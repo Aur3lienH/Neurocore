@@ -162,6 +162,11 @@ void Network::Learn(int epochs, double learningRate, Matrix** inputs, Matrix** o
         throw std::invalid_argument("Network must be compiled before learning");
     }
 
+    if(batchSize < threadNumber)
+    {
+        throw std::invalid_argument("More thread than batch size !");
+    }
+
     int pos = 0;
     int auxThreadNumber = threadNumber - 1;
     pthread_t* threads;
@@ -246,17 +251,14 @@ void Network::Learn(int epochs, double learningRate, Matrix** inputs, Matrix** o
                     pos = 0;
                 }
             }
-            std::cout << "pbl 1\n";
+
             cv->notify_all();
-            std::cout << "pbl 2\n";
+
             ClearDelta();
-            std::cout << "pbl 2.5\n";
             for (int i = 0; i < numberPerThread; i++)
             {
                 globalLoss += BackPropagate(inputsPerThread[threadNumber-1][0][i], outputsPerThread[threadNumber-1][0][i]);
             }
-            std::cout << "pbl 3\n";
-            Matrix* a = FeedForward(inputsPerThread[threadNumber-1][0][0]);
             
             
             for (int i = 0; i < auxThreadNumber; i++)

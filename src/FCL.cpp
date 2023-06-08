@@ -72,7 +72,7 @@ Matrix* FCL::BackPropagate(const Matrix* lastDelta, const Matrix* PastActivation
         for (int j = 0; j < NeuronsCount; j++)
         {
             newDelta[0][i] += deltaActivation[0][j] * Weigths[0][j+i*NeuronsCount];
-            Delta[0][i*NeuronsCount+j] += PastActivation[0][i] * deltaActivation[0][j];
+            Delta[0][i+j*previousNeuronsCount] += PastActivation[0][i] * deltaActivation[0][j];
         }
     }
     

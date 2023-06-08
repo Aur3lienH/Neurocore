@@ -20,7 +20,7 @@ int main()
 
     Network network = Network();
     network.AddLayer(new InputLayer(2));
-    network.AddLayer(new FCL(10000, new Sigmoid()));
+    network.AddLayer(new FCL(100, new Sigmoid()));
     network.AddLayer(new LastLayer(2, new Softmax(), new CrossEntropy()));
 
     network.Compile();
@@ -36,7 +36,7 @@ int main()
     output[1] = new Matrix(2,1,new double[2]{0,1});
     std::cout << *network.FeedForward(input[0]) << std::endl;
     std::cout << *network.FeedForward(input[1]) << std::endl;
-    network.Learn(10000,0.1,input,output,2,5,1);
+    network.Learn(10000,0.1,input,output,1,2,1);
     std::cout << *input[0] << std::endl;
     std::cout << *network.FeedForward(input[0]) << std::endl;
     std::cout << *network.FeedForward(input[1]) << std::endl;
