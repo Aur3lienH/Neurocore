@@ -1,6 +1,7 @@
 #pragma once
 #include <iostream>
 #include <vector>
+#include "Tools/Serializer.h"
 #include "Matrix.h"
 
 
@@ -22,8 +23,13 @@ public:
     virtual Matrix* getDelta() = 0;
     virtual Matrix* getDeltaBiases() = 0;
 
+    static Layer* Load(std::ifstream& reader);
+    virtual void SpecificSave(std::ofstream& writer) = 0;
+    void Save(std::ofstream& writer);
+
 protected:
     int* NeuronsCount;
     int NeuronsCountSize;
+    int LayerID;
 };
 

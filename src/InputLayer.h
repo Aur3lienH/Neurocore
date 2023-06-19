@@ -17,6 +17,8 @@ public:
     Matrix* getDelta();
     Matrix* getDeltaBiases();
     Layer* Clone(Matrix* delta, Matrix* deltaBiases);
+    static InputLayer* Load(std::ifstream& reader);
+    void SpecificSave(std::ofstream& writer);
 private:
     int inputSize;
     Matrix* input = nullptr;

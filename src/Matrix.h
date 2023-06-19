@@ -1,5 +1,7 @@
 #pragma once
 #include <iostream>
+#include <fstream>
+#include "Tools/Serializer.h"
 
 
 class Matrix
@@ -20,15 +22,20 @@ public:
     Matrix* operator*=(const Matrix* other);
     Matrix* operator*=(const double other);
     Matrix* operator*(const double& other);
+    static Matrix* Read(std::ifstream& reader);
+    void Save(std::ofstream& writer);
     double& operator[](int index);
     const double& operator[](int index) const;
+    const double& operator()(int rows,int cols) const;
     const void CrossProduct(const Matrix* other, Matrix* output) const;
     friend std::ostream& operator<<(std::ostream&, const Matrix&);
     void PrintSize();
+    static float Distance(Matrix* a, Matrix* b);
+    Matrix* Copy();
 private:
+    double* data;
     int rows;
     int cols;
-    double* data;
 };
 
 

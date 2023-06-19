@@ -1,4 +1,6 @@
 #include <iostream>
+#include <fstream>
+#include <cmath>
 #include "Matrix.h"
 
 //MATRIX
@@ -139,7 +141,17 @@ const double& Matrix::operator[](int index) const
         throw std::out_of_range("Matrix : Index out of bounds");
         return this->data[0];
     }
-    
+}
+
+const double& Matrix::operator()(int _rows, int _cols) const
+{
+
+    if(_rows >= rows || _cols >= cols)
+    {
+        throw std::out_of_range("Matrix : Index out of bounds");
+    }
+
+    return data[_rows + _cols * rows];
 }
 
 Matrix* Matrix::operator*=(const Matrix* other)
@@ -259,6 +271,59 @@ const void Matrix::CrossProduct(const Matrix* other, Matrix* output) const
 }
 
 
+//Read and write matrices.
+
+Matrix* Matrix::Read(std::ifstream& reader)
+{
+    int row,col;
+    reader.read(reinterpret_cast<char*>(&row),sizeof(int));
+    reader.read(reinterpret_cast<char*>(&col),sizeof(int));
+    Matrix* matrix = new Matrix(row,col);
+    for (int i = 0; i < row * col; i++)
+    {
+        reader.read(reinterpret_cast<char*>(matrix->data + i),sizeof(double));
+    }
+    return matrix;
+}
+
+void Matrix::Save(std::ofstream& writer)
+{
+    writer.write(reinterpret_cast<char*>(&rows),sizeof(int));
+    writer.write(reinterpret_cast<char*>(&cols),sizeof(int));
+    for (int i = 0; i < rows * cols; i++)
+    {
+        writer.write(reinterpret_cast<char*>(data + i),sizeof(double));
+    }
+}
+
+float Matrix::Distance(Matrix* a, Matrix* b)
+{
+    if(a->cols != b->cols || a->rows != b->rows)
+    {
+        throw std::invalid_argument("Matrices need to have same size to calculate distance !");
+    }
+    float res = 0;
+    for (int i = 0; i < a->cols * a->rows; i++)
+    {
+        res += (a[0][i] - b[0][i]) * (a[0][i] - b[0][i]);
+    }
+    res = sqrt(res);
+    return res;
+}
+
+Matrix* Matrix::Copy()
+{
+    double* resArray = new double[cols*rows];
+    for (int i = 0; i < cols*rows; i++)
+    {
+        resArray[i] = data[i];
+    }
+    return new Matrix(rows,cols,resArray);
+}
+
+
+
+
 //MATRIX CARRE
 
 MatrixCarre::MatrixCarre(int size) : Matrix(size, size)
@@ -286,6 +351,7 @@ MatrixDiagonale::MatrixDiagonale(int size, double value) : Matrix(size, size)
 
 MatrixDiagonale::~MatrixDiagonale()
 {
+    
 }
 
 

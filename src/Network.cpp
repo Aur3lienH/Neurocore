@@ -3,6 +3,8 @@
 #include "LastLayer.h"
 #include "Loss.h"
 #include "ThreadArg.h"
+#include "Tools/ProgressBar.h"
+#include <fstream>
 #include <unistd.h>
 #include <pthread.h>
 #include <iostream>
@@ -33,7 +35,6 @@ void* Network::LearnThread(void* args)
     {
         std::unique_lock<std::mutex> lock(*threadArg->mutex);
         threadArg->cv->wait(lock);
-        std::cout << "Thread started\n";
         threadArg->network->ClearDelta();
         for(int i = 0; i < threadArg->dataLength;i++)
         {
@@ -67,6 +68,12 @@ void Network::AddLayer(Layer* layer)
     }
 }
 
+
+Matrix* Network::Process(Matrix* input)
+{
+    Matrix* res = FeedForward(input);
+    return res->Copy();
+}
 
 
 Matrix* Network::FeedForward(Matrix* input) 
@@ -167,6 +174,8 @@ void Network::Learn(int epochs, double learningRate, Matrix** inputs, Matrix** o
         throw std::invalid_argument("More thread than batch size !");
     }
 
+    Tools::TrainBar Bar = Tools::TrainBar(epochs);
+
     int pos = 0;
     int auxThreadNumber = threadNumber - 1;
     pthread_t* threads;
@@ -236,6 +245,7 @@ void Network::Learn(int epochs, double learningRate, Matrix** inputs, Matrix** o
         pthread_create(&threads[j], NULL, LearnThread, (void*)threadArg);
     }
 
+
     for (int e = 0; e < epochs; e++)
     {
         globalLoss = 0;
@@ -286,11 +296,8 @@ void Network::Learn(int epochs, double learningRate, Matrix** inputs, Matrix** o
             {
                 mutexes[i]->unlock();
             }
-            std::cout << "\r";
-            std::cout << "Epoch " << e << " Batch " << k << " Loss " << globalLoss / (k+1) << "                        ";
-            std::cout.flush();
+            Bar.ChangeProgress(e+1, globalLoss / (k+1));
         }
-        std::cout << std::endl;
     }
     std::cout << "Learning finished" << std::endl;
     
@@ -323,3 +330,35 @@ void Network::PrintNetwork()
 
 
 
+void Network::Save(std::string filename)
+{
+    std::ofstream writer;
+    writer.open(filename, std::ios::binary | std::ios::trunc);
+
+    //First save the number of layers
+    writer.write(reinterpret_cast<char*>(&layersCount),sizeof(int));
+
+    for (int i = 0; i < layersCount; i++)
+    {
+        Layers[i]->Save(writer);
+    }
+    writer.close();
+}
+
+Network* Network::Load(std::string filename)
+{
+    std::ifstream reader;
+    reader.open(filename, std::ios::binary);
+    Network* network = new Network();
+    //Load number of layers
+    int layersCount;
+    reader.read(reinterpret_cast<char*>(&layersCount),sizeof(int));
+
+    //Load each Layer
+    for (int i = 0; i < layersCount; i++)
+    {
+        network->AddLayer(Layer::Load(reader));
+    }
+    reader.close();
+    return network;
+}

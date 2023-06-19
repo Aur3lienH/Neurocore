@@ -7,6 +7,35 @@ Loss::Loss()
 {
 }
 
+void Loss::Save(std::ofstream& writer)
+{
+    writer.write(reinterpret_cast<char*>(&ID),sizeof(int));
+}
+
+Loss* Loss::Read(std::ifstream& reader)
+{
+    int id;
+    reader.read(reinterpret_cast<char*>(&id),sizeof(int));
+    if(id == 0)
+    {
+        return new MSE();
+    }
+    else if(id == 1)
+    {
+        return new CrossEntropy();
+    }
+    else
+    {
+        throw std::invalid_argument("Invalid ID : Loss function");
+    }
+}
+
+
+MSE::MSE()
+{
+    ID = 0;
+}
+
 double MSE::Cost(const Matrix* output, const Matrix* target)
 {
     double cost = 0;
@@ -25,6 +54,11 @@ void MSE::CostDerivative(const Matrix* output, const Matrix* target, Matrix* res
     }
 }
 
+
+CrossEntropy::CrossEntropy()
+{
+    ID = 1;
+}
 
 double CrossEntropy::Cost(const Matrix* output, const Matrix* target)
 {
@@ -50,4 +84,8 @@ void CrossEntropy::CostDerivative(const Matrix* output, const Matrix* target, Ma
         }
     }
 }
+
+
+
+
 

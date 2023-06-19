@@ -4,6 +4,7 @@ InputLayer::InputLayer(int inputSize) : Layer(new int[1]{inputSize}, 1)
 {
     this->inputSize = inputSize;
     input = new Matrix(inputSize, 1);
+    LayerID = 1;
 }
 
 Matrix* InputLayer::FeedForward(const Matrix* _input) 
@@ -64,4 +65,16 @@ Matrix* InputLayer::getDelta()
 Matrix* InputLayer::getDeltaBiases()
 {
     return nullptr;
+}
+
+InputLayer* InputLayer::Load(std::ifstream& reader)
+{
+    int inputSize;
+    reader.read(reinterpret_cast<char*>(&inputSize),sizeof(int));
+    return new InputLayer(inputSize);
+}
+
+void InputLayer::SpecificSave(std::ofstream& writer) 
+{
+    writer.write(reinterpret_cast<char*>(&inputSize),sizeof(int));
 }

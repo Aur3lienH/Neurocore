@@ -17,6 +17,8 @@ public:
     Matrix* getDeltaBiases();
     Layer* Clone(Matrix* delta, Matrix* deltaBiases);
     double getLossError();
+    static LastLayer* Load(std::ifstream& reader);
+    void SpecificSave(std::ofstream& writer);
     
 private:
     Loss* loss;

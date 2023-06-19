@@ -10,6 +10,6 @@ Matrix*** GetDataset(std::string path,int dataLength);
 
 void Mnist();
 
-double TestAccuracy(Network* network, Matrix*** dataset, int dataLength);
+double TestAccuracy(Network* network, Matrix** inputs, Matrix** outputs, int dataLength);
 
-
+void LoadAndTest(std::string filename);
