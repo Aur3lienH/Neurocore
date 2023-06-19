@@ -1,10 +1,13 @@
 #include "Activation.h"
 #include "InitFunc.h"
+#include <fstream>
 #include <math.h>
+#include "Tools/ManagerIO.h"
 
 
 Activation::Activation()
 {
+    
 }
 
 std::string Activation::getName() const
@@ -36,12 +39,54 @@ void Activation::Derivative(const Matrix * input, Matrix* output)
     {
         output[0][i] = Derivate(input[0][i]);
     }
+}
 
+void Activation::Save(std::ofstream& writer)
+{
+    writer.write(reinterpret_cast<char*>(&ID),sizeof(int));
+}
+
+Activation* Activation::Read(std::ifstream& reader)
+{
+    int ID;
+    reader.read(reinterpret_cast<char*>(&ID),sizeof(int));
+    if(ID == 0)
+    {
+        return new Sigmoid();
+    }
+    else if (ID == 1)
+    {
+        return new SigmoidPrime();
+    }
+    else if (ID == 2)
+    {
+        return new ReLU();
+    }
+    else if (ID == 3)
+    {
+        float f;
+        reader.read(reinterpret_cast<char*>(&f),sizeof(float));
+        return new LeakyReLU(f);
+    }
+    else if (ID == 4)
+    {
+        return new Softmax();
+    }
+    else if (ID == 5)
+    {
+        return new Tanh();
+    }
+    else
+    {
+        throw std::invalid_argument("Invalid ID for loading activation funciton");
+        return nullptr;
+    }
 }
 
 Sigmoid::Sigmoid()
 {
     name = "Sigmoid";
+    ID = 0;
 }
 
 double Sigmoid::Function(double input)
@@ -64,6 +109,7 @@ Matrix* Sigmoid::InitWeights(int previousNeuronsCount, int NeuronsCount)
 SigmoidPrime::SigmoidPrime()
 {
     name = "SigmoidPrime";
+    ID = 1;
 }
 
 double SigmoidPrime::Function(double input)
@@ -86,6 +132,7 @@ Matrix* SigmoidPrime::InitWeights(int previousNeuronsCount, int NeuronsCount)
 ReLU::ReLU()
 {
     name = "ReLU";
+    ID = 2;
 }
 
 double ReLU::Function(double input)
@@ -122,6 +169,7 @@ Matrix* ReLU::InitWeights(int previousNeuronsCount, int NeuronsCount)
 LeakyReLU::LeakyReLU(double _alpha)
 {
     alpha = _alpha;
+    ID = 3;
 }
 
 double LeakyReLU::Function(double input)
@@ -134,6 +182,12 @@ double LeakyReLU::Derivate(double input)
     return input > 0 ? 1 : 0.01;
 }
 
+void LeakyReLU::Save(std::ofstream& writer)
+{
+    writer.write(reinterpret_cast<char*>(&ID),sizeof(int));
+    writer.write(reinterpret_cast<char*>(&alpha),sizeof(float));
+}
+
 Matrix* LeakyReLU::InitWeights(int previousNeuronsCount, int NeuronsCount)
 {
     Matrix* weights = new Matrix(NeuronsCount, previousNeuronsCount);
@@ -144,6 +198,7 @@ Matrix* LeakyReLU::InitWeights(int previousNeuronsCount, int NeuronsCount)
 Softmax::Softmax()
 {
     name = "Softmax";
+    ID = 4;
 }
 
 void Softmax::FeedForward(const Matrix* input, Matrix* output)
@@ -196,6 +251,7 @@ double Softmax::Derivate(double input)
 Tanh::Tanh()
 {
     name = "Tanh";
+    ID = 5;
 }
 
 double Tanh::Function(double input)

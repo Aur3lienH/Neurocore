@@ -3,6 +3,7 @@
 class Tests
 {
 public:
-    static void BasicNetwork1();
-    static void BasicNetwork2();
+    static void ExecuteTests();
+    static bool BasicNetwork1();
+    static bool SaveNetwork1();
 };

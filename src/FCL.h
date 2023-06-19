@@ -2,7 +2,7 @@
 #include "Matrix.h"
 #include "Activation.h"
 #include "Layer.h"
-
+#include "./Tools/Serializer.h"
 
 class FCL : public Layer
 {
@@ -20,13 +20,15 @@ public:
     Matrix* getResult() const;
     std::string getLayerTitle();
     virtual Layer* Clone(Matrix* delta, Matrix* deltaBiases);
+    static FCL* Load(std::ifstream& ifstream);
+    void SpecificSave(std::ofstream& filename);
 protected:
     Matrix* Delta = nullptr;
     Matrix* Result = nullptr;
     Matrix* Weigths = nullptr;
     Matrix* Biases = nullptr;
     Matrix* DeltaBiases = nullptr;
-    Activation* activation;
+    Activation* activation = nullptr;
     int NeuronsCount;
 private:
     Matrix* newDelta = nullptr;

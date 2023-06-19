@@ -1,7 +1,7 @@
 #pragma once
 #include <iostream>
 
-class Tools
+class CSVTools
 {
 public:
     static int CsvLength(std::string path);

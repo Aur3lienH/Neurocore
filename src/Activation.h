@@ -1,6 +1,8 @@
 #pragma once
 #include "Matrix.h"
 
+
+
 //Abstact class to make all activations function
 class Activation
 {
@@ -9,12 +11,15 @@ public:
     virtual void FeedForward(const Matrix* input, Matrix* output);
     virtual void Derivative(const Matrix * input, Matrix* output);
     virtual Matrix* InitWeights(int inputSize, int outputSize) = 0;
+    static Activation* Read(std::ifstream& reader);
+    virtual void Save(std::ofstream& write);
     Matrix* InitBiases(int outputSize);
     std::string getName() const;
 protected: 
     virtual double Function(double input) = 0;
     virtual double Derivate(double input) = 0;
     std::string name;
+    int ID;
     
 };
 
@@ -53,6 +58,7 @@ public:
     double Function(double input);
     double Derivate(double input);
     Matrix* InitWeights(int inputSize, int outputSize);
+    void Save(std::ofstream& writer);
 private:
     double alpha;
 };

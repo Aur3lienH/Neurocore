@@ -3,7 +3,7 @@
 #include <fstream>
 
 
-int Tools::CsvLength(std::string path)
+int CSVTools::CsvLength(std::string path)
 {
     std::ifstream file(path);
     std::string line;
