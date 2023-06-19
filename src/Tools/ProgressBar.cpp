@@ -194,7 +194,7 @@ namespace Tools
         std::cout << "\r";
         int Width = GetConsoleWidth();
         std::string beginning =  "Train -> loss : " + std::to_string(loss) + " epoch : " +  std::to_string(epochs) + " ";
-        int BarSize = std::min(Width - beginning.size(),(unsigned long)100);
+        int BarSize = std::min((unsigned long)(Width - beginning.size()),(unsigned long)100);
         std::cout << beginning;
         unsigned int space = Width - BarSize - beginning.size();
         for (unsigned int i = 0; i < space; i++)

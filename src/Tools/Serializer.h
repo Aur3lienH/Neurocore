@@ -8,7 +8,7 @@
 
 
 
-
+typedef unsigned long ulong;
 namespace Tools
 {
     class Data
