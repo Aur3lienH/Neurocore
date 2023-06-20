@@ -321,6 +321,36 @@ Matrix* Matrix::Copy()
     return new Matrix(rows,cols,resArray);
 }
 
+void MatrixCarre::Flip180()
+{
+    for (int i = 0; i < this->cols / 2; ++i)
+    {
+        for (int j = 0; j < this->rows / 2; ++j)
+        {
+            std::swap(this->data[i * this->cols + j], this->data[(this->cols - i - 1) * this->cols + (this->rows - j - 1)]);
+        }
+    }
+}
+
+double Matrix::Sum()
+{
+    double res = 0;
+    for (int i = 0; i < cols*rows; i++)
+    {
+        res += data[i];
+    }
+    return res;
+}
+
+double& Matrix::operator()(int _rows, int _cols)
+{
+    if(_rows >= rows || _cols >= cols)
+    {
+        throw std::out_of_range("Matrix : Index out of bounds");
+    }
+    return data[_rows * this->cols + _cols];
+}
+
 
 
 
