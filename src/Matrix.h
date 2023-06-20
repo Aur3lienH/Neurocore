@@ -14,6 +14,7 @@ public:
     void Add(Matrix* other, Matrix* result);
     void Subtract(const Matrix* other, Matrix* result) const ;
     void Zero();
+    double Sum();
     const int getRows() const;
     const int getCols() const;
     Matrix* operator+=(const Matrix& other);
@@ -25,6 +26,7 @@ public:
     static Matrix* Read(std::ifstream& reader);
     void Save(std::ofstream& writer);
     double& operator[](int index);
+    double& operator()(int rows,int cols);
     const double& operator[](int index) const;
     const double& operator()(int rows,int cols) const;
     const void CrossProduct(const Matrix* other, Matrix* output) const;
@@ -32,7 +34,8 @@ public:
     void PrintSize();
     static float Distance(Matrix* a, Matrix* b);
     Matrix* Copy();
-private:
+
+protected:
     double* data;
     int rows;
     int cols;
@@ -43,6 +46,7 @@ private:
 class MatrixCarre : public Matrix
 {
 public:
+    void Flip180();
     MatrixCarre(int size);
     MatrixCarre(int size, double value);
 private:
