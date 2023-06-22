@@ -67,7 +67,7 @@ void Matrix::Add(Matrix* other, Matrix* result)
     }
 }
 
-void Matrix::Subtract(const Matrix* other, Matrix* result) const 
+void Matrix::Substract(const Matrix* other, Matrix* result) const 
 {
     
     if (this->rows != other->rows || this->cols != other->cols)
@@ -321,13 +321,40 @@ Matrix* Matrix::Copy()
     return new Matrix(rows,cols,resArray);
 }
 
-void MatrixCarre::Flip180()
+void Matrix::Flip180(const Matrix* input, Matrix* output)
 {
-    for (int i = 0; i < this->cols / 2; ++i)
+    for (int i = 0; i < input->cols / 2; ++i)
     {
-        for (int j = 0; j < this->rows / 2; ++j)
+        for (int j = 0; j < input->rows / 2; ++j)
         {
-            std::swap(this->data[i * this->cols + j], this->data[(this->cols - i - 1) * this->cols + (this->rows - j - 1)]);
+            //UGLY
+            (*output)(i,j) = (*input)(input->rows - 1 - j,input->cols - 1 - i);
+        }
+    }
+}
+
+void Matrix::FullConvolution(const Matrix* a, const Matrix* b, Matrix* output)
+{
+
+    int filterSize = b->getRows();
+    int inputCols = a->getCols();
+    int inputRows = a->getRows();
+    int outputCols = inputCols - filterSize + 1;
+    int outputRows = inputRows - filterSize + 1;
+
+    for (int i = 0; i < outputRows; i++)
+    {
+        for (int j = 0; j < outputCols; j++)
+        {
+            double sum = 0;
+            for (int k = 0; k < filterSize; k++)
+            {
+                for (int l = 0; l < filterSize; l++)
+                {
+                    sum += (*a)(i + k, j + l) * (*b)(k, l);
+                }
+            }
+            (*output)(i, j) = sum;
         }
     }
 }
