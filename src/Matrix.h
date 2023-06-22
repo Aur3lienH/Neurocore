@@ -11,8 +11,12 @@ public:
     Matrix(int rows, int cols, double value);
     Matrix(int rows, int cols, double* data);
     ~Matrix();
+
+    static void Flip180(const Matrix* input, Matrix* output);
+    static void FullConvolution(const Matrix* a, const Matrix* b, Matrix* output);
+
     void Add(Matrix* other, Matrix* result);
-    void Subtract(const Matrix* other, Matrix* result) const ;
+    void Substract(const Matrix* other, Matrix* result) const ;
     void Zero();
     double Sum();
     const int getRows() const;
@@ -46,7 +50,6 @@ protected:
 class MatrixCarre : public Matrix
 {
 public:
-    void Flip180();
     MatrixCarre(int size);
     MatrixCarre(int size, double value);
 private:
