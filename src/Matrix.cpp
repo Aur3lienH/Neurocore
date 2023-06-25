@@ -333,14 +333,14 @@ void Matrix::Flip180(const Matrix* input, Matrix* output)
     }
 }
 
-void Matrix::FullConvolution(const Matrix* a, const Matrix* b, Matrix* output)
+void Matrix::FullConvolution(const Matrix* a, const Matrix* b, Matrix* output, int stride)
 {
 
     int filterSize = b->getRows();
     int inputCols = a->getCols();
     int inputRows = a->getRows();
-    int outputCols = inputCols - filterSize + 1;
-    int outputRows = inputRows - filterSize + 1;
+    int outputCols = (inputCols - 1) * stride + filterSize;
+    int outputRows = (inputRows - 1) * stride + filterSize;
 
     for (int i = 0; i < outputRows; i++)
     {
@@ -351,12 +351,16 @@ void Matrix::FullConvolution(const Matrix* a, const Matrix* b, Matrix* output)
             {
                 for (int l = 0; l < filterSize; l++)
                 {
-                    sum += (*a)(i + k, j + l) * (*b)(k, l);
+                    if (i - k >= 0 && i - k < inputRows && j - l >= 0 && j - l < inputCols)
+                    {
+                        sum += (*a)(i - k, j - l) * (*b)(k, l);
+                    }
                 }
             }
             (*output)(i, j) = sum;
         }
     }
+    
 }
 
 double Matrix::Sum()

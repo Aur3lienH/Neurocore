@@ -3,19 +3,18 @@
 #include <vector>
 #include "Tools/Serializer.h"
 #include "Matrix.h"
-
-
+#include "LayerShape.h"
 class Layer
 {
 public:
-    Layer(int* NeuronsCount, int NeuronsCountSize);
+    Layer();
 
     virtual Matrix* FeedForward(const Matrix* input) = 0;
     virtual Matrix* BackPropagate(const Matrix* delta, const Matrix* lastWeigths) = 0;
     virtual void ClearDelta() = 0;
     virtual void UpdateWeights(double learningRate, int batchSize) = 0;
     virtual void UpdateWeights(double learningRate, int batchSize, Matrix* delta, Matrix* deltaBiases) = 0;
-    virtual void Compile(int previousNeuronsCount) = 0;
+    virtual void Compile(LayerShape* previousOuptut) = 0;
     virtual Matrix* getResult() const = 0;
     int getNeuronsCount(int index);
     virtual std::string getLayerTitle() = 0;
@@ -28,8 +27,7 @@ public:
     void Save(std::ofstream& writer);
 
 protected:
-    int* NeuronsCount;
-    int NeuronsCountSize;
+    LayerShape* output;
     int LayerID;
 };
 

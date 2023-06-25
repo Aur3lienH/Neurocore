@@ -5,17 +5,18 @@
 #include "Matrix.h"
 #include "Tools/Serializer.h"
 #include "Tools/ManagerIO.h"
+#include "LayerShape.h"
 
 
 
-FCL::FCL(int NeuronsCount, Activation* activation) : Layer(new int[1]{ NeuronsCount }, 1)
+FCL::FCL(int NeuronsCount, Activation* activation)
 {
     this->NeuronsCount = NeuronsCount;
     this->activation = activation;
     LayerID = 0;
 }
 
-FCL::FCL(int NeuronsCount, Activation* _activation, Matrix* weights, Matrix* bias, Matrix* delta, Matrix* deltaBiases) : Layer(new int[1]{ NeuronsCount }, 1)
+FCL::FCL(int NeuronsCount, Activation* _activation, Matrix* weights, Matrix* bias, Matrix* delta, Matrix* deltaBiases)
 {
     this->Delta = delta;
     this->DeltaBiases = deltaBiases;
@@ -38,10 +39,13 @@ Matrix* FCL::FeedForward(const Matrix* input)
     activation->FeedForward(z, Result);
     return Result;
 }
-
-void FCL::Compile(int _previousNeuronsCount)
+void FCL::Compile(LayerShape* previousLayer)
 {
-    this->previousNeuronsCount = _previousNeuronsCount;
+    if(previousLayer->size != 1)
+    {
+        throw std::invalid_argument("Previous Layer must have one dimensions ! ");
+    }
+    previousNeuronsCount = previousLayer->dimensions[0];
     if(Weigths == nullptr)
         Weigths = activation->InitWeights(previousNeuronsCount, NeuronsCount);
     if(Delta == nullptr)
