@@ -3,6 +3,7 @@
 #include "Activation.h"
 #include "Layer.h"
 #include "./Tools/Serializer.h"
+#include "LayerShape.h"
 
 class FCL : public Layer
 {
@@ -14,7 +15,7 @@ public:
     void ClearDelta();
     void UpdateWeights(double learningRate, int batchSize);
     void UpdateWeights(double learningRate, int batchSize, Matrix* delta,Matrix* deltaActivation);
-    void Compile(int previousNeuronsCount);
+    void Compile(LayerShape* previousLayer);
     Matrix* getDelta();
     Matrix* getDeltaBiases();
     Matrix* getResult() const;

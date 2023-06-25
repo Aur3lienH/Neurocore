@@ -3,19 +3,27 @@
 //
 
 #include "ConvLayer.h"
+#include "LayerShape.h"
 
-ConvLayer::ConvLayer(int* dimensions, int dimensionSize) : Layer(dimensions,dimensionSize)
+
+ConvLayer::ConvLayer(Convolution convolution)
 {
+    LayerID = 3;
     
 }
 
 
-void ConvLayer::Compile(int* previousNeuronsCount, int preivousSize)
+void ConvLayer::Compile(LayerShape* previousLayer)
 {
-    if(preivousSize < 3)
+    if(previousLayer->size < 3)
     {
         throw new std::invalid_argument("Input of a CNN network must have 3 dimensions");
     }
+
+    outputCols = previousLayer->dimensions[1] - filter->getCols() + 1;
+    outputRows = previousLayer->dimensions[0] - filter->getRows() + 1;
+
+    output = new LayerShape(previousLayer->dimensions[0] - filter->getRows() + 1,previousLayer->dimensions[1] - filter->getCols() + 1, previousLayer->dimensions[2]);
 }
 
 Matrix* ConvLayer::FeedForward(const Matrix* input)
@@ -27,10 +35,6 @@ Matrix* ConvLayer::FeedForward(const Matrix* input)
 void ConvLayer::Convolve(const Matrix* input, Matrix* output)
 {
     int filterSize = filter->getRows();
-    int inputCols = input->getCols();
-    int inputRows = input->getRows();
-    //int outputCols = inputCols - filterSize + 1;
-    //int outputRows = inputRows - filterSize + 1;
 
     for (int i = 0; i < outputRows; i++)
     {
@@ -55,7 +59,7 @@ Matrix* ConvLayer::BackPropagate(const Matrix* lastDelta,const Matrix* lastWeigh
 {
     Matrix::Flip180(filter,rotatedFilter);
     Matrix::FullConvolution(rotatedFilter,lastDelta,delta);
-    Matrix::FullConvolution(input,lastDelta,nextLayerDelta);
+    Matrix::Convolve(input,lastDelta,nextLayerDelta);
     return nextLayerDelta;
 }
 
@@ -67,6 +71,7 @@ void ConvLayer::UpdateWeights(double learningRate, int batchSize)
 
 void ConvLayer::UpdateWeights(double learningRate, int batchSize, Matrix* delta, Matrix* deltaBiases)
 {
+    delta->operator*(learningRate/batchSize);
     filter->Substract(delta,result);
 }
 

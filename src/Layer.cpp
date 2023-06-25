@@ -3,6 +3,7 @@
 #include "FCL.h"
 #include "InputLayer.h"
 #include "LastLayer.h"
+#include "ConvLayer.h"
 
 
 Layer::Layer(int* NeuronsCount, int NeuronsCountSize)
@@ -38,6 +39,12 @@ Layer* Layer::Load(std::ifstream& reader)
         case 2:
         {
             return LastLayer::Load(reader);
+            break;
+        }
+
+        case 3:
+        {
+            return ConvLayer::Load(reader);
             break;
         }
 

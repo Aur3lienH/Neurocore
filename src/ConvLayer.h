@@ -1,14 +1,24 @@
 #pragma once
 #include "Layer.h"
+#include "LayerShape.h"
 
 
 #include "Matrix.h"
+
+
+enum Convolution
+{
+    Valid,
+    Same,
+    Full
+};
+
 
 class ConvLayer : public Layer
 {
 
 public:
-    ConvLayer(int* dimensions, int size);
+    ConvLayer(Convolution convolution);
     ConvLayer(int* dimesions, int dimensionsNumber, Matrix* filter, Matrix* delta);
     explicit ConvLayer(Matrix* _filter);
     void Convolve(const Matrix* input, Matrix* output);
@@ -18,7 +28,7 @@ public:
     void ClearDelta();
     void UpdateWeights(double learningRate, int batchSize);
     void UpdateWeights(double learningRate, int batchSize, Matrix* delta, Matrix* deltaBiases);
-    void Compile(int* previousNeuronsCount, int size);
+    void Compile(LayerShape* previousLayer);
     Matrix* getResult() const;
 
     std::string getLayerTitle();
@@ -41,4 +51,7 @@ private:
     Matrix* input;
     int outputRows;
     int outputCols;
+
+
+
 };
