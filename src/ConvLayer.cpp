@@ -28,29 +28,8 @@ void ConvLayer::Compile(LayerShape* previousLayer)
 
 Matrix* ConvLayer::FeedForward(const Matrix* input)
 {
-    Convolve(input,result);
+    Matrix::Convolution(input,filter,result);
     return result;
-}
-
-void ConvLayer::Convolve(const Matrix* input, Matrix* output)
-{
-    int filterSize = filter->getRows();
-
-    for (int i = 0; i < outputRows; i++)
-    {
-        for (int j = 0; j < outputCols; j++)
-        {
-            double sum = 0;
-            for (int k = 0; k < filterSize; k++)
-            {
-                for (int l = 0; l < filterSize; l++)
-                {
-                    sum += (*input)(i + k, j + l) * (*filter)(k, l);
-                }
-            }
-            (*output)(i, j) = sum;
-        }
-    }
 }
 
 
@@ -59,7 +38,7 @@ Matrix* ConvLayer::BackPropagate(const Matrix* lastDelta,const Matrix* lastWeigh
 {
     Matrix::Flip180(filter,rotatedFilter);
     Matrix::FullConvolution(rotatedFilter,lastDelta,delta);
-    Matrix::Convolve(input,lastDelta,nextLayerDelta);
+    Matrix::Convolution(input,lastDelta,nextLayerDelta);
     return nextLayerDelta;
 }
 
