@@ -14,7 +14,7 @@ public:
 
     static void Flip180(const Matrix* input, Matrix* output);
     static void FullConvolution(const Matrix* a, const Matrix* b, Matrix* output, int stride = 1);
-    static void Convolve(const Matrix* a, const Matrix* b, Matrix* output);
+    static void Convolution(const Matrix* a, const Matrix* b, Matrix* output, int stride = 1);
 
     void Add(Matrix* other, Matrix* result);
     void Substract(const Matrix* other, Matrix* result) const ;

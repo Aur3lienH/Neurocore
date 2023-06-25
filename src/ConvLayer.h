@@ -21,7 +21,6 @@ public:
     ConvLayer(Convolution convolution);
     ConvLayer(int* dimesions, int dimensionsNumber, Matrix* filter, Matrix* delta);
     explicit ConvLayer(Matrix* _filter);
-    void Convolve(const Matrix* input, Matrix* output);
 
     Matrix* FeedForward(const Matrix* input);
     Matrix* BackPropagate(const Matrix* delta, const Matrix* lastWeigths);

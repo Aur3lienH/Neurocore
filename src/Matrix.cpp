@@ -363,6 +363,32 @@ void Matrix::FullConvolution(const Matrix* a, const Matrix* b, Matrix* output, i
     
 }
 
+
+void Matrix::Convolution(const Matrix* input, const Matrix* filter, Matrix* output, int stride)
+{
+    int filterSize = filter->getRows();
+    int inputCols = input->getCols();
+    int inputRows = input->getRows();
+    int outputCols = (inputCols - filterSize) / stride + 1;
+    int outputRows = (inputRows - filterSize) / stride + 1;
+
+    for (int i = 0; i < outputRows; i++)
+    {
+        for (int j = 0; j < outputCols; j++)
+        {
+            double sum = 0;
+            for (int k = 0; k < filterSize; k++)
+            {
+                for (int l = 0; l < filterSize; l++)
+                {
+                    sum += (*input)(i * stride + k, j * stride + l) * (*filter)(k, l);
+                }
+            }
+            (*output)(i, j) = sum;
+        }
+    }
+}
+
 double Matrix::Sum()
 {
     double res = 0;
