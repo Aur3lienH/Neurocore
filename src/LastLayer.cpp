@@ -37,19 +37,11 @@ Matrix* LastLayer::BackPropagate(const Matrix* desiredOutput, const Matrix* last
 }
 
 
-void LastLayer::UpdateWeights(double learningRate, int batchSize)
-{
-    FCL::UpdateWeights(learningRate, batchSize);
-}
 
-void LastLayer::UpdateWeights(double learningRate, int batchSize, Matrix* delta, Matrix* deltaActivation)
-{
-    FCL::UpdateWeights(learningRate, batchSize, delta, deltaActivation);
-}
 
-Layer* LastLayer::Clone(Matrix* delta, Matrix* deltaBiases)
+Layer* LastLayer::Clone()
 {
-    return new LastLayer(NeuronsCount, activation, Weigths, Biases, delta, deltaBiases, loss);
+    return new LastLayer(NeuronsCount, activation, Weigths, Biases, nullptr,nullptr, loss);
 }
 
 Matrix* LastLayer::getDelta()

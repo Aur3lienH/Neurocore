@@ -7,6 +7,7 @@
 class Matrix
 {
 public:
+    Matrix();
     Matrix(int rows, int cols);
     Matrix(int rows, int cols, double value);
     Matrix(int rows, int cols, double* data);

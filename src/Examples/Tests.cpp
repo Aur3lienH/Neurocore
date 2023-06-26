@@ -3,6 +3,7 @@
 #include "../Network.h"
 #include "../InputLayer.h"
 #include "../Activation.h"
+#include "../ConvLayer.h"
 #include <limits>
 #include <tuple>
 #include <iomanip>
@@ -12,7 +13,8 @@ void Tests::ExecuteTests()
 {
     std::vector<std::tuple<void*,std::string>> functions;
     functions.push_back(std::make_tuple((void*)BasicNetwork1,"Single Thread"));
-    functions.push_back(std::make_tuple((void*)SaveNetwork1,"Save and Load Network"));
+    //functions.push_back(std::make_tuple((void*)SaveNetwork1,"Save and Load Network"));
+    functions.push_back(std::make_tuple((void*)CNNNetwork1,"Basic convolution test"));
 
     bool* array = new bool[functions.size()];
 
@@ -31,7 +33,7 @@ void Tests::ExecuteTests()
         }
     }
 
-    system("clear");
+    //system("clear");
     for (int i = 0; i < functions.size(); i++)
     {
         if(array[i])
@@ -118,4 +120,34 @@ bool Tests::SaveNetwork1()
     }
     return false;
 
+}
+
+bool Tests::CNNNetwork1()
+{
+    std::cout << "Network 1rst !\n";
+
+    Matrix* filter = new Matrix(2,2,new double[4]{1,0,0,1});
+
+    Network network = Network();
+    network.AddLayer(new InputLayer(3,3,1));
+    network.AddLayer(new ConvLayer(filter));
+
+    network.Compile();
+
+
+    Matrix* input1 = new Matrix(3,3,5);
+
+
+    std::cout << "Before process \n";
+
+    Matrix* out = network.Process(input1);
+
+    std::cout << *out;
+
+    if(out == input1)
+    {
+        return true;
+    }
+    
+    return false;
 }

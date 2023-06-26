@@ -18,13 +18,13 @@ Network::Network()
     
 }
 
-Network::Network(Network* network, Matrix** deltas, Matrix** deltaBiases)
+Network::Network(Network* network)
 {
     this->layersCount = network->layersCount;
     this->Layers = new Layer*[layersCount];
     for(int i = 0; i < layersCount; i++)
     {
-        this->Layers[i] = network->Layers[i]->Clone(deltas[i], deltaBiases[i]);
+        this->Layers[i] = network->Layers[i]->Clone();
     }
 }
 
@@ -81,7 +81,10 @@ Matrix* Network::FeedForward(Matrix* input)
     output = input;
     for (int i = 0; i < layersCount; i++)
     {
+        std::cout << "launching layer \n";
+        std::cout << Layers[i]->getLayerTitle() << "\n";
         output = Layers[i]->FeedForward(output);
+        std::cout << *output;
     }
     return output;
 }
@@ -107,9 +110,9 @@ void Network::Compile()
     for (int i = 0; i < layersCount; i++)
     {
         if(i == 0)
-            Layers[i]->Compile(0);
+            Layers[i]->Compile(nullptr);
         else
-            Layers[i]->Compile(Layers[i - 1]->getNeuronsCount(0));
+            Layers[i]->Compile(Layers[i - 1]->GetLayerShape());
     }
     InputLayer* inputLayer = (InputLayer*)Layers[0];
     if(inputLayer == nullptr)
@@ -179,16 +182,10 @@ void Network::Learn(int epochs, double learningRate, Matrix** inputs, Matrix** o
     int pos = 0;
     int auxThreadNumber = threadNumber - 1;
     pthread_t* threads;
-    Matrix*** delta;
-    Matrix*** deltaBiases;
-    Matrix* mainDelta;
-    Matrix* mainDeltaBiases;
     std::condition_variable* cv = new std::condition_variable;
     std::mutex** mutexes;
     if(auxThreadNumber > 0)
     {
-        delta = new Matrix**[auxThreadNumber];
-        deltaBiases = new Matrix**[auxThreadNumber];
         mutexes = new std::mutex*[auxThreadNumber];
         threads = new pthread_t[auxThreadNumber];
 
@@ -212,6 +209,7 @@ void Network::Learn(int epochs, double learningRate, Matrix** inputs, Matrix** o
 
     Matrix**** inputsPerThread = new Matrix***[threadNumber];
     Matrix**** outputsPerThread = new Matrix***[threadNumber];
+    Network* auxiliaryNetwork = new Network[auxThreadNumber];
 
     for (int i = 0; i < threadNumber; i++)
     {
@@ -221,27 +219,12 @@ void Network::Learn(int epochs, double learningRate, Matrix** inputs, Matrix** o
     
     for(int j = 0; j < auxThreadNumber; j++)
     {
-        delta[j] = new Matrix*[layersCount];
-        deltaBiases[j] = new Matrix*[layersCount];
-        for (int i = 0; i < layersCount; i++)
-        {
 
-            if(i==0)
-            {
-                delta[j][i] = new Matrix(0, Layers[i]->getNeuronsCount(0));
-            }
-            else
-            {
-                delta[j][i] = new Matrix(Layers[i-1]->getNeuronsCount(0), Layers[i]->getNeuronsCount(0));
-            }
-            deltaBiases[j][i] = new Matrix(Layers[i]->getNeuronsCount(0), 1);
-        }
-
-        Network* NetworkCopy = new Network(this, delta[j], deltaBiases[j]);
+        Network* NetworkCopy = new Network(this);
         NetworkCopy->Compile();
 
         ThreadArg* threadArg = new ThreadArg(NetworkCopy, inputsPerThread[j], outputsPerThread[j], mutexes[j], cv, numberPerThread);
-
+        auxiliaryNetwork[j] = NetworkCopy;
         pthread_create(&threads[j], NULL, LearnThread, (void*)threadArg);
     }
 
@@ -275,22 +258,19 @@ void Network::Learn(int epochs, double learningRate, Matrix** inputs, Matrix** o
             {
                 mutexes[i]->lock();
             }
+            
+            
+            
             for (int i = 1; i < layersCount; i++)
             {
-                mainDelta = Layers[i]->getDelta();
-                mainDeltaBiases = Layers[i]->getDeltaBiases();
                 for (int j = 0; j < auxThreadNumber; j++)
                 {
-                    mainDelta->Add(delta[j][i], mainDelta);
-                    mainDeltaBiases->Add(deltaBiases[j][i], mainDeltaBiases);
+                    Layers[i]->AddDeltaFrom(auxiliaryNetwork[j].Layers[i]);
                 }
+
+                Layers[i]->UpdateWeights(learningRate, batchSize);
                 
-            }
-            
-            
-            for (int i = 1; i < layersCount; i++)
-            {
-                Layers[i]->UpdateWeights(learningRate, batchSize, Layers[i]->getDelta(), Layers[i]->getDeltaBiases());
+                
             }
             for (int i = 0; i < auxThreadNumber; i++)
             {
