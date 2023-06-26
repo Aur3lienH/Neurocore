@@ -338,34 +338,39 @@ void Matrix::Flip180(const Matrix* input, Matrix* output)
     }
 }
 
-void Matrix::FullConvolution(const Matrix* a, const Matrix* b, Matrix* output, int stride)
+void Matrix::FullConvolution(const Matrix* m, const Matrix* filter, Matrix* output)
 {
+    const int outputCols = m->getCols() + filter->getCols() - 1;
+    const int outputRows = m->getRows() + filter->getRows() - 1;
 
-    int filterSize = b->getRows();
-    int inputCols = a->getCols();
-    int inputRows = a->getRows();
-    int outputCols = (inputCols - 1) * stride + filterSize;
-    int outputRows = (inputRows - 1) * stride + filterSize;
+    const int filterCols = filter->getCols();
+    const int filterRows = filter->getRows();
+
+    const int inputCols = m->getCols();
+    const int inputRows = m->getRows();
+
+    const int r = filterRows - 1;
+    const int c = filterCols - 1;
 
     for (int i = 0; i < outputRows; i++)
     {
         for (int j = 0; j < outputCols; j++)
         {
             double sum = 0;
-            for (int k = 0; k < filterSize; k++)
+            for (int k = 0; k < filterRows; k++)
             {
-                for (int l = 0; l < filterSize; l++)
+                for (int l = 0; l < filterCols; l++)
                 {
-                    if (i - k >= 0 && i - k < inputRows && j - l >= 0 && j - l < inputCols)
-                    {
-                        sum += (*a)(i - k, j - l) * (*b)(k, l);
-                    }
+                    const int inputRow = i + k - r;
+                    const int inputCol = j + l - c;
+                    if (inputRow >= 0 && inputRow < inputRows && inputCol >= 0 && inputCol < inputCols)
+                        sum += (*m)(inputRow, inputCol) * (*filter)(k, l);
+
                 }
             }
             (*output)(i, j) = sum;
         }
     }
-    
 }
 
 
@@ -422,6 +427,30 @@ Matrix* Matrix::Copy(const Matrix* a)
         res[0][i] = a[0][i];
     }
     return res;
+}
+
+void Matrix::MaxPool(const Matrix* a, Matrix* output, const int filterSize, const int stride)
+{
+    const int inputCols = a->cols;
+    const int inputRows = a->rows;
+    const int outputCols = (inputCols - 1) * stride + filterSize;
+    const int outputRows = (inputRows - 1) * stride + filterSize;
+
+    for (int i = 0; i < outputRows; i++)
+    {
+        for (int j = 0; j < outputCols; j++)
+        {
+            double max = -2; // Should be less than all elements thanks to activation functions
+            for (int k = 0; k < filterSize; k++)
+            {
+                for (int l = 0; l < filterSize; l++)
+                {
+                    max = std::max(max, (*a)(i - k, j - l));
+                }
+            }
+            (*output)(i, j) = max;
+        }
+    }
 }
 
 
