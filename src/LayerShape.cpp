@@ -3,7 +3,7 @@
 
 LayerShape::LayerShape(int neuronsCount)
 {
-    dimensions = new int[1] {neuronsCount};
+    dimensions = new int[3] {neuronsCount,1,1};
     size = 1;
 }
 

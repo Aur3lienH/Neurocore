@@ -59,6 +59,8 @@ void FCL::Compile(LayerShape* previousLayer)
     Result = new Matrix(NeuronsCount, 1);
     z = new Matrix(NeuronsCount, 1);
     newDelta = new Matrix(previousNeuronsCount, 1);
+
+    layerShape = new LayerShape(NeuronsCount);
 }
 
 Matrix* FCL::BackPropagate(const Matrix* lastDelta, const Matrix* PastActivation)
@@ -88,21 +90,32 @@ Matrix* FCL::BackPropagate(const Matrix* lastDelta, const Matrix* PastActivation
 
 void FCL::UpdateWeights(double learningRate, int batchSize)
 {
-    UpdateWeights(learningRate,batchSize,Delta,DeltaBiases);
-}
-
-void FCL::UpdateWeights(double learningRate, int batchSize, Matrix* delta, Matrix* deltaBiases)
-{
-
     // Can be optimized by adding all the deltas in the main thread and then updating the weights
     double coef = learningRate / batchSize;    
     for (int i = 0; i < Weigths->getCols() * Weigths->getRows(); i++)
     {
-        Weigths[0][i] -= delta[0][i] * coef;
+        Weigths[0][i] -= Delta[0][i] * coef;
     }
     for (int i = 0; i < Biases->getCols() * Biases->getRows(); i++)
     {
-       Biases[0][i] -= deltaBiases[0][i] * coef;
+       Biases[0][i] -= DeltaBiases[0][i] * coef;
+    }
+    
+    Delta->Zero();
+    DeltaBiases->Zero();
+}
+
+void FCL::AddDeltaFrom(Layer* otherLayer)
+{
+
+    FCL* _FCLLayer = (FCL*)otherLayer;
+    for (int i = 0; i < Weigths->getCols() * Weigths->getRows(); i++)
+    {
+        Delta[0][i] -= _FCLLayer->Delta[0][i];
+    }
+    for (int i = 0; i < Biases->getCols() * Biases->getRows(); i++)
+    {
+       DeltaBiases[0][i] -= _FCLLayer->DeltaBiases[0][i];
     }
     
     Delta->Zero();
@@ -134,9 +147,9 @@ std::string FCL::getLayerTitle()
     return buf;
 }
 
-Layer* FCL::Clone(Matrix* delta, Matrix* deltaBiases)
+Layer* FCL::Clone()
 {
-    return new FCL(NeuronsCount, activation, Weigths, Biases, delta, deltaBiases);
+    return new FCL(NeuronsCount, activation, Weigths, Biases, nullptr,nullptr);
 }
 
 FCL* FCL::Load(std::ifstream& reader)

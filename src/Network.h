@@ -9,7 +9,7 @@ class Network
 {
 public:
     Network();
-    Network(Network* network, Matrix** Delta, Matrix** DeltaBiases);
+    Network(Network* network);
     double BackPropagate(Matrix* input,Matrix* output);
     void AddLayer(Layer* layer);
     void Learn(int epochs, double learningRate, Matrix** inputs, Matrix** outputs, int batchSize,int dataLength, int threadNumber);

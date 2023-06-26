@@ -4,17 +4,16 @@
 #include "InputLayer.h"
 #include "LastLayer.h"
 #include "ConvLayer.h"
+#include "LayerShape.h"
 
 
-Layer::Layer(int* NeuronsCount, int NeuronsCountSize)
+Layer::Layer()
 {
-    this->NeuronsCount = NeuronsCount;
-    this->NeuronsCountSize = NeuronsCountSize;
 }
 
-int Layer::getNeuronsCount(int index)
+LayerShape* Layer::GetLayerShape()
 {
-    return NeuronsCount[index];
+    return layerShape;
 }
 
 Layer* Layer::Load(std::ifstream& reader)

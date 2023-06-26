@@ -9,8 +9,15 @@
 ConvLayer::ConvLayer(Convolution convolution)
 {
     LayerID = 3;
-    
 }
+
+ConvLayer::ConvLayer(Matrix* _filter)
+{
+    LayerID = 3;
+    filter = _filter;
+}
+
+
 
 
 void ConvLayer::Compile(LayerShape* previousLayer)
@@ -18,17 +25,25 @@ void ConvLayer::Compile(LayerShape* previousLayer)
     if(previousLayer->size < 3)
     {
         throw new std::invalid_argument("Input of a CNN network must have 3 dimensions");
+    }  
+
+    int outputRow = previousLayer->dimensions[0] - filter->getRows() + 1;
+    int outputCol = previousLayer->dimensions[1] - filter->getCols() + 1;
+
+    result = new Matrix[previousLayer->dimensions[2]];
+    for (int i = 0; i < previousLayer->dimensions[2]; i++)
+    {
+        result[i] = Matrix(outputRow,outputCol);
     }
-
-    outputCols = previousLayer->dimensions[1] - filter->getCols() + 1;
-    outputRows = previousLayer->dimensions[0] - filter->getRows() + 1;
-
-    output = new LayerShape(previousLayer->dimensions[0] - filter->getRows() + 1,previousLayer->dimensions[1] - filter->getCols() + 1, previousLayer->dimensions[2]);
+    
+    layerShape = new LayerShape(previousLayer->dimensions[0] - filter->getRows() + 1,previousLayer->dimensions[1] - filter->getCols() + 1, previousLayer->dimensions[2]);
 }
 
 Matrix* ConvLayer::FeedForward(const Matrix* input)
 {
-    Matrix::Convolution(input,filter,result);
+    std::cout << "here ! \n";
+    
+    std::cout << "not here \n";
     return result;
 }
 
@@ -66,6 +81,20 @@ std::string ConvLayer::getLayerTitle()
     return buf;
 }
 
+
+void ConvLayer::AddDeltaFrom(Layer* Layer)
+{
+    ConvLayer* convLayer = (ConvLayer*)Layer;
+    
+    for (int i = 0; i < layerShape->dimensions[2]; i++)
+    {
+        for (int j = 0; j < delta->getRows() * delta->getCols(); j++)
+        {
+            delta[i][j] += convLayer->delta[i][j];   
+        }
+    }
+}
+
 Matrix* ConvLayer::getDelta()
 {
     return delta;
@@ -81,7 +110,12 @@ Matrix* ConvLayer::getDeltaBiases()
     return nullptr;
 }
 
-Layer* ConvLayer::Clone(Matrix* delta, Matrix* deltaBiases)
+void ConvLayer::SpecificSave(std::ofstream& writer)
 {
-    
+
+}
+
+Layer* ConvLayer::Clone()
+{
+    return new ConvLayer(this->filter->Copy());
 }

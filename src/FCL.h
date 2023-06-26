@@ -14,13 +14,13 @@ public:
     Matrix* BackPropagate(const Matrix* delta, const Matrix* lastWeights);
     void ClearDelta();
     void UpdateWeights(double learningRate, int batchSize);
-    void UpdateWeights(double learningRate, int batchSize, Matrix* delta,Matrix* deltaActivation);
+    void AddDeltaFrom(Layer* otherLayer);
     void Compile(LayerShape* previousLayer);
     Matrix* getDelta();
     Matrix* getDeltaBiases();
     Matrix* getResult() const;
     std::string getLayerTitle();
-    virtual Layer* Clone(Matrix* delta, Matrix* deltaBiases);
+    virtual Layer* Clone();
     static FCL* Load(std::ifstream& ifstream);
     void SpecificSave(std::ofstream& filename);
 protected:

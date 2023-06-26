@@ -5,6 +5,12 @@
 
 //MATRIX
 
+Matrix::Matrix()
+{
+    
+}
+
+
 Matrix::Matrix(int rows, int cols)
 {
     this->rows = rows;
