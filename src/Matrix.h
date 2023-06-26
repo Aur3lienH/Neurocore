@@ -16,7 +16,8 @@ public:
     static void Flip180(const Matrix* input, Matrix* output);
     static void FullConvolution(const Matrix* m, const Matrix* filter, Matrix* output);
     static void Convolution(const Matrix* a, const Matrix* b, Matrix* output, int stride = 1);
-    static void MaxPool(const Matrix* a, Matrix* output, int filter_size, int stride = 1);
+    static void MaxPool(const Matrix* a, Matrix* output, int filter_size = 2, int stride = 2);
+    static Matrix Random(int rows, int cols);
 
     void Add(Matrix* other, Matrix* result);
     void Substract(const Matrix* other, Matrix* result) const ;

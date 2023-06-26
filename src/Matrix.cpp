@@ -157,7 +157,7 @@ const double& Matrix::operator()(int _rows, int _cols) const
         throw std::out_of_range("Matrix : Index out of bounds");
     }
 
-    return data[_rows + _cols * rows];
+    return data[_rows * this->cols + _cols];
 }
 
 Matrix* Matrix::operator*=(const Matrix* other)
@@ -433,24 +433,37 @@ void Matrix::MaxPool(const Matrix* a, Matrix* output, const int filterSize, cons
 {
     const int inputCols = a->cols;
     const int inputRows = a->rows;
-    const int outputCols = (inputCols - 1) * stride + filterSize;
-    const int outputRows = (inputRows - 1) * stride + filterSize;
+    const int outputCols = (inputCols - filterSize) / stride + 1;
+    const int outputRows = (inputRows - filterSize) / stride + 1;
 
     for (int i = 0; i < outputRows; i++)
     {
         for (int j = 0; j < outputCols; j++)
         {
-            double max = -2; // Should be less than all elements thanks to activation functions
+            double max = -2; // Should be less than all elements thanks to activation functions that keep values in [-1;1]
             for (int k = 0; k < filterSize; k++)
             {
                 for (int l = 0; l < filterSize; l++)
                 {
-                    max = std::max(max, (*a)(i - k, j - l));
+                    const int inputRow = i * stride + k;
+                    const int inputCol = j * stride + l;
+                    if (inputRow >= 0 && inputRow < inputRows && inputCol >= 0 && inputCol < inputCols)
+                        max = std::max(max, (*a)(inputRow, inputCol));
+
                 }
             }
             (*output)(i, j) = max;
         }
     }
+}
+
+Matrix Matrix::Random(int rows, int cols)
+{
+    Matrix res(rows, cols);
+    for (int i = 0; i < rows * cols; i++)
+        res[i] = (double) rand() / RAND_MAX * 2 - 1;
+
+    return res;
 }
 
 
