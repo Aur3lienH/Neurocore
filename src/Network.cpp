@@ -120,6 +120,7 @@ void Network::Compile()
         throw std::invalid_argument("First layer must be an input layer");
     }
 
+
     lastLayer = (LastLayer*)Layers[layersCount - 1];
     if(lastLayer == nullptr)
     {
