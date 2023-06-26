@@ -40,6 +40,7 @@ public:
     void PrintSize();
     static float Distance(Matrix* a, Matrix* b);
     Matrix* Copy();
+    static Matrix* Copy(const Matrix* a);
 
 protected:
     double* data;

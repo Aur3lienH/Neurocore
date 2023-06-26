@@ -4,7 +4,6 @@
 #include "../Layer.h"
 #include "../InputLayer.h"
 #include "../FCL.h"
-#include "../LastLayer.h"
 #include "Tools.h"
 #include <iostream>
 #include <fstream>
@@ -105,9 +104,9 @@ void Mnist()
     network->AddLayer(new InputLayer(784));
     network->AddLayer(new FCL(16, new ReLU()));
     network->AddLayer(new FCL(16, new ReLU()));
-    network->AddLayer(new LastLayer(10, new Softmax(), new CrossEntropy()));
+    network->AddLayer(new FCL(10, new Softmax()));
 
-    network->Compile();
+    network->Compile(new CrossEntropy());
 
     int trainLength = dataLength * 0.8;
     int testLength = dataLength - trainLength;
@@ -140,7 +139,7 @@ void LoadAndTest(std::string filename)
 {
     Network* network = Network::Load(filename);
 
-    network->Compile();
+    //network->Compile();
 
     network->PrintNetwork();
 

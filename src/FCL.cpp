@@ -34,7 +34,9 @@ void FCL::ClearDelta()
 
 Matrix* FCL::FeedForward(const Matrix* input) 
 {
+    std::cout << "here 1\n";
     this->Weigths->CrossProduct(input, this->Result);
+    std::cout << "here 2\n";
     Result->Add(Biases, z);
     activation->FeedForward(z, Result);
     return Result;
@@ -47,7 +49,9 @@ void FCL::Compile(LayerShape* previousLayer)
     }
     previousNeuronsCount = previousLayer->dimensions[0];
     if(Weigths == nullptr)
+    {
         Weigths = activation->InitWeights(previousNeuronsCount, NeuronsCount);
+    }
     if(Delta == nullptr)
         Delta = new Matrix(previousNeuronsCount, NeuronsCount); 
     if(deltaActivation == nullptr)
@@ -69,12 +73,8 @@ Matrix* FCL::BackPropagate(const Matrix* lastDelta, const Matrix* PastActivation
     deltaActivation->operator*=(lastDelta);
     
     
-    for (int i = 0; i < deltaActivation->getCols() * deltaActivation->getRows(); i++)
-    {
-        DeltaBiases[0][i] += deltaActivation[0][i];
-    }
+    DeltaBiases->Add(deltaActivation,DeltaBiases);
     
-
     for (int i = 0; i < previousNeuronsCount; i++)
     {
         newDelta[0][i] = 0;
@@ -105,6 +105,8 @@ void FCL::UpdateWeights(double learningRate, int batchSize)
     DeltaBiases->Zero();
 }
 
+
+
 void FCL::AddDeltaFrom(Layer* otherLayer)
 {
 
@@ -123,17 +125,17 @@ void FCL::AddDeltaFrom(Layer* otherLayer)
     
 }
 
-Matrix* FCL::getResult() const
+const Matrix* FCL::getResult() const
 {
     return Result;
 }
 
-Matrix* FCL::getDelta() 
+const Matrix* FCL::getDelta() 
 {
     return Delta;
 }
 
-Matrix* FCL::getDeltaBiases() 
+const Matrix* FCL::getDeltaBiases() 
 {
     return DeltaBiases;
 }

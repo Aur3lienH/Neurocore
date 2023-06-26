@@ -2,7 +2,6 @@
 #include "Matrix.h"
 #include "FCL.h"
 #include "InputLayer.h"
-#include "LastLayer.h"
 #include "ConvLayer.h"
 #include "LayerShape.h"
 
@@ -36,12 +35,6 @@ Layer* Layer::Load(std::ifstream& reader)
         }
 
         case 2:
-        {
-            return LastLayer::Load(reader);
-            break;
-        }
-
-        case 3:
         {
             return ConvLayer::Load(reader);
             break;

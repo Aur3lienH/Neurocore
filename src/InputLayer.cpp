@@ -3,7 +3,6 @@
 
 InputLayer::InputLayer(int inputSize)
 {
-    input = new Matrix(inputSize, 1);
     LayerID = 1;
     layerShape = new LayerShape(inputSize);
 }
@@ -12,11 +11,6 @@ InputLayer::InputLayer(int rows, int cols, int size)
 {
     LayerID = 1;
     layerShape = new LayerShape(rows,cols,size);
-    input = new Matrix[size];
-    for (int i = 0; i < size; i++)
-    {
-        input[i] = Matrix(rows,cols);
-    }
 }
 
 InputLayer::InputLayer(LayerShape* LayerShape)
@@ -26,16 +20,10 @@ InputLayer::InputLayer(LayerShape* LayerShape)
 
 
 
-Matrix* InputLayer::FeedForward(const Matrix* _input) 
+const Matrix* InputLayer::FeedForward(const Matrix* _input) 
 {
-    for (int i = 0; i < layerShape->dimensions[2]; i++)
-    {
-        for (int j = 0; j < input->getRows() * input->getCols(); j++)
-        {
-            input[i][j] = _input[i][j];
-        }
-    }
-    return input;
+    input = _input;
+    return _input;
 }
 
 
@@ -54,7 +42,7 @@ void InputLayer::Compile(LayerShape* layerShape)
     
 }
 
-Matrix* InputLayer::getResult() const
+const Matrix* InputLayer::getResult() const
 {
     return input;
 }
@@ -82,15 +70,6 @@ Layer* InputLayer::Clone()
     return new InputLayer(layerShape);
 }
 
-Matrix* InputLayer::getDelta()
-{
-    return nullptr;
-}
-
-Matrix* InputLayer::getDeltaBiases()
-{
-    return nullptr;
-}
 
 InputLayer* InputLayer::Load(std::ifstream& reader)
 {

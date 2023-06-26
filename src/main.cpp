@@ -4,7 +4,6 @@
 #include "Layer.h"
 #include "FCL.h"
 #include "Activation.h"
-#include "LastLayer.h"
 #include "InputLayer.h"
 #include "Loss.h"
 #include "Examples/Mnist.h"
