@@ -9,7 +9,7 @@ class Layer
 public:
     Layer();
 
-    virtual Matrix* FeedForward(const Matrix* input) = 0;
+    virtual const Matrix* FeedForward(const Matrix* input) = 0;
     virtual Matrix* BackPropagate(const Matrix* delta, const Matrix* lastWeigths) = 0;
     virtual void ClearDelta() = 0;
 
@@ -20,7 +20,7 @@ public:
 
     //Must define the layerShape !
     virtual void Compile(LayerShape* previousOuptut) = 0;
-    virtual Matrix* getResult() const = 0;
+    virtual const Matrix* getResult() const = 0;
 
     LayerShape* GetLayerShape();
     

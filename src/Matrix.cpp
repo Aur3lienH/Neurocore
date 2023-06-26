@@ -7,7 +7,7 @@
 
 Matrix::Matrix()
 {
-    
+
 }
 
 
@@ -257,12 +257,11 @@ const void Matrix::CrossProduct(const Matrix* other, Matrix* output) const
         throw std::runtime_error("Matrice have not the shape to be cross producted !");
         return;
     }
-    if(output->cols != other->cols || output->rows != this->rows)
+    if(output->rows != this->rows || output->cols != other->cols)
     {
         throw std::runtime_error("Output matrix has not the right shape !");
         return;
     }
-    
     for (int i = 0; i < this->rows; i++)
     {
         for (int j = 0; j < other->cols; j++)
@@ -415,6 +414,17 @@ double& Matrix::operator()(int _rows, int _cols)
 }
 
 
+Matrix* Matrix::Copy(const Matrix* a)
+{
+    Matrix* res = new Matrix(a->rows,a->cols);
+    for (int i = 0; i < a->cols * a->rows; i++)
+    {
+        res[0][i] = a[0][i];
+    }
+    return res;
+}
+
+
 
 
 //MATRIX CARRE
@@ -446,5 +456,6 @@ MatrixDiagonale::~MatrixDiagonale()
 {
     
 }
+
 
 

@@ -10,34 +10,71 @@ class FCL : public Layer
 public:
     FCL(int NeuronsCount, Activation* activation);
     FCL(int NeuronsCount, Activation* activation, Matrix* weights, Matrix* bias, Matrix* delta, Matrix* deltaActivation);
-    Matrix* FeedForward(const Matrix* input);
-    Matrix* BackPropagate(const Matrix* delta, const Matrix* lastWeights);
-    void ClearDelta();
-    void UpdateWeights(double learningRate, int batchSize);
-    void AddDeltaFrom(Layer* otherLayer);
-    void Compile(LayerShape* previousLayer);
-    Matrix* getDelta();
-    Matrix* getDeltaBiases();
-    Matrix* getResult() const;
-    std::string getLayerTitle();
-    virtual Layer* Clone();
+
+    //Compute the input threw the layer
+    Matrix* FeedForward(const Matrix* input) override;
+
+    //Compute partial derivative (named delta)
+    Matrix* BackPropagate(const Matrix* delta, const Matrix* lastWeights) override;
+
+    //Clear partial derivative (named delta)
+    void ClearDelta() override;
+
+    //Update the current weights thanks to partial derivative (named delta)
+    void UpdateWeights(double learningRate, int batchSize) override;
+
+    //Add Delta from another identical layer
+    void AddDeltaFrom(Layer* otherLayer) override;
+
+    //Initialize variable and check for network architecture
+    void Compile(LayerShape* previousLayer) override;
+
+    //Getter for delta
+    const Matrix* getDelta();
+
+    //Getter for deltaBiases (delta to update biases)
+    const Matrix* getDeltaBiases();
+
+    //Getter for the result of the layer
+    const Matrix* getResult() const override;
+
+    //Return information on the layer (neurons count)
+    std::string getLayerTitle() override;
+
+    //Clone layer
+    Layer* Clone() override;
+
     static FCL* Load(std::ifstream& ifstream);
-    void SpecificSave(std::ofstream& filename);
+
+    void SpecificSave(std::ofstream& filename) override;
 protected:
+    //Partial derivative of the weigths
     Matrix* Delta = nullptr;
+
+    //Partial derivative of the biases
+    Matrix* DeltaBiases = nullptr;
+
+    //Results of the layer
     Matrix* Result = nullptr;
+
     Matrix* Weigths = nullptr;
     Matrix* Biases = nullptr;
-    Matrix* DeltaBiases = nullptr;
+    
+    //Activation function
     Activation* activation = nullptr;
+
     int NeuronsCount;
 private:
+    //Delta passed to the previous netowrk in backpropagation
     Matrix* newDelta = nullptr;
 
-
+    //Result before passing threw the activation function
     Matrix* z = nullptr;
+
+    //Delta from the activation function
     Matrix* deltaActivation = nullptr;
 
+    //Neurons in the previous layer
     int previousNeuronsCount;
 
 
