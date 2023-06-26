@@ -19,9 +19,9 @@ class ConvLayer : public Layer
 
 public:
     
-    ConvLayer(Convolution convolution);
-    ConvLayer(int* dimesions, int dimensionsNumber, Matrix* filter, Matrix* delta);
     explicit ConvLayer(Matrix* _filter);
+    
+    void Compile(LayerShape* previousLayer);
 
     Matrix* FeedForward(const Matrix* input);
     Matrix* BackPropagate(const Matrix* delta, const Matrix* lastWeigths);
@@ -29,17 +29,12 @@ public:
     void AddDeltaFrom(Layer* ConvLayer);
     void ClearDelta();
     void UpdateWeights(double learningRate, int batchSize);
-    void UpdateWeights(double learningRate, int batchSize, Matrix* delta, Matrix* deltaBiases);
-    void Compile(LayerShape* previousLayer);
     Layer* Clone();
     void SpecificSave(std::ofstream& writer);
     Matrix* getResult() const;
 
     std::string getLayerTitle();
     Layer* Clone(Matrix* delta, Matrix* deltaBiases);
-    Matrix* getDelta();
-    Matrix* getDeltaBiases();
-
 
 private:
     Matrix* result;

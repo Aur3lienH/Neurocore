@@ -34,7 +34,6 @@ Matrix* InputLayer::FeedForward(const Matrix* _input)
         {
             input[i][j] = _input[i][j];
         }
-        
     }
     return input;
 }

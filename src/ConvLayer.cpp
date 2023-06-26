@@ -6,11 +6,6 @@
 #include "LayerShape.h"
 
 
-ConvLayer::ConvLayer(Convolution convolution)
-{
-    LayerID = 3;
-}
-
 ConvLayer::ConvLayer(Matrix* _filter)
 {
     LayerID = 3;
@@ -41,9 +36,7 @@ void ConvLayer::Compile(LayerShape* previousLayer)
 
 Matrix* ConvLayer::FeedForward(const Matrix* input)
 {
-    std::cout << "here ! \n";
-    
-    std::cout << "not here \n";
+    std::cout << "i'm here \n";
     return result;
 }
 
@@ -60,14 +53,10 @@ Matrix* ConvLayer::BackPropagate(const Matrix* lastDelta,const Matrix* lastWeigh
 
 void ConvLayer::UpdateWeights(double learningRate, int batchSize)
 {
-    UpdateWeights(learningRate,batchSize,delta,nullptr);
-}
-
-void ConvLayer::UpdateWeights(double learningRate, int batchSize, Matrix* delta, Matrix* deltaBiases)
-{
     delta->operator*(learningRate/batchSize);
     filter->Substract(delta,result);
 }
+
 
 void ConvLayer::ClearDelta()
 {
@@ -95,20 +84,14 @@ void ConvLayer::AddDeltaFrom(Layer* Layer)
     }
 }
 
-Matrix* ConvLayer::getDelta()
-{
-    return delta;
-}
+
 
 Matrix* ConvLayer::getResult() const
 {
     return result;
 }
 
-Matrix* ConvLayer::getDeltaBiases()
-{
-    return nullptr;
-}
+
 
 void ConvLayer::SpecificSave(std::ofstream& writer)
 {
