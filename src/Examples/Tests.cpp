@@ -13,9 +13,10 @@
 void Tests::ExecuteTests()
 {
     std::vector<std::tuple<void*,std::string>> functions;
-    functions.push_back(std::make_tuple((void*)BasicNetwork1,"Single Thread"));
+    //functions.push_back(std::make_tuple((void*)BasicNetwork1,"Single Thread"));
     //functions.push_back(std::make_tuple((void*)SaveNetwork1,"Save and Load Network"));
-    //functions.push_back(std::make_tuple((void*)CNNNetwork1,"Basic convolution test"));
+    functions.push_back(std::make_tuple((void*)CNNNetwork1,"Basic convolution test"));
+    
 
     bool* array = new bool[functions.size()];
 
@@ -137,9 +138,26 @@ bool Tests::CNNNetwork1()
 
     std::cout << "Before process \n";
 
-    Matrix* out = network.Process(input1);
+    const Matrix* out = network.FeedForward(input1);
 
     std::cout << *out;
+
+
+    Matrix** inputs = new Matrix*[2];
+    Matrix** outputs = new Matrix*[2];
+
+    inputs[0] = new Matrix(3,3,new double[9]{1,1,1,0,0,0,0,0,0});
+    inputs[1] = new Matrix(3,3,new double[9]{0,0,0,0,0,0,1,1,1});
+
+    outputs[0] = new Matrix(2,2,20);
+    outputs[1] = new Matrix(2,2,8);
+    
+
+    network.Learn(10000,0.1,inputs,outputs,2);
+
+    std::cout << *network.FeedForward(inputs[0]);
+    std::cout << *network.FeedForward(inputs[1]);
+
 
     if(out == input1)
     {

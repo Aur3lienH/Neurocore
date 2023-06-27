@@ -47,7 +47,7 @@ private:
     Matrix* nextLayerDelta;
 
     //Result from the previous layer (don't initialize when compiling the layer)
-    Matrix* input;
+    const Matrix* input;
 
 
 

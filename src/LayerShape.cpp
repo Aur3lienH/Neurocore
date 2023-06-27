@@ -17,7 +17,7 @@ LayerShape::LayerShape(int rows, int cols, int _size)
 //Convert the format of the layer to an array of matrix.
 Matrix* LayerShape::ToMatrix()
 {
-    if(size == 1)
+    if(dimensions[2] == 1)
     {
         return new Matrix(dimensions[0],dimensions[1]);
     }
