@@ -4,6 +4,9 @@
 #include <float.h>
 #include "Matrix.h"
 
+
+#define SAFE true
+
 //MATRIX
 
 Matrix::Matrix()
@@ -16,7 +19,9 @@ Matrix::Matrix(int rows, int cols)
 {
     this->rows = rows;
     this->cols = cols;
-    this->data = new double[rows * cols];
+    this->dim = 1;
+    matrixSize = rows * cols;
+    this->data = new double[rows * cols * dim];
 
     for (int i = 0; i < rows * cols; i++)
     {
@@ -24,11 +29,23 @@ Matrix::Matrix(int rows, int cols)
     }
 }
 
+Matrix::Matrix(int rows, int cols, int dim)
+{
+    this->rows = rows;
+    this->cols = cols;
+    this->dim = dim;  
+    matrixSize = rows * cols;
+    this->data = new double[rows * cols * dim];
+}
+
+
 Matrix::Matrix(int rows, int cols, double value)
 {
     this->rows = rows;
     this->cols = cols;
-    this->data = new double[rows * cols];
+    this->dim = 1;
+    matrixSize = rows * cols;
+    this->data = new double[rows * cols * dim];
     for (int i = 0; i < rows * cols; i++)
     {
         this->data[i] = value;
@@ -39,7 +56,9 @@ Matrix::Matrix(int rows, int cols, double* newArray)
 {
     this->rows = rows;
     this->cols = cols;
+    this->dim = 1;
     this->data = newArray;
+    matrixSize = rows * cols;
 }
 
 Matrix::~Matrix()
@@ -60,6 +79,7 @@ const int Matrix::getCols() const
 void Matrix::Add(Matrix* other, Matrix* result)
 {
     
+#if SAFE
     if (this->rows != other->rows || this->cols != other->cols)
     {
         std::cout << "Error: Matrix dimensions must agree." << std::endl;
@@ -67,6 +87,7 @@ void Matrix::Add(Matrix* other, Matrix* result)
         std::cout << "Matrix 2: " << other->rows << "x" << other->cols << std::endl;
         return;
     }
+#endif
     
     for (int i = 0; i < this->rows * this->cols; i++)
     {
@@ -74,18 +95,81 @@ void Matrix::Add(Matrix* other, Matrix* result)
     }
 }
 
+void Matrix::AddAllDims(Matrix* other, Matrix* result)
+{
+    #if SAFE
+    if (this->rows != other->rows || this->cols != other->cols || this->dim != other->dim)
+    {
+        std::cout << "Error: Matrix dimensions must agree." << std::endl;
+        return;
+    }
+#endif
+    int size = this->rows * this->cols * this->dim;
+    
+    for (int i = 0; i < size; i++)
+    {
+        result->data[i] = this->data[i] + other->data[i];
+    }
+}
+
 void Matrix::Substract(const Matrix* other, Matrix* result) const 
 {
-    
+#if SAFE
     if (this->rows != other->rows || this->cols != other->cols)
     {
         std::cout << "Error: Matrix dimensions must agree." << std::endl;
         return;
     }
+#endif
     
     for (int i = 0; i < this->rows * this->cols; i++)
     {
         result->data[i] = this->data[i] - other->data[i];
+    }
+}
+
+void Matrix::SubstractAllDims(const Matrix* other, Matrix* result) const
+{
+    #if SAFE
+    if (this->rows != other->rows || this->cols != other->cols || this->dim != other->dim)
+    {
+        std::cout << "Error: Matrix dimensions must agree." << std::endl;
+        return;
+    }
+#endif
+    int size = this->rows * this->cols * this->dim;
+    
+    for (int i = 0; i < size; i++)
+    {
+        result->data[i] = this->data[i] - other->data[i];
+    }
+}
+
+
+void Matrix::MultiplyAllDims(const Matrix* other, Matrix* result)
+{
+#if SAFE
+    if (this->rows != other->rows || this->cols != other->cols || this->dim != other->dim)
+    {
+        std::cout << "Error: Matrix dimensions must agree." << std::endl;
+        return;
+    }
+#endif
+    int size = this->rows * this->cols * this->dim;
+    
+    for (int i = 0; i < size; i++)
+    {
+        result->data[i] = this->data[i] * other->data[i];
+    }
+}
+
+void Matrix::MultiplyAllDims(double value)
+{
+    int size = this->rows * this->cols * this->dim;
+    
+    for (int i = 0; i < size; i++)
+    {
+        this->data[i] *= value;
     }
 }
 
@@ -123,50 +207,53 @@ void Matrix::PrintSize()
 
 double& Matrix::operator[](int index) 
 {
-    
-    if (index < this->rows * this->cols)
-    {
-        return this->data[index];
-    }
-    else
+#if SAFE
+    if (index >= this->rows * this->cols)
     {
         throw std::out_of_range("Matrix : Index out of bounds");
-        return this->data[0];
     }
+#endif
+
+
+    return this->data[index];
     
 }
 
 const double& Matrix::operator[](int index) const
 {
     
-    if (index < this->rows * this->cols)
-    {
-        return this->data[index];
-    }
-    else
+#if SAFE
+    if (index >= this->rows * this->cols)
     {
         throw std::out_of_range("Matrix : Index out of bounds");
-        return this->data[0];
     }
+#endif
+
+
+    return this->data[index];
 }
 
 const double& Matrix::operator()(int _rows, int _cols) const
 {
-
+#if SAFE
     if(_rows >= rows || _cols >= cols)
     {
         throw std::out_of_range("Matrix : Index out of bounds");
     }
+#endif
 
     return data[_rows * this->cols + _cols];
 }
 
 Matrix* Matrix::operator*=(const Matrix* other)
 {
+#if SAFE
     if(this->cols != other->cols && this->rows != other->rows)
     {
         throw std::runtime_error("Error: Matrix dimensions must agree.");
     }
+#endif
+
     for (int i = 0; i < cols*rows; i++)
     {
         this->data[i] *= other->data[i];
@@ -188,11 +275,14 @@ Matrix* Matrix::operator*=(const double other)
 
 Matrix* Matrix::operator+(const Matrix& other)
 {
+#if SAFE
     if (this->rows != other.rows || this->cols != other.cols)
     {
         std::cout << "Matrices are not of the same size\n";
         return nullptr;
     }
+#endif
+
     Matrix* result = new Matrix(this->rows, this->cols);
     for (int i = 0; i < this->cols * this->rows; i++)
     {
@@ -204,12 +294,13 @@ Matrix* Matrix::operator+(const Matrix& other)
 }
 Matrix* Matrix::operator+=(const Matrix& other)
 {
-    
+#if SAFE
     if (this->rows != other.rows || this->cols != other.cols)
     {
         std::cout << "Matrices are not of the same size\n";
         return nullptr;
     }
+#endif
     
     for (int i = 0; i < this->cols * this->rows; i++)
     {
@@ -234,12 +325,13 @@ Matrix* Matrix::operator*(const double& other)
 
 Matrix* Matrix::operator-=(const Matrix& other)
 {
-    
+#if SAFE
     if(this->rows != other.rows || this->cols != other.cols)
     {
         std::cout << "Matrices are not of the same size\n";
         return nullptr;
     }
+#endif
     
     for (int i = 0; i < this->rows * this->cols; i++)
     {
@@ -252,6 +344,7 @@ Matrix* Matrix::operator-=(const Matrix& other)
 
 const void Matrix::CrossProduct(const Matrix* other, Matrix* output) const
 {
+#if SAFE
     
     if(other->rows != this->cols)
     {
@@ -263,6 +356,8 @@ const void Matrix::CrossProduct(const Matrix* other, Matrix* output) const
         throw std::runtime_error("Output matrix has not the right shape !");
         return;
     }
+
+#endif
     for (int i = 0; i < this->rows; i++)
     {
         for (int j = 0; j < other->cols; j++)
@@ -304,10 +399,12 @@ void Matrix::Save(std::ofstream& writer)
 
 float Matrix::Distance(Matrix* a, Matrix* b)
 {
+#if SAFE
     if(a->cols != b->cols || a->rows != b->rows)
     {
         throw std::invalid_argument("Matrices need to have same size to calculate distance !");
     }
+#endif
     float res = 0;
     for (int i = 0; i < a->cols * a->rows; i++)
     {
@@ -339,16 +436,38 @@ void Matrix::Flip180(const Matrix* input, Matrix* output)
     }
 }
 
+
+const void Matrix::GoToNextMatrix() const
+{
+    data += matrixSize;
+    offset += matrixSize;
+}
+
+void Matrix::ResetOffset() const
+{
+    data -= offset;
+    offset = 0;
+}
+
+void Matrix::SetOffset(int offset) const
+{
+    data += offset;
+    this->offset += offset;
+}
+
+
 void Matrix::FullConvolution(const Matrix* m, const Matrix* filter, Matrix* output)
 {
     const int outputCols = m->getCols() + filter->getCols() - 1;
     const int outputRows = m->getRows() + filter->getRows() - 1;
 
+#if SAFE
     if(output->cols != outputCols || outputRows != output->rows)
     {
         std::cout << "right shape is : " << "(" << outputRows << "," << outputCols << ")\n";
         throw std::invalid_argument("Output Matrix has not the right shape ! ");
     }
+#endif
     const int filterCols = filter->getCols();
     const int filterRows = filter->getRows();
 
@@ -451,6 +570,13 @@ double& Matrix::operator()(int _rows, int _cols)
         throw std::out_of_range("Matrix : Index out of bounds");
     }
     return data[_rows * this->cols + _cols];
+}
+
+void Matrix::Flatten() const
+{
+    rows *= cols * dim;
+    cols = 1;
+    dim = 1;
 }
 
 

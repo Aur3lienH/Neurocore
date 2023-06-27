@@ -9,6 +9,7 @@ class Matrix
 public:
     Matrix();
     Matrix(int rows, int cols);
+    Matrix(int rows, int cols, int size);
     Matrix(int rows, int cols, double value);
     Matrix(int rows, int cols, double* data);
     ~Matrix();
@@ -20,12 +21,25 @@ public:
     static void AveragePool(const Matrix* a, Matrix* output, int filterSize = 2, int stride = 2);
     static Matrix Random(int rows, int cols);
 
+
+    //Movement threw the matrix with the offset
+    const void GoToNextMatrix() const;
+    void ResetOffset() const;
+    void SetOffset(int offset) const;
+
+
+    void Flatten() const;
     void Add(Matrix* other, Matrix* result);
-    void Substract(const Matrix* other, Matrix* result) const ;
+    void AddAllDims(Matrix* other, Matrix* result);
+    void Substract(const Matrix* other, Matrix* result) const;
+    void SubstractAllDims(const Matrix* other, Matrix* result) const;
+    void MultiplyAllDims(const Matrix* other, Matrix* result);
+    void MultiplyAllDims(double value);
     void Zero();
     double Sum();
     const int getRows() const;
     const int getCols() const;
+    const int getDim() const;
     Matrix* operator+=(const Matrix& other);
     Matrix* operator-=(const Matrix& other);
     Matrix* operator+(const Matrix& other);
@@ -38,6 +52,7 @@ public:
     double& operator()(int rows,int cols);
     const double& operator[](int index) const;
     const double& operator()(int rows,int cols) const;
+    const double& operator()(int rows,int cols, int dim) const;
     const void CrossProduct(const Matrix* other, Matrix* output) const;
     friend std::ostream& operator<<(std::ostream&, const Matrix&);
     void PrintSize();
@@ -46,9 +61,12 @@ public:
     static Matrix* Copy(const Matrix* a);
 
 protected:
-    double* data;
-    int rows;
-    int cols;
+    mutable double* data;
+    mutable int rows;
+    mutable int cols;
+    mutable int dim;
+    int matrixSize;
+    mutable int offset = 0;
 };
 
 

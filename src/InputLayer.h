@@ -12,7 +12,7 @@ public:
 
 
     const Matrix* FeedForward(const Matrix* input);
-    Matrix* BackPropagate(const Matrix* delta, const Matrix* lastWeigths);
+    const Matrix* BackPropagate(const Matrix* delta, const Matrix* lastWeigths);
     void ClearDelta();
     void UpdateWeights(double learningRate, int batchSize);
     void AddDeltaFrom(Layer* otherLayer);

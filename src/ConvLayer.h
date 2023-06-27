@@ -18,8 +18,8 @@ class ConvLayer : public Layer
 {
 
 public:
-    
-    explicit ConvLayer(Matrix* _filter);
+    explicit ConvLayer(Matrix* filters);
+    explicit ConvLayer(LayerShape* filterShape);
     
     void Compile(LayerShape* previousLayer);
 
@@ -39,7 +39,7 @@ public:
 private:
     Matrix* result;
     Matrix* rotatedFilter;
-    Matrix* filter;
+    Matrix* filters;
     //Delta for next layer
     Matrix* delta;
 
@@ -47,7 +47,12 @@ private:
     Matrix* nextLayerDelta;
 
     //Result from the previous layer (don't initialize when compiling the layer)
-    const Matrix* input;
+    uint filterCount;
+    uint preivousDimCount;
+    
+
+
+    LayerShape* filterShape;
 
 
 
