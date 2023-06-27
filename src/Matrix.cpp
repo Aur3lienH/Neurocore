@@ -343,6 +343,11 @@ void Matrix::FullConvolution(const Matrix* m, const Matrix* filter, Matrix* outp
     const int outputCols = m->getCols() + filter->getCols() - 1;
     const int outputRows = m->getRows() + filter->getRows() - 1;
 
+    if(output->cols != outputCols || outputRows != output->rows)
+    {
+        std::cout << "right shape is : " << "(" << outputRows << "," << outputCols << ")\n";
+        throw std::invalid_argument("Output Matrix has not the right shape ! ");
+    }
     const int filterCols = filter->getCols();
     const int filterRows = filter->getRows();
 
@@ -365,7 +370,6 @@ void Matrix::FullConvolution(const Matrix* m, const Matrix* filter, Matrix* outp
                     const int inputCol = j + l - c;
                     if (inputRow >= 0 && inputRow < inputRows && inputCol >= 0 && inputCol < inputCols)
                         sum += (*m)(inputRow, inputCol) * (*filter)(k, l);
-
                 }
             }
             (*output)(i, j) = sum;

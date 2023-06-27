@@ -30,13 +30,19 @@ void ConvLayer::Compile(LayerShape* previousLayer)
     {
         result[i] = Matrix(outputRow,outputCol);
     }
+
+    rotatedFilter = filter->Copy();
+
+    nextLayerDelta = previousLayer->ToMatrix();
+    delta = filter->Copy();
     
     layerShape = new LayerShape(previousLayer->dimensions[0] - filter->getRows() + 1,previousLayer->dimensions[1] - filter->getCols() + 1, previousLayer->dimensions[2]);
 }
 
 Matrix* ConvLayer::FeedForward(const Matrix* input)
 {
-    std::cout << "i'm here \n";
+    this->input = input;
+    Matrix::Convolution(input,filter,result);
     return result;
 }
 
@@ -45,7 +51,7 @@ Matrix* ConvLayer::FeedForward(const Matrix* input)
 Matrix* ConvLayer::BackPropagate(const Matrix* lastDelta,const Matrix* lastWeights)
 {
     Matrix::Flip180(filter,rotatedFilter);
-    Matrix::FullConvolution(rotatedFilter,lastDelta,delta);
+    Matrix::FullConvolution(rotatedFilter,lastDelta,nextLayerDelta);
     Matrix::Convolution(input,lastDelta,nextLayerDelta);
     return nextLayerDelta;
 }
@@ -53,8 +59,9 @@ Matrix* ConvLayer::BackPropagate(const Matrix* lastDelta,const Matrix* lastWeigh
 
 void ConvLayer::UpdateWeights(double learningRate, int batchSize)
 {
+    std::cout << *delta;
     delta->operator*(learningRate/batchSize);
-    filter->Substract(delta,result);
+    filter->Substract(delta,filter);
 }
 
 
