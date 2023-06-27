@@ -1,6 +1,7 @@
 #include <iostream>
 #include <fstream>
 #include <cmath>
+#include <float.h>
 #include "Matrix.h"
 
 //MATRIX
@@ -377,6 +378,36 @@ void Matrix::FullConvolution(const Matrix* m, const Matrix* filter, Matrix* outp
     }
 }
 
+void Matrix::AveragePool(const Matrix* a, Matrix* output, int filterSize, int stride)
+{
+    const int inputCols = a->cols;
+    const int inputRows = a->rows;
+    const int outputCols = (inputCols - filterSize) / stride + 1;
+    const int outputRows = (inputRows - filterSize) / stride + 1;
+
+    const int fsSquare = filterSize * filterSize;
+
+    for (int i = 0; i < outputRows; i++)
+    {
+        for (int j = 0; j < outputCols; j++)
+        {
+            double sum = 0;
+            for (int k = 0; k < filterSize; k++)
+            {
+                for (int l = 0; l < filterSize; l++)
+                {
+                    const int inputRow = i * stride + k;
+                    const int inputCol = j * stride + l;
+                    if (inputRow >= 0 && inputRow < inputRows && inputCol >= 0 && inputCol < inputCols)
+                        sum += (*a)(inputRow, inputCol);
+
+                }
+            }
+            (*output)(i, j) = sum / fsSquare;
+        }
+    }
+}
+
 
 void Matrix::Convolution(const Matrix* input, const Matrix* filter, Matrix* output, int stride)
 {
@@ -444,7 +475,7 @@ void Matrix::MaxPool(const Matrix* a, Matrix* output, const int filterSize, cons
     {
         for (int j = 0; j < outputCols; j++)
         {
-            double max = -2; // Should be less than all elements thanks to activation functions that keep values in [-1;1]
+            double max = -DBL_MAX;
             for (int k = 0; k < filterSize; k++)
             {
                 for (int l = 0; l < filterSize; l++)

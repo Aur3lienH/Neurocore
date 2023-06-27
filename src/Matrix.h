@@ -17,6 +17,7 @@ public:
     static void FullConvolution(const Matrix* m, const Matrix* filter, Matrix* output);
     static void Convolution(const Matrix* a, const Matrix* b, Matrix* output, int stride = 1);
     static void MaxPool(const Matrix* a, Matrix* output, int filterSize = 2, int stride = 2);
+    static void AveragePool(const Matrix* a, Matrix* output, int filterSize = 2, int stride = 2);
     static Matrix Random(int rows, int cols);
 
     void Add(Matrix* other, Matrix* result);
