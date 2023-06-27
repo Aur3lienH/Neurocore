@@ -1,11 +1,13 @@
 #pragma once
 #include "PoolingLayer.h"
 
-class Pooling : Layer
+class MaxPoolLayer : Layer
 {
+    MaxPoolLayer(int filterSize, int stride);
+
     const Matrix* FeedForward(const Matrix* input) override;
 
-    Matrix* BackPropagate(const Matrix* delta, const Matrix* lastWeigths) override;
+    Matrix* BackPropagate(const Matrix* delta, const Matrix* previousActivation) override;
 
     void ClearDelta() override;
 
@@ -13,7 +15,7 @@ class Pooling : Layer
 
     void AddDeltaFrom(Layer* layer) override;
 
-    void Compile(LayerShape* previousOuptut) override;
+    void Compile(LayerShape* previousOutput) override;
 
     const Matrix* getResult() const override;
 
@@ -23,4 +25,8 @@ class Pooling : Layer
 
     void SpecificSave(std::ofstream& writer) override;
 
+private:
+    const int filterSize, stride;
+    Matrix* result;
+    Matrix* newDelta;
 };

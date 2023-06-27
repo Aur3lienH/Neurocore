@@ -48,7 +48,7 @@ public:
 
     void SpecificSave(std::ofstream& filename) override;
 protected:
-    //Partial derivative of the weigths
+    //Partial derivative of the weights
     Matrix* Delta = nullptr;
 
     //Partial derivative of the biases
@@ -57,7 +57,7 @@ protected:
     //Results of the layer
     Matrix* Result = nullptr;
 
-    Matrix* Weigths = nullptr;
+    Matrix* Weights = nullptr;
     Matrix* Biases = nullptr;
     
     //Activation function
@@ -65,10 +65,10 @@ protected:
 
     int NeuronsCount;
 private:
-    //Delta passed to the previous netowrk in backpropagation
+    //Delta passed to the previous network in backpropagation
     Matrix* newDelta = nullptr;
 
-    //Result before passing threw the activation function
+    //Result before passing through the activation function
     Matrix* z = nullptr;
 
     //Delta from the activation function

@@ -10,7 +10,7 @@ public:
     Layer();
 
     virtual const Matrix* FeedForward(const Matrix* input) = 0;
-    virtual Matrix* BackPropagate(const Matrix* delta, const Matrix* lastWeigths) = 0;
+    virtual Matrix* BackPropagate(const Matrix* delta, const Matrix* previousActivation) = 0;
     virtual void ClearDelta() = 0;
 
     
