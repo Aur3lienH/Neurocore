@@ -50,12 +50,12 @@ public:
     static Network* Load(std::string filename);
     //Save network to a file
     void Save(std::string filename);
-    
-private:
-    void UpdateWeights(double learningRate, int batchSize);
 
     //Compute values through the neural network
     const Matrix* FeedForward(Matrix* input);
+    
+private:
+    void UpdateWeights(double learningRate, int batchSize);
 
     //Compute values and loss
     double FeedForward(Matrix* input, Matrix* desiredOutput);
