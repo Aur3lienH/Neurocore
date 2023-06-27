@@ -92,6 +92,7 @@ double Network::FeedForward(Matrix* input, Matrix* desiredOutput)
     {
         output = Layers[i]->FeedForward(output);
     }
+
     return loss->Cost(output,desiredOutput);
 }
 
@@ -121,7 +122,9 @@ void Network::Compile()
     }
 
     //Initialize the matrix which holds the values of the cost derivative.
-    costDerivative = Layers[layersCount - 1]->GetLayerShape()->ToMatrix();
+    costDerivative = Layers[layersCount -1]->GetLayerShape()->ToMatrix();
+
+
     InputLayer* inputLayer = (InputLayer*)Layers[0];
     if(inputLayer == nullptr)
     {
@@ -142,14 +145,15 @@ void Network::Compile(Loss* _loss)
 
 double Network::BackPropagate(Matrix* input,Matrix* desiredOutput)
 {
-    double loss = FeedForward(input, desiredOutput);
-    this->loss->CostDerivative(Layers[layersCount - 1]->getResult(),desiredOutput,costDerivative);
+    double NetworkLoss = FeedForward(input, desiredOutput);
+    loss->CostDerivative(Layers[layersCount - 1]->getResult(),desiredOutput,costDerivative);
+    
     output = costDerivative;
     for (int i = layersCount - 1; i > 0; i--)
     {
         output = Layers[i]->BackPropagate(output, Layers[i - 1]->getResult());
     }
-    return loss;
+    return NetworkLoss;
 }
 
 void Network::ClearDelta()

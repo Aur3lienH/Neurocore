@@ -34,9 +34,7 @@ void FCL::ClearDelta()
 
 Matrix* FCL::FeedForward(const Matrix* input) 
 {
-    std::cout << "here 1\n";
-    this->Weigths->CrossProduct(input, this->Result);
-    std::cout << "here 2\n";
+    this->Weigths->CrossProduct(input, Result);
     Result->Add(Biases, z);
     activation->FeedForward(z, Result);
     return Result;
@@ -60,7 +58,8 @@ void FCL::Compile(LayerShape* previousLayer)
         DeltaBiases = new Matrix(NeuronsCount, 1);
     if(Biases == nullptr)
         Biases = activation->InitBiases(NeuronsCount);
-    Result = new Matrix(NeuronsCount, 1);
+    if(Result == nullptr)
+        Result = new Matrix(NeuronsCount, 1);
     z = new Matrix(NeuronsCount, 1);
     newDelta = new Matrix(previousNeuronsCount, 1);
 
@@ -71,7 +70,6 @@ Matrix* FCL::BackPropagate(const Matrix* lastDelta, const Matrix* PastActivation
 {
     activation->Derivative(z, deltaActivation);
     deltaActivation->operator*=(lastDelta);
-    
     
     DeltaBiases->Add(deltaActivation,DeltaBiases);
     
