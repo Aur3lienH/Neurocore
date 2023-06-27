@@ -34,33 +34,6 @@ Matrix* MaxPoolLayer::BackPropagate(const Matrix* delta, const Matrix* previousA
     return newDelta;
 }
 
-void MaxPoolLayer::ClearDelta()
-{
-    // No weights nor biases
-}
-
-void MaxPoolLayer::UpdateWeights(double learningRate, int batchSize)
-{
-    // No weights nor biases
-}
-
-void MaxPoolLayer::AddDeltaFrom(Layer* layer)
-{
-
-}
-
-void MaxPoolLayer::Compile(LayerShape* previousOutput)
-{
-    layerShape = new LayerShape(previousOutput->dimensions[0] / stride + 1, previousOutput->dimensions[1] / stride + 1, previousOutput->dimensions[2]);
-    result = new Matrix(layerShape->dimensions[0], layerShape->dimensions[1]);
-    newDelta = new Matrix(previousOutput->dimensions[0], previousOutput->dimensions[1], (double)0);
-}
-
-const Matrix* MaxPoolLayer::getResult() const
-{
-    return result;
-}
-
 std::string MaxPoolLayer::getLayerTitle()
 {
     std::string buf;
@@ -76,13 +49,7 @@ Layer* MaxPoolLayer::Clone()
     return new MaxPoolLayer(filterSize, stride);
 }
 
-void MaxPoolLayer::SpecificSave(std::ofstream& writer)
-{
-    writer.write((char*)&filterSize, sizeof(int));
-    writer.write((char*)&stride, sizeof(int));
-}
-
-MaxPoolLayer::MaxPoolLayer(const int filterSize, const int stride) : filterSize(filterSize), stride(stride), result(nullptr), newDelta(nullptr)
+MaxPoolLayer::MaxPoolLayer(int filterSize, int stride) : PoolingLayer(filterSize, stride)
 {
 
 }

@@ -1,31 +1,26 @@
 #pragma once
 #include "Layer.h"
 
-class PoolingLayer : Layer
+class PoolingLayer : protected Layer
 {
 public:
-    PoolingLayer();
-    virtual Matrix* Compute();
+    PoolingLayer(int filterSize, int stride);
+
+    void ClearDelta() override;
+
+    void UpdateWeights(double learningRate, int batchSize) override;
+
+    void AddDeltaFrom(Layer* layer) override;
+
+    void Compile(LayerShape* previousActivation) override;
+
+    const Matrix* getResult() const override;
+
+    void SpecificSave(std::ofstream& writer) override;
 
 
-    void ClearDelta();
-
-    void UpdateWeights(double learningRate, int batchSize);
-    void UpdateWeights(double learningRate, int batchSize, Matrix* delta, Matrix* deltaBiases);
-
-    void Compile();
-
-    Matrix* getResult();
-
-    LayerShape* GetLayerShape();
-
-    Matrix* getDelta();
-    Matrix* getDeltaBiases();
-
-
-private:
-    int stride;
-
-    Matrix* delta;
-    Matrix* deltaBiases;
+protected:
+    const int filterSize, stride;
+    Matrix* result;
+    Matrix* newDelta;
 };

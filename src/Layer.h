@@ -19,7 +19,7 @@ public:
 
 
     //Must define the layerShape !
-    virtual void Compile(LayerShape* previousOuptut) = 0;
+    virtual void Compile(LayerShape* previousOutput) = 0;
     virtual const Matrix* getResult() const = 0;
 
     LayerShape* GetLayerShape();
