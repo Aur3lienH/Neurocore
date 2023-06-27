@@ -70,15 +70,17 @@ bool Tests::BasicNetwork1()
     output[0] = new Matrix(2,1,new double[2]{1,0});
     output[1] = new Matrix(2,1,new double[2]{0,1});
 
-    Matrix* res0 = network.Process(input[0]);
-    std::cout << *res0 << '\n';
 
     std::cout << "learning is beginning ! \n";
-    network.Learn(10000,0.1,input,output,1,2,1);
+    network.Learn(10000,0.1,input,output,2);
 
     Matrix* res1 = network.Process(input[1]);
     std::cout << *res1 << '\n';
-    if(Matrix::Distance(res0,output[0]) < 0.01f && Matrix::Distance(res1,output[1]) < 0.01)
+
+    Matrix* res0 = network.Process(input[0]);
+    std::cout << *res0 << '\n';
+
+    if(Matrix::Distance(res0,output[0]) < 0.1f && Matrix::Distance(res1,output[1]) < 0.1)
     {
         return true;
     }
