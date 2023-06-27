@@ -21,8 +21,8 @@ public:
     /// @param epochs Number of times which the neural network will see the dataset
     /// @param learningRate 
     /// @param inputs The inputs of the dataset
-    /// @param outputs The ouptuts of the dataset
-    /// @param batchSize The number of turn before updating weigths
+    /// @param outputs The outputs of the dataset
+    /// @param batchSize The number of turn before updating weights
     /// @param dataLength The size of the dataset
     /// @param threadNumber The number of thread used to train the model
     void Learn(int epochs, double learningRate, Matrix** inputs, Matrix** outputs, int batchSize,int dataLength, int threadNumber);
@@ -54,7 +54,7 @@ public:
 private:
     void UpdateWeights(double learningRate, int batchSize);
 
-    //Compute values threw the neural network
+    //Compute values through the neural network
     const Matrix* FeedForward(Matrix* input);
 
     //Compute values and loss

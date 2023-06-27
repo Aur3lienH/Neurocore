@@ -22,7 +22,7 @@ FCL::FCL(int NeuronsCount, Activation* _activation, Matrix* weights, Matrix* bia
     this->DeltaBiases = deltaBiases;
     this->NeuronsCount = NeuronsCount;
     this->activation = _activation;
-    Weigths = weights;
+    Weights = weights;
     Biases = bias;
 }
 
@@ -34,7 +34,7 @@ void FCL::ClearDelta()
 
 Matrix* FCL::FeedForward(const Matrix* input) 
 {
-    this->Weigths->CrossProduct(input, Result);
+    this->Weights->CrossProduct(input, Result);
     Result->Add(Biases, z);
     activation->FeedForward(z, Result);
     return Result;
@@ -43,12 +43,12 @@ void FCL::Compile(LayerShape* previousLayer)
 {
     if(previousLayer->size != 1)
     {
-        throw std::invalid_argument("Previous Layer must have one dimensions ! ");
+        throw std::invalid_argument("Previous Layer must have one dimension ! ");
     }
     previousNeuronsCount = previousLayer->dimensions[0];
-    if(Weigths == nullptr)
+    if(Weights == nullptr)
     {
-        Weigths = activation->InitWeights(previousNeuronsCount, NeuronsCount);
+        Weights = activation->InitWeights(previousNeuronsCount, NeuronsCount);
     }
     if(Delta == nullptr)
         Delta = new Matrix(previousNeuronsCount, NeuronsCount); 
@@ -78,7 +78,7 @@ Matrix* FCL::BackPropagate(const Matrix* lastDelta, const Matrix* PastActivation
         newDelta[0][i] = 0;
         for (int j = 0; j < NeuronsCount; j++)
         {
-            newDelta[0][i] += deltaActivation[0][j] * Weigths[0][j+i*NeuronsCount];
+            newDelta[0][i] += deltaActivation[0][j] * Weights[0][j + i * NeuronsCount];
             Delta[0][i+j*previousNeuronsCount] += PastActivation[0][i] * deltaActivation[0][j];
         }
     }
@@ -90,9 +90,9 @@ void FCL::UpdateWeights(double learningRate, int batchSize)
 {
     // Can be optimized by adding all the deltas in the main thread and then updating the weights
     double coef = learningRate / batchSize;    
-    for (int i = 0; i < Weigths->getCols() * Weigths->getRows(); i++)
+    for (int i = 0; i < Weights->getCols() * Weights->getRows(); i++)
     {
-        Weigths[0][i] -= Delta[0][i] * coef;
+        Weights[0][i] -= Delta[0][i] * coef;
     }
     for (int i = 0; i < Biases->getCols() * Biases->getRows(); i++)
     {
@@ -109,7 +109,7 @@ void FCL::AddDeltaFrom(Layer* otherLayer)
 {
 
     FCL* _FCLLayer = (FCL*)otherLayer;
-    for (int i = 0; i < Weigths->getCols() * Weigths->getRows(); i++)
+    for (int i = 0; i < Weights->getCols() * Weights->getRows(); i++)
     {
         Delta[0][i] -= _FCLLayer->Delta[0][i];
     }
@@ -149,7 +149,7 @@ std::string FCL::getLayerTitle()
 
 Layer* FCL::Clone()
 {
-    return new FCL(NeuronsCount, activation, Weigths, Biases, nullptr,nullptr);
+    return new FCL(NeuronsCount, activation, Weights, Biases, nullptr, nullptr);
 }
 
 FCL* FCL::Load(std::ifstream& reader)
@@ -165,7 +165,7 @@ FCL* FCL::Load(std::ifstream& reader)
 void FCL::SpecificSave(std::ofstream& write)
 {
     write.write(reinterpret_cast<char*>(&NeuronsCount),sizeof(int));
-    Weigths->Save(write);
+    Weights->Save(write);
     Biases->Save(write);
     activation->Save(write);
 }
