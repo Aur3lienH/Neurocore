@@ -32,7 +32,7 @@ void InputLayer::ClearDelta()
     
 }
 
-Matrix* InputLayer::BackPropagate(const Matrix* delta, const Matrix* lastWeigths)
+const Matrix* InputLayer::BackPropagate(const Matrix* delta, const Matrix* lastWeigths)
 {
     return nullptr;
 }

@@ -66,7 +66,7 @@ void FCL::Compile(LayerShape* previousLayer)
     layerShape = new LayerShape(NeuronsCount);
 }
 
-Matrix* FCL::BackPropagate(const Matrix* lastDelta, const Matrix* PastActivation)
+const Matrix* FCL::BackPropagate(const Matrix* lastDelta, const Matrix* PastActivation)
 {
     activation->Derivative(z, deltaActivation);
     deltaActivation->operator*=(lastDelta);

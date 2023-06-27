@@ -15,7 +15,7 @@ public:
     Matrix* FeedForward(const Matrix* input) override;
 
     //Compute partial derivative (named delta)
-    Matrix* BackPropagate(const Matrix* delta, const Matrix* lastWeights) override;
+    const Matrix* BackPropagate(const Matrix* delta, const Matrix* lastWeights) override;
 
     //Clear partial derivative (named delta)
     void ClearDelta() override;
