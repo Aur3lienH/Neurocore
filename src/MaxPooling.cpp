@@ -1,11 +1,16 @@
 #include "MaxPooling.h"
 
 
+MaxPoolLayer::MaxPoolLayer(int filterSize, int stride) : PoolingLayer(filterSize,stride)
+{
+    LayerID = 4;
+}
+
+
 const Matrix* MaxPoolLayer::FeedForward(const Matrix* input)
 {
     auto res = new Matrix(layerShape->dimensions[0], layerShape->dimensions[1]);
     Matrix::MaxPool(input, res, filterSize, stride);
-
     return res;
 }
 
@@ -49,7 +54,19 @@ Layer* MaxPoolLayer::Clone()
     return new MaxPoolLayer(filterSize, stride);
 }
 
-MaxPoolLayer::MaxPoolLayer(int filterSize, int stride) : PoolingLayer(filterSize, stride)
+Layer* MaxPoolLayer::Load(std::ifstream& reader)
 {
+    int _filterSize;
+    int _tempStride;
+    reader.read(reinterpret_cast<char*>(&_filterSize),sizeof(int));
+    reader.read(reinterpret_cast<char*>(_tempStride),sizeof(int));
+    return new MaxPoolLayer(_filterSize,_tempStride);
+}
 
+void MaxPoolLayer::SpecificSave(std::ofstream& writer)
+{
+    int tempFilterSize = filterSize;
+    int tempStride = stride;
+    writer.write(reinterpret_cast<char*>(&tempFilterSize),sizeof(int));
+    writer.write(reinterpret_cast<char*>(&tempStride),sizeof(int));
 }

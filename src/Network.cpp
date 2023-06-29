@@ -134,7 +134,6 @@ void Network::Compile()
 
     compiled = true;
 
-    std::cout << "Network compiled" << std::endl;
 }
 
 void Network::Compile(Loss* _loss)
@@ -363,6 +362,7 @@ void Network::Save(std::string filename)
     std::ofstream writer;
     writer.open(filename, std::ios::binary | std::ios::trunc);
 
+    loss->Save(writer);
     //First save the number of layers
     writer.write(reinterpret_cast<char*>(&layersCount),sizeof(int));
 
@@ -379,6 +379,8 @@ Network* Network::Load(std::string filename)
     reader.open(filename, std::ios::binary);
     Network* network = new Network();
     //Load number of layers
+
+    Loss* loss = Loss::Read(reader);
     int layersCount;
     reader.read(reinterpret_cast<char*>(&layersCount),sizeof(int));
 
@@ -387,6 +389,7 @@ Network* Network::Load(std::string filename)
     {
         network->AddLayer(Layer::Load(reader));
     }
+    network->Compile(loss);
     reader.close();
     return network;
 }

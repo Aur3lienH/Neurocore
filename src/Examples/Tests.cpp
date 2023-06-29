@@ -4,6 +4,7 @@
 #include "../InputLayer.h"
 #include "../Activation.h"
 #include "../ConvLayer.h"
+#include "../Flatten.h"
 #include "../FCL.h"
 #include <limits>
 #include <tuple>
@@ -15,8 +16,8 @@ void Tests::ExecuteTests()
     std::vector<std::tuple<void*,std::string>> functions;
     //functions.push_back(std::make_tuple((void*)BasicNetwork1,"Single Thread"));
     //functions.push_back(std::make_tuple((void*)SaveNetwork1,"Save and Load Network"));
-    functions.push_back(std::make_tuple((void*)CNNNetwork1,"Basic convolution test"));
-    
+    //functions.push_back(std::make_tuple((void*)CNNNetwork1,"Basic convolution test"));
+    functions.push_back(std::make_tuple((void*)CNNSaveTest, "CNN save test"));
 
     bool* array = new bool[functions.size()];
 
@@ -128,7 +129,7 @@ bool Tests::CNNNetwork1()
 
     Network network = Network();
     network.AddLayer(new InputLayer(3,3,1));
-    network.AddLayer(new ConvLayer(filter));
+    network.AddLayer(new ConvLayer(new LayerShape(2,2,1)));
 
     network.Compile(new MSE());
 
@@ -158,11 +159,30 @@ bool Tests::CNNNetwork1()
     std::cout << *network.FeedForward(inputs[0]);
     std::cout << *network.FeedForward(inputs[1]);
 
-
     if(out == input1)
     {
         return true;
     }
     
     return false;
+}
+
+bool Tests::CNNSaveTest()
+{
+    Network* network = new Network();
+    network->AddLayer(new InputLayer(28,28,1));
+    network->AddLayer(new ConvLayer(new LayerShape(2,2,32)));
+    network->AddLayer(new Flatten());
+    network->AddLayer(new FCL(10, new Softmax()));
+
+    network->Compile(new CrossEntropy());
+    network->Save("test.net");
+
+    Network* secondNetwork = Network::Load("test.net");
+
+    Matrix* input = new Matrix(28,28);
+    const Matrix* output = secondNetwork->FeedForward(input);
+
+    std::cout << *output;
+    return true;
 }

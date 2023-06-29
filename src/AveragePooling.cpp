@@ -4,6 +4,7 @@
 
 #include "AveragePooling.h"
 
+
 const Matrix* AveragePooling::FeedForward(const Matrix* input)
 {
     auto res = new Matrix(layerShape->dimensions[0], layerShape->dimensions[1]);
@@ -50,4 +51,22 @@ Layer* AveragePooling::Clone()
 AveragePooling::AveragePooling(const int filterSize, const int stride) : PoolingLayer(filterSize, stride),fs_2(filterSize * filterSize)
 {
 
+}
+
+
+Layer* AveragePooling::Load(std::ifstream& reader)
+{
+    int _filterSize;
+    int _tempStride;
+    reader.read(reinterpret_cast<char*>(&_filterSize),sizeof(int));
+    reader.read(reinterpret_cast<char*>(_tempStride),sizeof(int));
+    return new AveragePooling(_filterSize,_tempStride);
+}
+
+void AveragePooling::SpecificSave(std::ofstream& writer)
+{
+    int tempFilterSize = filterSize;
+    int tempStride = stride;
+    writer.write(reinterpret_cast<char*>(&tempFilterSize),sizeof(int));
+    writer.write(reinterpret_cast<char*>(&tempStride),sizeof(int));
 }

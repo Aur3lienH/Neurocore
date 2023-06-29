@@ -9,6 +9,8 @@ public:
     const Matrix* BackPropagate(const Matrix* delta, const Matrix* pastActivation) override;
     void ClearDelta() override;
 
+    static Layer* Load(std::ifstream& reader);
+
 
     void UpdateWeights(double learningRate, int batchSize) override;
 

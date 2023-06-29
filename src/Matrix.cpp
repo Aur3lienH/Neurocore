@@ -390,11 +390,12 @@ const void Matrix::CrossProduct(const Matrix* other, Matrix* output) const
 
 Matrix* Matrix::Read(std::ifstream& reader)
 {
-    int row,col;
+    int row,col,dim;
     reader.read(reinterpret_cast<char*>(&row),sizeof(int));
     reader.read(reinterpret_cast<char*>(&col),sizeof(int));
-    Matrix* matrix = new Matrix(row,col);
-    for (int i = 0; i < row * col; i++)
+    reader.read(reinterpret_cast<char*>(&dim),sizeof(int));
+    Matrix* matrix = new Matrix(row,col,dim);
+    for (int i = 0; i < row * col * dim; i++)
     {
         reader.read(reinterpret_cast<char*>(matrix->data + i),sizeof(double));
     }
@@ -405,7 +406,8 @@ void Matrix::Save(std::ofstream& writer)
 {
     writer.write(reinterpret_cast<char*>(&rows),sizeof(int));
     writer.write(reinterpret_cast<char*>(&cols),sizeof(int));
-    for (int i = 0; i < rows * cols; i++)
+    writer.write(reinterpret_cast<char*>(&dim),sizeof(int));
+    for (int i = 0; i < rows * cols * dim; i++)
     {
         writer.write(reinterpret_cast<char*>(data + i),sizeof(double));
     }
