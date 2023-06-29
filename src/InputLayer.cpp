@@ -15,7 +15,8 @@ InputLayer::InputLayer(int rows, int cols, int size)
 
 InputLayer::InputLayer(LayerShape* LayerShape)
 {
-    InputLayer(layerShape->dimensions[0],layerShape->dimensions[1],layerShape->dimensions[2]);
+    LayerID = 1;
+    this->layerShape = LayerShape;
 }
 
 
@@ -73,12 +74,11 @@ Layer* InputLayer::Clone()
 
 InputLayer* InputLayer::Load(std::ifstream& reader)
 {
-    int inputSize;
-    reader.read(reinterpret_cast<char*>(&inputSize),sizeof(int));
-    return new InputLayer(inputSize);
+    LayerShape* layerShape = LayerShape::Load(reader);
+    return new InputLayer(layerShape);
 }
 
 void InputLayer::SpecificSave(std::ofstream& writer) 
 {
-    //writer.write(reinterpret_cast<char*>(&inputSize),sizeof(int));
+    layerShape->Save(writer);
 }

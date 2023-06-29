@@ -11,7 +11,10 @@
 
 class AveragePooling : protected PoolingLayer
 {
+public:
     AveragePooling(int filterSize, int stride);
+
+    static Layer* Load(std::ifstream& reader);
 
     const Matrix* FeedForward(const Matrix* input) override;
 
@@ -20,6 +23,9 @@ class AveragePooling : protected PoolingLayer
     std::string getLayerTitle() override;
 
     Layer* Clone() override;
+
+    void SpecificSave(std::ofstream& writer) override;
+
 
 private:
     // Filter size squared

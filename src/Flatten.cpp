@@ -3,7 +3,7 @@
 
 Flatten::Flatten()
 {
-
+    LayerID = 3;
 }
 
 void Flatten::Compile(LayerShape* previous)
@@ -12,6 +12,7 @@ void Flatten::Compile(LayerShape* previous)
     rows = previous->dimensions[0];
     cols = previous->dimensions[1];
     dims = previous->dimensions[2];
+    LayerID = 3;
 }
 
 const Matrix* Flatten::FeedForward(const Matrix* input)
@@ -27,6 +28,7 @@ const Matrix* Flatten::BackPropagate(const Matrix* delta, const Matrix* pastActi
     delta->Reshape(rows,cols,dims);
     return delta;
 }
+
 
 
 void Flatten::ClearDelta()
@@ -53,6 +55,12 @@ std::string Flatten::getLayerTitle()
     return buffer;
 }
 
+
+
+Layer* Flatten::Load(std::ifstream& reader)
+{
+    return new Flatten();
+}
 
 
 void Flatten::SpecificSave(std::ofstream& writer)

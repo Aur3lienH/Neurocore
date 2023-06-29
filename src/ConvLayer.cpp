@@ -9,12 +9,15 @@
 
 ConvLayer::ConvLayer(LayerShape* _filterShape)
 {
+    LayerID = 2;
     filterShape = _filterShape;
 }
 
-ConvLayer::ConvLayer(Matrix* filters)
+ConvLayer::ConvLayer(Matrix* filters, LayerShape* filterShape)
 {
-
+    LayerID = 2;
+    this->filters = filters;
+    this->filterShape = filterShape;
 }
 
 
@@ -27,9 +30,9 @@ void ConvLayer::Compile(LayerShape* previousLayer)
         throw new std::invalid_argument("Input of a CNN network must have 3 dimensions");
     }
 
-
     int outputRow = previousLayer->dimensions[0] - filterShape->dimensions[0] + 1;
     int outputCol = previousLayer->dimensions[1] - filterShape->dimensions[1] + 1;
+
 
     int size = previousLayer->dimensions[2] * filterShape->dimensions[2];
 
@@ -51,11 +54,11 @@ void ConvLayer::Compile(LayerShape* previousLayer)
     layerShape = new LayerShape(previousLayer->dimensions[0] - filters->getRows() + 1,previousLayer->dimensions[1] - filters->getCols() + 1, size);
 
     result = new Matrix(layerShape->dimensions[0],layerShape->dimensions[1],layerShape->dimensions[2]);
-
 }
 
 Matrix* ConvLayer::FeedForward(const Matrix* input)
 {
+    result->Reshape(layerShape->dimensions[0],layerShape->dimensions[1],layerShape->dimensions[2]);
     for (uint i = 0; i < preivousDimCount; i++)
     {
         for (int i = 0; i < filterCount; i++)
@@ -146,10 +149,18 @@ Matrix* ConvLayer::getResult() const
 
 void ConvLayer::SpecificSave(std::ofstream& writer)
 {
+    filters->Save(writer);
+    filterShape->Save(writer);
+}
 
+Layer* ConvLayer::Load(std::ifstream& reader)
+{
+    Matrix* filters = Matrix::Read(reader);
+    LayerShape* filterShape = LayerShape::Load(reader);
+    return new ConvLayer(filters,filterShape);
 }
 
 Layer* ConvLayer::Clone()
 {
-    return new ConvLayer(this->filters->Copy());
+    return new ConvLayer(this->filters->Copy(), new LayerShape(layerShape->dimensions[0],layerShape->dimensions[1],layerShape->dimensions[2]));
 }

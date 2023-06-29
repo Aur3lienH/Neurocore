@@ -18,7 +18,7 @@ class ConvLayer : public Layer
 {
 
 public:
-    ConvLayer(Matrix* filters);
+    ConvLayer(Matrix* filters, LayerShape* layerShape);
     ConvLayer(LayerShape* filterShape);
     
     void Compile(LayerShape* previousLayer);
@@ -31,6 +31,7 @@ public:
     void UpdateWeights(double learningRate, int batchSize);
     Layer* Clone();
     void SpecificSave(std::ofstream& writer);
+    static Layer* Load(std::ifstream& reader);
     Matrix* getResult() const;
 
     std::string getLayerTitle();

@@ -4,6 +4,9 @@
 #include "InputLayer.h"
 #include "ConvLayer.h"
 #include "LayerShape.h"
+#include "MaxPooling.h"
+#include "AveragePooling.h"
+#include "Flatten.h"
 
 
 Layer::Layer()
@@ -27,16 +30,29 @@ Layer* Layer::Load(std::ifstream& reader)
             return FCL::Load(reader);
             break;
         }
-        
         case 1:
         {
             return InputLayer::Load(reader);
             break;
         }
-
         case 2:
         {
             return ConvLayer::Load(reader);
+            break;
+        }
+        case 3:
+        {
+            return Flatten::Load(reader);
+            break;
+        }
+        case 4:
+        {
+            return MaxPoolLayer::Load(reader);
+            break;
+        }
+        case 5:
+        {
+            return AveragePooling::Load(reader);
             break;
         }
 
