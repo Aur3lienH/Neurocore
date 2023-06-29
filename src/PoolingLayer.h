@@ -1,7 +1,7 @@
 #pragma once
 #include "Layer.h"
 
-class PoolingLayer : protected Layer
+class PoolingLayer : public Layer
 {
 public:
     PoolingLayer(int filterSize, int stride);

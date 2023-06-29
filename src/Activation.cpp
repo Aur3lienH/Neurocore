@@ -5,6 +5,8 @@
 #include "Tools/ManagerIO.h"
 
 
+
+
 Activation::Activation()
 {
     
@@ -27,7 +29,12 @@ Matrix* Activation::InitBiases(int outputSize)
 
 void Activation::FeedForward(const Matrix* input, Matrix* output)
 {
-    for (int i = 0; i < input->getCols() * input->getRows(); i++)
+    if(input->getCols() != output->getCols() || input->getRows() != output->getRows() || input->getDim() != output->getDim())
+    {
+        throw std::invalid_argument("Activation::FeedForward : Both matrix must have the same shape !");
+    }
+
+    for (int i = 0; i < input->getCols() * input->getRows() * input->getDim(); i++)
     {
         output[0][i] = Function(input[0][i]);
     }
@@ -35,7 +42,12 @@ void Activation::FeedForward(const Matrix* input, Matrix* output)
 
 void Activation::Derivative(const Matrix * input, Matrix* output)
 {
-    for (int i = 0; i < input->getCols() * input->getRows(); i++)
+    if(input->getCols() != output->getCols() || input->getRows() != output->getRows() || input->getDim() != output->getDim())
+    {
+        throw std::invalid_argument("Activation::Derivative() : Both matrix must have the same shape !");
+    }
+
+    for (int i = 0; i < input->getCols() * input->getRows() * input->getDim(); i++)
     {
         output[0][i] = Derivate(input[0][i]);
     }
@@ -270,6 +282,18 @@ Matrix* Tanh::InitWeights(int previousNeuronsCount, int NeuronsCount)
     XavierInit(previousNeuronsCount, weights);
     return weights;
 }
+
+
+None::None()
+{
+
+}
+
+double None::Function(double input)
+{
+    return 0;
+}
+
 
 
 

@@ -84,3 +84,12 @@ public:
     double Derivate(double input);
     Matrix* InitWeights(int inputSize, int outputSize);
 };
+
+class None : public Activation
+{
+public:
+    None();
+    double Function(double input);
+    double Derivative(double input);
+    Matrix* InitWeigths(int inputSize, int outputSize);
+};

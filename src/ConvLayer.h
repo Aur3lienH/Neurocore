@@ -1,6 +1,7 @@
 #pragma once
 #include "Layer.h"
 #include "LayerShape.h"
+#include "Activation.h"
 
 
 #include "Matrix.h"
@@ -18,8 +19,8 @@ class ConvLayer : public Layer
 {
 
 public:
-    ConvLayer(Matrix* filters, LayerShape* layerShape);
-    ConvLayer(LayerShape* filterShape);
+    ConvLayer(Matrix* filters, LayerShape* layerShape, Activation* activation);
+    ConvLayer(LayerShape* filterShape, Activation* activation);
     
     void Compile(LayerShape* previousLayer);
 
@@ -43,6 +44,9 @@ private:
     Matrix* filters = nullptr;
     //Delta for next layer
     Matrix* delta = nullptr;
+    Matrix* activationDelta;
+    Matrix* z;
+    Matrix* previousDeltaMultiplied;
 
     
     Matrix* nextLayerDelta = nullptr;
@@ -50,11 +54,10 @@ private:
     //Result from the previous layer (don't initialize when compiling the layer)
     uint filterCount = 0;
     uint preivousDimCount = 0;
-    
-
 
     LayerShape* filterShape = nullptr;
 
+    Activation* activation = nullptr;
 
 
 };

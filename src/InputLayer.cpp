@@ -68,7 +68,7 @@ std::string InputLayer::getLayerTitle()
 
 Layer* InputLayer::Clone()
 {
-    return new InputLayer(layerShape);
+    return new InputLayer(new LayerShape(layerShape->dimensions[0],layerShape->dimensions[1],layerShape->dimensions[2]));
 }
 
 

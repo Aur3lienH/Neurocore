@@ -160,7 +160,7 @@ void Matrix::SubstractAllDims(const Matrix* other, Matrix* result) const
 }
 
 
-void Matrix::MultiplyAllDims(const Matrix* other, Matrix* result)
+void Matrix::MultiplyAllDims(const Matrix* other, Matrix* result) const
 {
 #if SAFE
     if (this->rows != other->rows || this->cols != other->cols || this->dim != other->dim)
@@ -222,7 +222,7 @@ void Matrix::PrintSize() const
 double& Matrix::operator[](int index) 
 {
 #if SAFE
-    if (index >= this->rows * this->cols)
+    if (index >= this->rows * this->cols * this->dim)
     {
         throw std::out_of_range("Matrix : Index out of bounds");
     }
@@ -237,7 +237,7 @@ const double& Matrix::operator[](int index) const
 {
     
 #if SAFE
-    if (index >= this->rows * this->cols)
+    if (index >= this->rows * this->cols * this->dim)
     {
         throw std::out_of_range("Matrix : Index out of bounds");
     }
@@ -644,25 +644,33 @@ void Matrix::MaxPool(const Matrix* a, Matrix* output, const int filterSize, cons
     const int outputCols = (inputCols - filterSize) / stride + 1;
     const int outputRows = (inputRows - filterSize) / stride + 1;
 
-    for (int i = 0; i < outputRows; i++)
+    for (int k = 0; k < a->dim; k++)
     {
-        for (int j = 0; j < outputCols; j++)
+        for (int i = 0; i < outputRows; i++)
         {
-            double max = -DBL_MAX;
-            for (int k = 0; k < filterSize; k++)
+            for (int j = 0; j < outputCols; j++)
             {
-                for (int l = 0; l < filterSize; l++)
+                double max = -DBL_MAX;
+                for (int k = 0; k < filterSize; k++)
                 {
-                    const int inputRow = i * stride + k;
-                    const int inputCol = j * stride + l;
-                    if (inputRow >= 0 && inputRow < inputRows && inputCol >= 0 && inputCol < inputCols)
-                        max = std::max(max, (*a)(inputRow, inputCol));
+                    for (int l = 0; l < filterSize; l++)
+                    {
+                        const int inputRow = i * stride + k;
+                        const int inputCol = j * stride + l;
+                        if (inputRow >= 0 && inputRow < inputRows && inputCol >= 0 && inputCol < inputCols)
+                            max = std::max(max, (*a)(inputRow, inputCol));
 
+                    }
                 }
+                (*output)(i, j) = max;
             }
-            (*output)(i, j) = max;
         }
+        a->GoToNextMatrix();
+        output->GoToNextMatrix();
     }
+    a->ResetOffset();
+    output->ResetOffset();
+
 }
 
 Matrix Matrix::Random(int rows, int cols)

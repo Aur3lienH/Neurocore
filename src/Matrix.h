@@ -36,7 +36,7 @@ public:
     void AddAllDims(Matrix* other, Matrix* result);
     void Substract(const Matrix* other, Matrix* result) const;
     void SubstractAllDims(const Matrix* other, Matrix* result) const;
-    void MultiplyAllDims(const Matrix* other, Matrix* result);
+    void MultiplyAllDims(const Matrix* other, Matrix* result) const;
     void MultiplyAllDims(double value);
     void Zero();
     double Sum();
