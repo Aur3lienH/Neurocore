@@ -4,6 +4,8 @@
 #include "../Layer.h"
 #include "../InputLayer.h"
 #include "../FCL.h"
+#include "../ConvLayer.h"
+#include "../Flatten.h"
 #include "Tools.h"
 #include <iostream>
 #include <fstream>
@@ -59,7 +61,7 @@ Matrix*** GetDataset(std::string path, int dataLength)
 
             std::stringstream s(line);
             int i = -1;
-            dataset[0][j] = new Matrix(784, 1);
+            dataset[0][j] = new Matrix(28, 28);
             
             while (getline(s, value, ','))
             {
@@ -87,7 +89,7 @@ Matrix*** GetDataset(std::string path, int dataLength)
 }
 
 
-void Mnist()
+void Mnist1()
 {
     int dataLength = CSVTools::CsvLength(MNIST_DATA_PATH);
     Matrix*** data = GetDataset(MNIST_DATA_PATH, dataLength);
@@ -113,10 +115,38 @@ void Mnist()
 
     network->Learn(100,0.01,data[0], data[1], 24, trainLength, 12);
 
-    network->Save("./Models/MNIST_7.net");
 
     double accuracy = TestAccuracy(network,data[0] + trainLength,data[1] + trainLength, testLength);
     std::cout << "Accurcy : " << accuracy * 100 << "% \n";
+}
+
+void Mnist2()
+{
+    
+    int dataLength = CSVTools::CsvLength(MNIST_DATA_PATH);
+    Matrix*** data = GetDataset(MNIST_DATA_PATH, dataLength);
+    
+    std::cout << "Data length: " << dataLength << std::endl;
+
+    for (int i = 0; i < dataLength; i++)
+    {
+        data[0][i]->operator*=(1.0/255.0);
+    }
+    
+    
+
+    Network* network = new Network();
+    network->AddLayer(new InputLayer(28,28,1));
+    network->AddLayer(new ConvLayer(new LayerShape(2,2,8)));
+    network->AddLayer(new Flatten());
+    network->AddLayer(new FCL(10, new Softmax()));
+
+    network->Compile(new CrossEntropy());
+
+    network->PrintNetwork();
+    
+
+    network->Learn(10,0.1,data[0],data[1],dataLength);
 }
 
 

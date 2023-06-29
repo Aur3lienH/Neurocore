@@ -1,7 +1,7 @@
 #pragma once
 #include "Layer.h"
 
-class Flatten : Layer
+class Flatten : public Layer
 {
 public:
     Flatten();
@@ -17,13 +17,17 @@ public:
 
     void Compile(LayerShape* previousOutput) override;
 
-    const Matrix* getResult() const = 0;
+    std::string getLayerTitle() override;
+    
+    void SpecificSave(std::ofstream& writer);
 
+    Layer* Clone();
 
+    const Matrix* getResult() const override;
 
 private:
-    Matrix* output;
-
+    const Matrix* input;
+    int rows, cols, dims = 0;
 
 
 };

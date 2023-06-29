@@ -18,8 +18,8 @@ class ConvLayer : public Layer
 {
 
 public:
-    explicit ConvLayer(Matrix* filters);
-    explicit ConvLayer(LayerShape* filterShape);
+    ConvLayer(Matrix* filters);
+    ConvLayer(LayerShape* filterShape);
     
     void Compile(LayerShape* previousLayer);
 
@@ -37,22 +37,22 @@ public:
     Layer* Clone(Matrix* delta, Matrix* deltaBiases);
 
 private:
-    Matrix* result;
-    Matrix* rotatedFilter;
-    Matrix* filters;
+    Matrix* result = nullptr;
+    Matrix* rotatedFilter = nullptr;
+    Matrix* filters = nullptr;
     //Delta for next layer
-    Matrix* delta;
+    Matrix* delta = nullptr;
 
     
-    Matrix* nextLayerDelta;
+    Matrix* nextLayerDelta = nullptr;
 
     //Result from the previous layer (don't initialize when compiling the layer)
-    uint filterCount;
-    uint preivousDimCount;
+    uint filterCount = 0;
+    uint preivousDimCount = 0;
     
 
 
-    LayerShape* filterShape;
+    LayerShape* filterShape = nullptr;
 
 
 

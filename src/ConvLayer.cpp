@@ -7,9 +7,9 @@
 #include "LayerShape.h"
 
 
-ConvLayer::ConvLayer(LayerShape* filterShape)
+ConvLayer::ConvLayer(LayerShape* _filterShape)
 {
-    this->filterShape = filterShape;
+    filterShape = _filterShape;
 }
 
 ConvLayer::ConvLayer(Matrix* filters)
@@ -25,30 +25,32 @@ void ConvLayer::Compile(LayerShape* previousLayer)
     if(previousLayer->size < 3)
     {
         throw new std::invalid_argument("Input of a CNN network must have 3 dimensions");
-    }  
-
+    }
 
 
     int outputRow = previousLayer->dimensions[0] - filterShape->dimensions[0] + 1;
     int outputCol = previousLayer->dimensions[1] - filterShape->dimensions[1] + 1;
 
+    int size = previousLayer->dimensions[2] * filterShape->dimensions[2];
 
-    rotatedFilter = filters->Copy();
-
-    nextLayerDelta = previousLayer->ToMatrix();
-    delta = filters->Copy();
-    
-    layerShape = new LayerShape(previousLayer->dimensions[0] - filters->getRows() + 1,previousLayer->dimensions[1] - filters->getCols() + 1, previousLayer->dimensions[2] * filterCount);
-
-
-    result = new Matrix(layerShape->dimensions[0],layerShape->dimensions[1],layerShape->dimensions[2]);
-
+    filterCount = filterShape->dimensions[2];
+    preivousDimCount = previousLayer->dimensions[2];
 
     if(filters == nullptr)
     {
-        filters = new Matrix(filterShape->dimensions[0],filterShape->dimensions[1],layerShape->dimensions[2]);
+        filters = new Matrix(filterShape->dimensions[0],filterShape->dimensions[1],size);
         HeInit(filters->getCols() * filters->getRows() * filters->getDim(),filters);
     }
+
+    rotatedFilter = filters->Copy();
+
+    nextLayerDelta = new Matrix(previousLayer->dimensions[0],previousLayer->dimensions[1],previousLayer->dimensions[2]);
+    delta = filters->Copy();
+
+
+    layerShape = new LayerShape(previousLayer->dimensions[0] - filters->getRows() + 1,previousLayer->dimensions[1] - filters->getCols() + 1, size);
+
+    result = new Matrix(layerShape->dimensions[0],layerShape->dimensions[1],layerShape->dimensions[2]);
 
 }
 
@@ -60,11 +62,13 @@ Matrix* ConvLayer::FeedForward(const Matrix* input)
         {
             Matrix::Convolution(input,filters,result);
             filters->GoToNextMatrix();
+            result->GoToNextMatrix();
         }
         input->GoToNextMatrix();
     }
     filters->ResetOffset();
     input->ResetOffset();
+    result->ResetOffset();
 
     return result;
 }
@@ -73,14 +77,14 @@ Matrix* ConvLayer::FeedForward(const Matrix* input)
 //May be optimized by not rotating the matrix
 Matrix* ConvLayer::BackPropagate(const Matrix* lastDelta,const Matrix* pastActivation)
 {
-
+    std::cout << "Backpropagate convlayer !\n";
     for (uint i = 0; i < preivousDimCount; i++)
     {
-        for (uint i = 0; i < filterCount; i++)
+        for (uint j = 0; j < filterCount; j++)
         {
             Matrix::Flip180(filters,rotatedFilter);
             Matrix::FullConvolution(rotatedFilter,lastDelta,nextLayerDelta);
-            Matrix::Convolution(pastActivation,lastDelta,nextLayerDelta);
+            Matrix::Convolution(pastActivation,lastDelta,delta);
             filters->GoToNextMatrix();
             rotatedFilter->GoToNextMatrix();
             lastDelta->GoToNextMatrix();
@@ -113,7 +117,9 @@ void ConvLayer::ClearDelta()
 std::string ConvLayer::getLayerTitle()
 {
     std::string buf = "";
-    buf += "Convolutional layer";
+    buf += "Convolutional layer\n";
+    buf += "Filter count per channel : " + std::to_string(filterShape->dimensions[2]) + "\n";
+    buf += "Feature map count : " + std::to_string(layerShape->dimensions[2]) + "\n";
     return buf;
 }
 

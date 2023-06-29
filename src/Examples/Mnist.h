@@ -8,7 +8,8 @@ int MatrixToLabel(const Matrix* matrix);
 
 Matrix*** GetDataset(std::string path,int dataLength);
 
-void Mnist();
+void Mnist1();
+void Mnist2();
 
 double TestAccuracy(Network* network, Matrix** inputs, Matrix** outputs, int dataLength);
 

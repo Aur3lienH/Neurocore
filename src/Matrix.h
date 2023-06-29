@@ -12,6 +12,7 @@ public:
     Matrix(int rows, int cols, int size);
     Matrix(int rows, int cols, double value);
     Matrix(int rows, int cols, double* data);
+    Matrix(int rows, int cols, int dims, double* data);
     ~Matrix();
 
     static void Flip180(const Matrix* input, Matrix* output);
@@ -26,9 +27,11 @@ public:
     const void GoToNextMatrix() const;
     void ResetOffset() const;
     void SetOffset(int offset) const;
+    int GetOffset() const;
 
 
     void Flatten() const;
+    void Reshape(int rows, int cols, int dims) const;
     void Add(Matrix* other, Matrix* result);
     void AddAllDims(Matrix* other, Matrix* result);
     void Substract(const Matrix* other, Matrix* result) const;
@@ -54,8 +57,10 @@ public:
     const double& operator()(int rows,int cols) const;
     const double& operator()(int rows,int cols, int dim) const;
     const void CrossProduct(const Matrix* other, Matrix* output) const;
+
+    
     friend std::ostream& operator<<(std::ostream&, const Matrix&);
-    void PrintSize();
+    void PrintSize() const;
     static float Distance(Matrix* a, Matrix* b);
     Matrix* Copy();
     static Matrix* Copy(const Matrix* a);
@@ -65,7 +70,7 @@ protected:
     mutable int rows;
     mutable int cols;
     mutable int dim;
-    int matrixSize;
+    mutable int matrixSize;
     mutable int offset = 0;
 };
 
