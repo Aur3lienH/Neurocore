@@ -17,11 +17,7 @@ void Flatten::Compile(LayerShape* previous)
 const Matrix* Flatten::FeedForward(const Matrix* input)
 {
     this->input = input;
-    input->PrintSize();
-    std::cout << input->GetOffset();
     input->Flatten();
-    input->PrintSize();
-    std::cout << input[0][5831];
     return input;
 }
 

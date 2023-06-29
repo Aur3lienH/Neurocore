@@ -77,7 +77,6 @@ Matrix* ConvLayer::FeedForward(const Matrix* input)
 //May be optimized by not rotating the matrix
 Matrix* ConvLayer::BackPropagate(const Matrix* lastDelta,const Matrix* pastActivation)
 {
-    std::cout << "Backpropagate convlayer !\n";
     for (uint i = 0; i < preivousDimCount; i++)
     {
         for (uint j = 0; j < filterCount; j++)
@@ -103,7 +102,6 @@ Matrix* ConvLayer::BackPropagate(const Matrix* lastDelta,const Matrix* pastActiv
 
 void ConvLayer::UpdateWeights(double learningRate, int batchSize)
 {
-    std::cout << *delta;
     delta->MultiplyAllDims(learningRate/batchSize);
     filters->SubstractAllDims(delta,filters);
 }
