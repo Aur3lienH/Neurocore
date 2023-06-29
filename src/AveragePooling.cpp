@@ -47,8 +47,7 @@ Layer* AveragePooling::Clone()
     return new AveragePooling(filterSize, stride);
 }
 
-AveragePooling::AveragePooling(const int filterSize, const int stride) : PoolingLayer(filterSize, stride),
-                                                                            fs_2(filterSize * filterSize)
+AveragePooling::AveragePooling(const int filterSize, const int stride) : PoolingLayer(filterSize, stride),fs_2(filterSize * filterSize)
 {
 
 }

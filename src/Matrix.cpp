@@ -61,6 +61,15 @@ Matrix::Matrix(int rows, int cols, double* newArray)
     matrixSize = rows * cols;
 }
 
+Matrix::Matrix(int rows, int cols, int dims, double* data)
+{
+    this->rows = rows;
+    this->cols = cols;
+    this->dim = dims;
+    this->data = data;
+    matrixSize = rows * cols;
+}
+
 Matrix::~Matrix()
 {
     delete[] this->data;
@@ -74,6 +83,11 @@ const int Matrix::getRows () const
 const int Matrix::getCols() const
 {
     return this->cols;
+}
+
+const int Matrix::getDim() const
+{
+    return this->dim;
 }
 
 void Matrix::Add(Matrix* other, Matrix* result)
@@ -200,9 +214,9 @@ std::ostream& operator<<(std::ostream& os, const Matrix& matrix)
     return os;
 }
 
-void Matrix::PrintSize()
+void Matrix::PrintSize() const
 {
-    std::cout << "(" << this->rows << "," << this->cols << ")" << std::endl;
+    std::cout << "(" << this->rows << "," << this->cols << "," << this->dim  << ")" << std::endl;
 }
 
 double& Matrix::operator[](int index) 
@@ -416,12 +430,12 @@ float Matrix::Distance(Matrix* a, Matrix* b)
 
 Matrix* Matrix::Copy()
 {
-    double* resArray = new double[cols*rows];
-    for (int i = 0; i < cols*rows; i++)
+    double* resArray = new double[cols*rows*dim];
+    for (int i = 0; i < cols*rows*dim; i++)
     {
         resArray[i] = data[i];
     }
-    return new Matrix(rows,cols,resArray);
+    return new Matrix(rows,cols,dim,resArray);
 }
 
 void Matrix::Flip180(const Matrix* input, Matrix* output)
@@ -455,6 +469,11 @@ void Matrix::SetOffset(int offset) const
     this->offset += offset;
 }
 
+int Matrix::GetOffset() const
+{
+    return offset;
+}
+
 
 void Matrix::FullConvolution(const Matrix* m, const Matrix* filter, Matrix* output)
 {
@@ -465,7 +484,7 @@ void Matrix::FullConvolution(const Matrix* m, const Matrix* filter, Matrix* outp
     if(output->cols != outputCols || outputRows != output->rows)
     {
         std::cout << "right shape is : " << "(" << outputRows << "," << outputCols << ")\n";
-        throw std::invalid_argument("Output Matrix has not the right shape ! ");
+        throw std::invalid_argument("FullConvolution : Output Matrix has not the right shape ! ");
     }
 #endif
     const int filterCols = filter->getCols();
@@ -476,7 +495,6 @@ void Matrix::FullConvolution(const Matrix* m, const Matrix* filter, Matrix* outp
 
     const int r = filterRows - 1;
     const int c = filterCols - 1;
-
     for (int i = 0; i < outputRows; i++)
     {
         for (int j = 0; j < outputCols; j++)
@@ -489,7 +507,9 @@ void Matrix::FullConvolution(const Matrix* m, const Matrix* filter, Matrix* outp
                     const int inputRow = i + k - r;
                     const int inputCol = j + l - c;
                     if (inputRow >= 0 && inputRow < inputRows && inputCol >= 0 && inputCol < inputCols)
+                    {
                         sum += (*m)(inputRow, inputCol) * (*filter)(k, l);
+                    }
                 }
             }
             (*output)(i, j) = sum;
@@ -536,6 +556,15 @@ void Matrix::Convolution(const Matrix* input, const Matrix* filter, Matrix* outp
     int outputCols = (inputCols - filterSize) / stride + 1;
     int outputRows = (inputRows - filterSize) / stride + 1;
 
+
+#if SAFE
+
+    if(outputCols != output->cols || output->rows != outputRows)
+    {
+        throw std::invalid_argument("Convolution : output matrix has not the right shape !");
+    }
+#endif
+
     for (int i = 0; i < outputRows; i++)
     {
         for (int j = 0; j < outputCols; j++)
@@ -577,13 +606,29 @@ void Matrix::Flatten() const
     rows *= cols * dim;
     cols = 1;
     dim = 1;
+    matrixSize = rows * cols;
+}
+
+void Matrix::Reshape(int rows, int cols, int dims) const
+{
+#if SAFE
+    if(rows * cols * dims != this->cols * this->rows * this->dim)
+    {
+        throw std::invalid_argument("Reshape : Incorrect Reshape !");
+    }
+#endif
+
+    this->rows = rows;
+    this->cols = cols;
+    this->dim = dims;
+    matrixSize = rows * cols;
 }
 
 
 Matrix* Matrix::Copy(const Matrix* a)
 {
-    Matrix* res = new Matrix(a->rows,a->cols);
-    for (int i = 0; i < a->cols * a->rows; i++)
+    Matrix* res = new Matrix(a->rows,a->cols,a->dim);
+    for (int i = 0; i < a->cols * a->rows * a->dim; i++)
     {
         res[0][i] = a[0][i];
     }

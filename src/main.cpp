@@ -13,5 +13,5 @@
 
 int main()
 {
-    Tests::ExecuteTests();
+    Mnist2();
 }
