@@ -129,7 +129,7 @@ bool Tests::CNNNetwork1()
 
     Network network = Network();
     network.AddLayer(new InputLayer(3,3,1));
-    network.AddLayer(new ConvLayer(new LayerShape(2,2,1)));
+    network.AddLayer(new ConvLayer(new LayerShape(2,2,1),new ReLU()));
 
     network.Compile(new MSE());
 
@@ -171,7 +171,7 @@ bool Tests::CNNSaveTest()
 {
     Network* network = new Network();
     network->AddLayer(new InputLayer(28,28,1));
-    network->AddLayer(new ConvLayer(new LayerShape(2,2,32)));
+    network->AddLayer(new ConvLayer(new LayerShape(2,2,32),new ReLU()));
     network->AddLayer(new Flatten());
     network->AddLayer(new FCL(10, new Softmax()));
 

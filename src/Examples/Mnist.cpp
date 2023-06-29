@@ -6,6 +6,7 @@
 #include "../FCL.h"
 #include "../ConvLayer.h"
 #include "../Flatten.h"
+#include "../MaxPooling.h"
 #include "Tools.h"
 #include <iostream>
 #include <fstream>
@@ -137,7 +138,8 @@ void Mnist2()
 
     Network* network = new Network();
     network->AddLayer(new InputLayer(28,28,1));
-    network->AddLayer(new ConvLayer(new LayerShape(2,2,32)));
+    network->AddLayer(new ConvLayer(new LayerShape(3,3,32),new ReLU()));
+    network->AddLayer(new MaxPoolLayer(2,2));
     network->AddLayer(new Flatten());
     network->AddLayer(new FCL(10, new Softmax()));
 
@@ -148,10 +150,12 @@ void Mnist2()
     int trainLength = dataLength * 0.8;
     int testLength = dataLength - trainLength;
 
-    network->Learn(1,0.1,data[0],data[1],trainLength);
+    network->Learn(3,0.1,data[0],data[1],1,trainLength,1);
+
+    network->Save("./Models/MNIST_11.net");
 
 
-    double accuracy = TestAccuracy(network,data[0] + trainLength,data[1] + trainLength, testLength);
+    double accuracy = TestAccuracy(network,data[0] + trainLength,data[1] + trainLength, 1000);
     std::cout << "Accurcy : " << accuracy * 100 << "% \n";
 }
 

@@ -1,7 +1,8 @@
 #pragma once
 #include "PoolingLayer.h"
+#include "Layer.h"
 
-class MaxPoolLayer : protected PoolingLayer
+class MaxPoolLayer : public PoolingLayer
 {
 public:
     MaxPoolLayer(int filterSize, int stride);
