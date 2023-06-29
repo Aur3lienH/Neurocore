@@ -137,7 +137,7 @@ void Mnist2()
 
     Network* network = new Network();
     network->AddLayer(new InputLayer(28,28,1));
-    network->AddLayer(new ConvLayer(new LayerShape(2,2,8)));
+    network->AddLayer(new ConvLayer(new LayerShape(2,2,32)));
     network->AddLayer(new Flatten());
     network->AddLayer(new FCL(10, new Softmax()));
 
@@ -145,8 +145,14 @@ void Mnist2()
 
     network->PrintNetwork();
     
+    int trainLength = dataLength * 0.8;
+    int testLength = dataLength - trainLength;
 
-    network->Learn(10,0.1,data[0],data[1],dataLength);
+    network->Learn(1,0.1,data[0],data[1],trainLength);
+
+
+    double accuracy = TestAccuracy(network,data[0] + trainLength,data[1] + trainLength, testLength);
+    std::cout << "Accurcy : " << accuracy * 100 << "% \n";
 }
 
 
