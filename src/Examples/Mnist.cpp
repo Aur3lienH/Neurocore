@@ -16,7 +16,7 @@
 
 
 
-const std::string MNIST_DATA_PATH = "./datasets/mnist/mnist_train.csv";
+const std::string MNIST_DATA_PATH = "../datasets/mnist/mnist_train.csv";
 
 
 Matrix* LabelToMatrix(int label)

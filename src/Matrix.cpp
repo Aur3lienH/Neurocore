@@ -528,25 +528,33 @@ void Matrix::AveragePool(const Matrix* a, Matrix* output, int filterSize, int st
 
     const int fsSquare = filterSize * filterSize;
 
-    for (int i = 0; i < outputRows; i++)
+    for (int d = 0; d < a->dim; d++)
     {
-        for (int j = 0; j < outputCols; j++)
+        for (int i = 0; i < outputRows; i++)
         {
-            double sum = 0;
-            for (int k = 0; k < filterSize; k++)
+            for (int j = 0; j < outputCols; j++)
             {
-                for (int l = 0; l < filterSize; l++)
+                double sum = 0;
+                for (int k = 0; k < filterSize; k++)
                 {
-                    const int inputRow = i * stride + k;
-                    const int inputCol = j * stride + l;
-                    if (inputRow >= 0 && inputRow < inputRows && inputCol >= 0 && inputCol < inputCols)
-                        sum += (*a)(inputRow, inputCol);
+                    for (int l = 0; l < filterSize; l++)
+                    {
+                        const int inputRow = i * stride + k;
+                        const int inputCol = j * stride + l;
+                        if (inputRow >= 0 && inputRow < inputRows && inputCol >= 0 && inputCol < inputCols)
+                            sum += (*a)(inputRow, inputCol);
 
+                    }
                 }
+                (*output)(i, j) = sum / fsSquare;
             }
-            (*output)(i, j) = sum / fsSquare;
         }
+        a->GoToNextMatrix();
+        output->GoToNextMatrix();
     }
+
+    a->ResetOffset();
+    output->ResetOffset();
 }
 
 
@@ -644,7 +652,7 @@ void Matrix::MaxPool(const Matrix* a, Matrix* output, const int filterSize, cons
     const int outputCols = (inputCols - filterSize) / stride + 1;
     const int outputRows = (inputRows - filterSize) / stride + 1;
 
-    for (int k = 0; k < a->dim; k++)
+    for (int d = 0; d < a->dim; d++)
     {
         for (int i = 0; i < outputRows; i++)
         {

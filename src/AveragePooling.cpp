@@ -5,35 +5,46 @@
 #include "AveragePooling.h"
 
 
-const Matrix* AveragePooling::FeedForward(const Matrix* input)
+const Matrix* AveragePoolLayer::FeedForward(const Matrix* input)
 {
-    auto res = new Matrix(layerShape->dimensions[0], layerShape->dimensions[1]);
-    Matrix::AveragePool(input, res, filterSize, stride);
+    Matrix::AveragePool(input, result, filterSize, stride);
 
-    return res;
+    return result;
 }
 
-Matrix* AveragePooling::BackPropagate(const Matrix* delta, const Matrix* previousActivation)
+Matrix* AveragePoolLayer::BackPropagate(const Matrix* delta, const Matrix* previousActivation)
 {
     // All elements in the pooling window have the same delta which is delta / (filterSize * filterSize)
-    for (int i = 0; i < layerShape->dimensions[0]; ++i)
+    for (int d = 0; d < layerShape->dimensions[2]; ++d)
     {
-        for (int j = 0; j < layerShape->dimensions[1]; ++j)
+        for (int i = 0; i < layerShape->dimensions[0]; ++i)
         {
-            for (int k = 0; k < filterSize; ++k)
+            for (int j = 0; j < layerShape->dimensions[1]; ++j)
             {
-                for (int l = 0; l < filterSize; ++l)
+                for (int k = 0; k < filterSize; ++k)
                 {
-                    (*newDelta)(i * stride + k,j * stride + l) = (*delta)(i,j) / fs_2;
+                    for (int l = 0; l < filterSize; ++l)
+                    {
+                        (*newDelta)(i * stride + k,j * stride + l) = (*delta)(i,j) / fs_2;
+                    }
                 }
             }
         }
+        previousActivation->GoToNextMatrix();
+        result->GoToNextMatrix();
+        newDelta->GoToNextMatrix();
+        delta->GoToNextMatrix();
     }
+
+    previousActivation->ResetOffset();
+    result->ResetOffset();
+    newDelta->ResetOffset();
+    delta->ResetOffset();
 
     return newDelta;
 }
 
-std::string AveragePooling::getLayerTitle()
+std::string AveragePoolLayer::getLayerTitle()
 {
     std::string buf;
     buf += "AveragePool Layer\n";
@@ -43,27 +54,27 @@ std::string AveragePooling::getLayerTitle()
     return buf;
 }
 
-Layer* AveragePooling::Clone()
+Layer* AveragePoolLayer::Clone()
 {
-    return new AveragePooling(filterSize, stride);
+    return new AveragePoolLayer(filterSize, stride);
 }
 
-AveragePooling::AveragePooling(const int filterSize, const int stride) : PoolingLayer(filterSize, stride),fs_2(filterSize * filterSize)
+AveragePoolLayer::AveragePoolLayer(const int filterSize, const int stride) : PoolingLayer(filterSize, stride), fs_2(filterSize * filterSize)
 {
 
 }
 
 
-Layer* AveragePooling::Load(std::ifstream& reader)
+Layer* AveragePoolLayer::Load(std::ifstream& reader)
 {
     int _filterSize;
     int _tempStride;
     reader.read(reinterpret_cast<char*>(&_filterSize),sizeof(int));
     reader.read(reinterpret_cast<char*>(_tempStride),sizeof(int));
-    return new AveragePooling(_filterSize,_tempStride);
+    return new AveragePoolLayer(_filterSize, _tempStride);
 }
 
-void AveragePooling::SpecificSave(std::ofstream& writer)
+void AveragePoolLayer::SpecificSave(std::ofstream& writer)
 {
     int tempFilterSize = filterSize;
     int tempStride = stride;
