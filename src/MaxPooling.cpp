@@ -32,14 +32,20 @@ Matrix* MaxPoolLayer::BackPropagate(const Matrix* delta, const Matrix* previousA
                 {
                     for (int l = 0; l < filterSize; ++l)
                     {
-                        std::cout << m  << "  " << i << "  " << j << "  " << k << "  " << l << "\n";
-                        std::cout << i * stride + k << " : x y : " << j * stride + l << "\n";
-                        std::cout << (*previousActivation)(i * stride + k,j * stride + l) << "\n";
-                        if ((*previousActivation)(i * stride + k,j * stride + l) == (*result)(i,j))
-                            (*newDelta)(i * stride + k,j * stride + l) = (*delta)(i,j);
+                        const int r = i * stride + k;
+                        //if (r >= previousActivation->getRows())
+                        //    continue;
+                        const int c = j * stride + l;
+                        //if (c >= previousActivation->getCols())
+                        //    continue;
+                        //std::cout << m  << "  " << i << "  " << j << "  " << k << "  " << l << "\n";
+                        //std::cout << r << " : x y : " << c << "\n";
+                        //std::cout << (*previousActivation)(r,c) << "\n";
+                        if ((*previousActivation)(r,c) == (*result)(i,j))
+                            (*newDelta)(r,c) = (*delta)(i,j);
                         // Should already be 0
                         //else
-                        //    (*newDelta)(i * stride + k,j * stride + l) = 0.0;
+                        //    (*newDelta)(r,c) = 0.0;
                     }
                 }
             }

@@ -52,7 +52,7 @@ Layer* Layer::Load(std::ifstream& reader)
         }
         case 5:
         {
-            return AveragePooling::Load(reader);
+            return AveragePoolLayer::Load(reader);
             break;
         }
 

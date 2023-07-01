@@ -9,10 +9,10 @@
 #include "Layer.h"
 #include "PoolingLayer.h"
 
-class AveragePooling : protected PoolingLayer
+class AveragePoolLayer : public PoolingLayer
 {
 public:
-    AveragePooling(int filterSize, int stride);
+    AveragePoolLayer(int filterSize, int stride);
 
     static Layer* Load(std::ifstream& reader);
 
