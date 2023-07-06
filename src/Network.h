@@ -3,6 +3,7 @@
 #include "Layer.h"
 #include "Matrix.h"
 #include "Loss.h"
+#include "Optimizers.h"
 
 class Network
 {
@@ -43,8 +44,7 @@ public:
     double TestAccuracy(Matrix** inputs, Matrix** outputs, int dataLength);
 
     //Initialize variable and check for error in the architecture of the model
-    void Compile(Loss* loss);
-    void Compile();
+    void Compile(Opti opti = Opti::Constant,Loss* loss = nullptr);
 
     //Load network from a file
     static Network* Load(std::string filename);

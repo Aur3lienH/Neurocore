@@ -43,6 +43,7 @@ public:
     const int getRows() const;
     const int getCols() const;
     const int getDim() const;
+    const int size() const;
     Matrix* operator+=(const Matrix& other);
     Matrix* operator-=(const Matrix& other);
     Matrix* operator+(const Matrix& other);
