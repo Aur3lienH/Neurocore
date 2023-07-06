@@ -4,6 +4,7 @@
 #include "Tools/Serializer.h"
 #include "Matrix.h"
 #include "LayerShape.h"
+#include "Optimizers.h"
 class Layer
 {
 public:
@@ -17,8 +18,8 @@ public:
     virtual void UpdateWeights(double learningRate, int batchSize) = 0;
     virtual void AddDeltaFrom(Layer* layer) = 0;
 
-
     //Must define the layerShape !
+    void Compile(LayerShape* previousOutput, Opti opti);
     virtual void Compile(LayerShape* previousOutput) = 0;
     virtual const Matrix* getResult() const = 0;
 
@@ -34,5 +35,6 @@ public:
 protected:
     int LayerID;
     LayerShape* layerShape;
+    Optimizer* optimizer;
 };
 

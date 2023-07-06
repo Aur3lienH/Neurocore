@@ -100,8 +100,13 @@ double Network::FeedForward(Matrix* input, Matrix* desiredOutput)
 
 //Prepare all the elements of the network before using it.
 
-void Network::Compile()
+void Network::Compile(Opti opti, Loss* _loss)
 {
+    if(_loss != nullptr)
+    {
+        loss = _loss;
+    }
+
     //Cannot compile a network which has no loss function
     if(loss == nullptr)
     {
@@ -135,12 +140,6 @@ void Network::Compile()
 
     compiled = true;
 
-}
-
-void Network::Compile(Loss* _loss)
-{
-    loss = _loss;
-    Compile();
 }
 
 double Network::BackPropagate(Matrix* input,Matrix* desiredOutput)
@@ -260,7 +259,7 @@ void Network::Learn(int epochs, double learningRate, Matrix** inputs, Matrix** o
     for(int j = 0; j < auxThreadNumber; j++)
     {
         Network* NetworkCopy = new Network(this);
-        NetworkCopy->Compile(loss);
+        NetworkCopy->Compile(Constant,loss);
         auxiliaryNetwork[j] = NetworkCopy;
         ThreadArg* threadArg = new ThreadArg(NetworkCopy, inputsPerThread[j], outputsPerThread[j], mutexes[j], cv, numberPerThread);
         pthread_create(&threads[j], NULL, LearnThread, (void*)threadArg);
@@ -392,7 +391,7 @@ Network* Network::Load(std::string filename)
     {
         network->AddLayer(Layer::Load(reader));
     }
-    network->Compile(loss);
+    network->Compile(Constant, loss);
     reader.close();
     return network;
 }

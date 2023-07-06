@@ -634,6 +634,11 @@ void Matrix::Reshape(int rows, int cols, int dims) const
     matrixSize = rows * cols;
 }
 
+const int Matrix::size() const
+{
+    return matrixSize * dim;
+}
+
 
 Matrix* Matrix::Copy(const Matrix* a)
 {
