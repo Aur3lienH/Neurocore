@@ -35,6 +35,6 @@ public:
 protected:
     int LayerID;
     LayerShape* layerShape;
-    Optimizer* optimizer;
+    Optimizer* optimizer = nullptr;
 };
 

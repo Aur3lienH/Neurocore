@@ -7,6 +7,7 @@
 #include "../ConvLayer.h"
 #include "../Flatten.h"
 #include "../MaxPooling.h"
+#include "../Optimizers.h"
 #include "Tools.h"
 #include <iostream>
 #include <fstream>
@@ -16,7 +17,7 @@
 
 
 
-const std::string MNIST_DATA_PATH = "../datasets/mnist/mnist_train.csv";
+const std::string MNIST_DATA_PATH = "./datasets/mnist/mnist_train.csv";
 
 
 Matrix* LabelToMatrix(int label)
@@ -42,8 +43,20 @@ int MatrixToLabel(const Matrix* matrix)
 }
 
 
-Matrix*** GetDataset(std::string path, int dataLength)
+Matrix*** GetDataset(std::string path, int dataLength, bool format2D)
 {
+    int cols = 0;
+    int rows = 0;
+    if(format2D)
+    {
+        cols = 28;
+        rows = 28;
+    }
+    else
+    {
+        cols = 1;
+        rows = 784;
+    }
 
     std::ifstream file(path);
 
@@ -62,7 +75,7 @@ Matrix*** GetDataset(std::string path, int dataLength)
 
             std::stringstream s(line);
             int i = -1;
-            dataset[0][j] = new Matrix(28, 28);
+            dataset[0][j] = new Matrix(rows, cols);
             
             while (getline(s, value, ','))
             {
@@ -93,7 +106,7 @@ Matrix*** GetDataset(std::string path, int dataLength)
 void Mnist1()
 {
     int dataLength = CSVTools::CsvLength(MNIST_DATA_PATH);
-    Matrix*** data = GetDataset(MNIST_DATA_PATH, dataLength);
+    Matrix*** data = GetDataset(MNIST_DATA_PATH, dataLength, false);
     
     std::cout << "Data length: " << dataLength << std::endl;
 
@@ -101,20 +114,20 @@ void Mnist1()
     {
         data[0][i]->operator*=(1.0/255.0);
     }
+
     
 
     Network* network = new Network();
     network->AddLayer(new InputLayer(784));
-    network->AddLayer(new FCL(16, new ReLU()));
-    network->AddLayer(new FCL(16, new ReLU()));
+    network->AddLayer(new FCL(128, new ReLU()));
     network->AddLayer(new FCL(10, new Softmax()));
 
-    network->Compile(new CrossEntropy());
+    network->Compile(Opti::Adam,new CrossEntropy());
 
     int trainLength = dataLength * 0.8;
     int testLength = dataLength - trainLength;
 
-    network->Learn(100,0.01,data[0], data[1], 24, trainLength, 12);
+    network->Learn(5,0.01,data[0], data[1], 1, trainLength, 1);
 
 
     double accuracy = TestAccuracy(network,data[0] + trainLength,data[1] + trainLength, testLength);
@@ -125,7 +138,7 @@ void Mnist2()
 {
     
     int dataLength = CSVTools::CsvLength(MNIST_DATA_PATH);
-    Matrix*** data = GetDataset(MNIST_DATA_PATH, dataLength);
+    Matrix*** data = GetDataset(MNIST_DATA_PATH, dataLength, true);
     
     std::cout << "Data length: " << dataLength << std::endl;
 
@@ -143,7 +156,7 @@ void Mnist2()
     network->AddLayer(new Flatten());
     network->AddLayer(new FCL(10, new Softmax()));
 
-    network->Compile(new CrossEntropy());
+    network->Compile(Opti::Adam,new CrossEntropy());
 
     network->PrintNetwork();
     

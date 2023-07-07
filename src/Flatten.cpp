@@ -17,7 +17,6 @@ void Flatten::Compile(LayerShape* previous)
 
 const Matrix* Flatten::FeedForward(const Matrix* input)
 {
-    input->PrintSize();
     this->input = input;
     input->Flatten();
     return input;

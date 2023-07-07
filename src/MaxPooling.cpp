@@ -17,10 +17,6 @@ Matrix* MaxPoolLayer::BackPropagate(const Matrix* delta, const Matrix* previousA
 {
     // The idea is that if an element is the maximum than maxPool has selected, then the delta is
     // the same as the previous delta, because the current element is the only one affecting the result.
-    previousActivation->PrintSize();
-    result->PrintSize();
-    newDelta->PrintSize();
-    delta->PrintSize();
 
     for (int m = 0; m < layerShape->dimensions[2]; m++)
     {

@@ -6,7 +6,8 @@ Matrix* LabelToMatrix(int label);
 
 int MatrixToLabel(const Matrix* matrix);
 
-Matrix*** GetDataset(std::string path,int dataLength);
+Matrix*** GetDataset(std::string path,int dataLength, bool format2D = false);
+
 
 void Mnist1();
 void Mnist2();
