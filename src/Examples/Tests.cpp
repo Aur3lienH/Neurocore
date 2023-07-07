@@ -62,7 +62,7 @@ bool Tests::BasicNetwork1()
     network.AddLayer(new InputLayer(2));
     network.AddLayer(new FCL(5, new Sigmoid()));
     network.AddLayer(new FCL(2, new Sigmoid()));
-    network.Compile(new MSE());
+    network.Compile(Opti::Adam,new MSE());
 
 
     Matrix** input = new Matrix*[2];
@@ -131,7 +131,7 @@ bool Tests::CNNNetwork1()
     network.AddLayer(new InputLayer(3,3,1));
     network.AddLayer(new ConvLayer(new LayerShape(2,2,1),new ReLU()));
 
-    network.Compile(new MSE());
+    network.Compile(Opti::Adam,new MSE());
 
 
     Matrix* input1 = new Matrix(3,3,5);
@@ -175,7 +175,7 @@ bool Tests::CNNSaveTest()
     network->AddLayer(new Flatten());
     network->AddLayer(new FCL(10, new Softmax()));
 
-    network->Compile(new CrossEntropy());
+    network->Compile(Opti::Adam,new CrossEntropy());
     network->Save("test.net");
 
     Network* secondNetwork = Network::Load("test.net");

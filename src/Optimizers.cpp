@@ -13,7 +13,7 @@ void Constant::Compile(int size)
 
 }
 
-void Constant::Compute(Matrix* gradient, Matrix* parameters)
+void Constant::Compute(Matrix* gradient, Matrix* parameters, int offset)
 {
     for (int i = 0; i < gradient->size(); i++)
     {
@@ -43,21 +43,28 @@ void Adam::Compile(int size)
 }
 
 
-void Adam::Compute(Matrix* _gradient, Matrix* parameters)
+void Adam::Compute(Matrix* _gradient, Matrix* parameters, int offset)
 {
+    double* _momentum1 = momentum1 + offset;
+    double* _momentum2 = momentum2 + offset;
+    
+    double* _biasCorrectedMomentum1 = biasCorrectedMomentum1 + offset;
+    double* _biasCorrectedMomentum2 = biasCorrectedMomentum2 + offset;
+
+
     for (int i = 0; i < _gradient->size(); i++)
     {
         double gradient = (*_gradient)[i];
-        momentum1[i] = beta1 * momentum1[i] + (1 - beta1) * gradient;
-        momentum2[i] = beta2 * momentum2[i] + (1 - beta2) * gradient * gradient;
+        _momentum1[i] = beta1 * _momentum1[i] + (1 - beta1) * gradient;
+        _momentum2[i] = beta2 * _momentum2[i] + (1 - beta2) * gradient * gradient;
 
-        biasCorrectedMomentum1[i] = momentum1[i] / (1 - adjBeta1);
-        biasCorrectedMomentum2[i] = momentum2[i] / (1 - adjBeta2);
+        _biasCorrectedMomentum1[i] = _momentum1[i] / (1 - adjBeta1);
+        _biasCorrectedMomentum2[i] = _momentum2[i] / (1 - adjBeta2);
 
-        (*parameters)[i] = (*parameters)[i] - alpha * biasCorrectedMomentum1[i] / (sqrt(biasCorrectedMomentum2[i]) + gamma);
+        (*parameters)[i] = (*parameters)[i] - alpha * _biasCorrectedMomentum1[i] / (sqrt(_biasCorrectedMomentum2[i]) + gamma);
     }
 
     adjBeta1 *= beta1;
-    adjBeta1 *= beta2;
+    adjBeta2 *= beta2;
     
 }

@@ -5,7 +5,7 @@
 #include "ConvLayer.h"
 #include "InitFunc.h"
 #include "LayerShape.h"
-
+#include "Optimizers.h"
 
 ConvLayer::ConvLayer(LayerShape* _filterShape, Activation* activation)
 {
@@ -67,6 +67,8 @@ void ConvLayer::Compile(LayerShape* previousLayer)
     previousDeltaMultiplied = result->Copy();
     activationDelta = result->Copy();
 
+    optimizer->Compile(filters->size());
+
 
 }
 
@@ -123,8 +125,7 @@ Matrix* ConvLayer::BackPropagate(const Matrix* lastDelta,const Matrix* pastActiv
 
 void ConvLayer::UpdateWeights(double learningRate, int batchSize)
 {
-    delta->MultiplyAllDims(learningRate/batchSize);
-    filters->SubstractAllDims(delta,filters);
+    optimizer->Compute(delta,filters);
 }
 
 

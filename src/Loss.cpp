@@ -65,7 +65,7 @@ double CrossEntropy::Cost(const Matrix* output, const Matrix* target)
     double cost = 0;
     for (int i = 0; i < output->getRows() * output->getCols(); i++)
     {
-        cost += target[0][i] * log(output[0][i]) + (1 - target[0][i]) * log(1 - output[0][i]);
+        cost += target[0][i] * log(output[0][i] + 1e-15) + (1 - target[0][i]) * log(1 - output[0][i] + 1e-15);
     }
     return -cost / output->getRows();
 }

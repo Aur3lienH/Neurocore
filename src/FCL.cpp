@@ -34,8 +34,6 @@ void FCL::ClearDelta()
 
 Matrix* FCL::FeedForward(const Matrix* input) 
 {
-    input->PrintSize();
-    Weights->PrintSize();
     this->Weights->CrossProduct(input, Result);
     Result->Add(Biases, z);
     activation->FeedForward(z, Result);
@@ -66,6 +64,8 @@ void FCL::Compile(LayerShape* previousLayer)
     newDelta = new Matrix(previousNeuronsCount, 1);
 
     layerShape = new LayerShape(NeuronsCount);
+
+    optimizer->Compile(NeuronsCount * previousNeuronsCount + NeuronsCount);
 }
 
 const Matrix* FCL::BackPropagate(const Matrix* lastDelta, const Matrix* PastActivation)
@@ -91,16 +91,8 @@ const Matrix* FCL::BackPropagate(const Matrix* lastDelta, const Matrix* PastActi
 
 void FCL::UpdateWeights(double learningRate, int batchSize)
 {
-    // Can be optimized by adding all the deltas in the main thread and then updating the weights
-    double coef = learningRate / batchSize;    
-    for (int i = 0; i < Weights->getCols() * Weights->getRows(); i++)
-    {
-        Weights[0][i] -= Delta[0][i] * coef;
-    }
-    for (int i = 0; i < Biases->getCols() * Biases->getRows(); i++)
-    {
-       Biases[0][i] -= DeltaBiases[0][i] * coef;
-    }
+    optimizer->Compute(Delta,Weights);
+    optimizer->Compute(DeltaBiases,Biases,Weights->size());
     
     Delta->Zero();
     DeltaBiases->Zero();

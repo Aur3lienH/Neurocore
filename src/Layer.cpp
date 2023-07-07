@@ -7,7 +7,6 @@
 #include "MaxPooling.h"
 #include "AveragePooling.h"
 #include "Flatten.h"
-#include "Optimizers.h"
 
 
 Layer::Layer()
@@ -17,12 +16,9 @@ Layer::Layer()
 
 void Layer::Compile(LayerShape* previousLayer, Opti opti)
 {
-    Compile(previousLayer);
-    optimizer = new Constant();
     switch (opti)
     {
     case Opti::Constant :
-
         optimizer = new Constant();
         break;
     case Opti::Adam :
@@ -32,6 +28,8 @@ void Layer::Compile(LayerShape* previousLayer, Opti opti)
         throw std::invalid_argument("Layer Constructor : Invalid Optimizer ! ");
         break;
     }
+    
+    Compile(previousLayer);
 }
 
 LayerShape* Layer::GetLayerShape()

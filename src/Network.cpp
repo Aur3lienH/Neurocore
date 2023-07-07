@@ -91,7 +91,6 @@ double Network::FeedForward(Matrix* input, Matrix* desiredOutput)
     for (int i = 0; i < layersCount; i++)
     {
         output = Layers[i]->FeedForward(output);
-        std::cout << i << " i \n";
     }
 
     return loss->Cost(output,desiredOutput);
@@ -122,9 +121,9 @@ void Network::Compile(Opti opti, Loss* _loss)
     for (int i = 0; i < layersCount; i++)
     {
         if(i == 0)
-            Layers[i]->Compile(nullptr);
+            Layers[i]->Compile(nullptr,opti);
         else
-            Layers[i]->Compile(Layers[i - 1]->GetLayerShape());
+            Layers[i]->Compile(Layers[i - 1]->GetLayerShape(),opti);
     }
 
     //Initialize the matrix which holds the values of the cost derivative.
@@ -259,7 +258,7 @@ void Network::Learn(int epochs, double learningRate, Matrix** inputs, Matrix** o
     for(int j = 0; j < auxThreadNumber; j++)
     {
         Network* NetworkCopy = new Network(this);
-        NetworkCopy->Compile(Constant,loss);
+        NetworkCopy->Compile(Opti::Constant,loss);
         auxiliaryNetwork[j] = NetworkCopy;
         ThreadArg* threadArg = new ThreadArg(NetworkCopy, inputsPerThread[j], outputsPerThread[j], mutexes[j], cv, numberPerThread);
         pthread_create(&threads[j], NULL, LearnThread, (void*)threadArg);
@@ -391,7 +390,7 @@ Network* Network::Load(std::string filename)
     {
         network->AddLayer(Layer::Load(reader));
     }
-    network->Compile(Constant, loss);
+    network->Compile(Opti::Constant, loss);
     reader.close();
     return network;
 }
