@@ -62,7 +62,7 @@ std::string InputLayer::getLayerTitle()
 {
     std::string buf = "";
     buf += "InputLayer" + '\n';
-    //buf += "InputSize: " + std::to_string(inputSize) + "\n";
+    buf += layerShape->GetDimensions() + "\n";
     return buf;
 }
 

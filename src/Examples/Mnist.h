@@ -14,4 +14,4 @@ void Mnist2();
 
 double TestAccuracy(Network* network, Matrix** inputs, Matrix** outputs, int dataLength);
 
-void LoadAndTest(std::string filename);
+void LoadAndTest(std::string filename, bool is2D = false);

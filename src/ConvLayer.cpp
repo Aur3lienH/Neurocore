@@ -75,7 +75,7 @@ void ConvLayer::Compile(LayerShape* previousLayer)
 Matrix* ConvLayer::FeedForward(const Matrix* input)
 {
     result->Reshape(layerShape->dimensions[0],layerShape->dimensions[1],layerShape->dimensions[2]);
-    for (uint i = 0; i < preivousDimCount; i++)
+    for (uint j = 0; j < preivousDimCount; j++)
     {
         for (int i = 0; i < filterCount; i++)
         {
@@ -140,6 +140,7 @@ std::string ConvLayer::getLayerTitle()
     buf += "Convolutional layer\n";
     buf += "Filter count per channel : " + std::to_string(filterShape->dimensions[2]) + "\n";
     buf += "Feature map count : " + std::to_string(layerShape->dimensions[2]) + "\n";
+    buf += "Output size : " + layerShape->GetDimensions() + "\n";
     return buf;
 }
 

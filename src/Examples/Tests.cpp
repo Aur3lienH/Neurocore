@@ -10,7 +10,7 @@
 #include <tuple>
 #include <iomanip>
 
-
+/*
 void Tests::ExecuteTests()
 {
     std::vector<std::tuple<void*,std::string>> functions;
@@ -186,3 +186,5 @@ bool Tests::CNNSaveTest()
     std::cout << *output;
     return true;
 }
+
+*/

@@ -61,9 +61,7 @@ Matrix*** GetDataset(std::string path, int dataLength, bool format2D)
     std::ifstream file(path);
 
 
-    Matrix*** dataset = new Matrix**[2];
-    dataset[0] = new Matrix*[dataLength];
-    dataset[1] = new Matrix*[dataLength];
+    Matrix*** dataset = new Matrix**[dataLength];
 
     std::string line;
     std::string value;
@@ -72,21 +70,22 @@ Matrix*** GetDataset(std::string path, int dataLength, bool format2D)
         int j = 0;
         while(getline(file, line))
         {
+            dataset[j] = new Matrix*[2];
 
             std::stringstream s(line);
             int i = -1;
-            dataset[0][j] = new Matrix(rows, cols);
+            dataset[j][0] = new Matrix(rows, cols);
             
             while (getline(s, value, ','))
             {
 
                 if(i == -1)
                 {
-                    dataset[1][j] = LabelToMatrix(std::stoi(value));
+                    dataset[j][1] = LabelToMatrix(std::stoi(value));
                 }
                 else
                 {
-                    dataset[0][j][0][i] = std::stod(value);
+                    dataset[j][0][0][i] = std::stod(value);
                 }
                 i++;
             }
@@ -105,6 +104,7 @@ Matrix*** GetDataset(std::string path, int dataLength, bool format2D)
 
 void Mnist1()
 {
+    std::cout << "mnist 1\n";
     int dataLength = CSVTools::CsvLength(MNIST_DATA_PATH);
     Matrix*** data = GetDataset(MNIST_DATA_PATH, dataLength, false);
     
@@ -112,7 +112,7 @@ void Mnist1()
 
     for (int i = 0; i < dataLength; i++)
     {
-        data[0][i]->operator*=(1.0/255.0);
+        data[i][0]->operator*=(1.0/255.0);
     }
 
     
@@ -121,13 +121,12 @@ void Mnist1()
     network->AddLayer(new InputLayer(784));
     network->AddLayer(new FCL(128, new ReLU()));
     network->AddLayer(new FCL(10, new Softmax()));
-
+    std::cout << "before compiling !\n";
     network->Compile(Opti::Adam,new CrossEntropy());
 
     int trainLength = dataLength * 0.8;
     int testLength = dataLength - trainLength;
-
-    network->Learn(5,0.01,data[0], data[1], 1, trainLength, 1);
+    network->Learn(5,0.01,new DataLoader(data,1,trainLength), 1,1);
 
 
     double accuracy = TestAccuracy(network,data[0] + trainLength,data[1] + trainLength, testLength);
@@ -151,7 +150,9 @@ void Mnist2()
 
     Network* network = new Network();
     network->AddLayer(new InputLayer(28,28,1));
-    network->AddLayer(new ConvLayer(new LayerShape(3,3,32),new ReLU()));
+    network->AddLayer(new ConvLayer(new LayerShape(5,5,32),new ReLU()));
+    network->AddLayer(new MaxPoolLayer(2,2));   
+    network->AddLayer(new ConvLayer(new LayerShape(5,5,16),new ReLU()));
     network->AddLayer(new MaxPoolLayer(2,2));
     network->AddLayer(new Flatten());
     network->AddLayer(new FCL(10, new Softmax()));
@@ -163,13 +164,18 @@ void Mnist2()
     int trainLength = dataLength * 0.8;
     int testLength = dataLength - trainLength;
 
-    network->Learn(3,0.1,data[0],data[1],1,trainLength,1);
+    network->Learn(3,0.1,new DataLoader(data,30,trainLength),1,1);
 
     network->Save("./Models/MNIST_11.net");
 
 
-    double accuracy = TestAccuracy(network,data[0] + trainLength,data[1] + trainLength, 1000);
-    std::cout << "Accurcy : " << accuracy * 100 << "% \n";
+    double trainingAccuracy = TestAccuracy(network,data[0],data[1], 1000);
+
+    std::cout << "Training Accuracy : " << trainingAccuracy * 100 << "% \n";
+
+
+    double testingAccuracy = TestAccuracy(network,data[0] + trainLength,data[1] + trainLength, 1000);
+    std::cout << "Testing Accuracy : " << testingAccuracy * 100 << "% \n";
 }
 
 
@@ -188,7 +194,7 @@ double TestAccuracy(Network* network, Matrix** inputs, Matrix** ouputs, int data
     return (double)correct/(double)dataLength;
 }
 
-void LoadAndTest(std::string filename)
+void LoadAndTest(std::string filename, bool is2D)
 {
     Network* network = Network::Load(filename);
 
@@ -197,12 +203,17 @@ void LoadAndTest(std::string filename)
     network->PrintNetwork();
 
     int dataLength = CSVTools::CsvLength(MNIST_DATA_PATH);
-    Matrix*** data = GetDataset(MNIST_DATA_PATH, dataLength);
+    Matrix*** data = GetDataset(MNIST_DATA_PATH, dataLength,is2D);
 
     int trainLength = dataLength * 0.8;
     int testLength = dataLength - trainLength;
 
-    double accuracy = TestAccuracy(network,data[0] + trainLength,data[1] + trainLength, testLength);
-    std::cout << "Accurcy : " << accuracy * 100 << "% \n";
+    
+    double trainingAccuracy = TestAccuracy(network,data[0],data[1], 1000);
+    std::cout << "Training Accuracy : " << trainingAccuracy * 100 << "% \n";
+
+
+    double testingAccuracy = TestAccuracy(network,data[0] + trainLength,data[1] + trainLength, 1000);
+    std::cout << "Testing Accuracy : " << testingAccuracy * 100 << "% \n";
 }
 

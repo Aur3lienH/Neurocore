@@ -34,6 +34,7 @@ void FCL::ClearDelta()
 
 Matrix* FCL::FeedForward(const Matrix* input) 
 {
+    input->Flatten();
     this->Weights->CrossProduct(input, Result);
     Result->Add(Biases, z);
     activation->FeedForward(z, Result);

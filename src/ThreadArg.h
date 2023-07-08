@@ -8,11 +8,11 @@
 class ThreadArg
 {
 public:
-    ThreadArg(Network* network, Matrix*** inputs, Matrix*** outputs, std::mutex* mutex, std::condition_variable* cv, int dataLength);
+    ThreadArg(Network* network, Matrix*** data, std::mutex* mutex, std::condition_variable* cv, int batchSize, int numberOfBatch);
     Network* network;
-    Matrix*** inputs;
-    Matrix*** outputs;
+    Matrix*** data;
     std::condition_variable* cv;
+    int batchSize;
+    int numberOfBatch;
     std::mutex* mutex;
-    int dataLength;
 };

@@ -9,6 +9,7 @@ MaxPoolLayer::MaxPoolLayer(int filterSize, int stride) : PoolingLayer(filterSize
 
 const Matrix* MaxPoolLayer::FeedForward(const Matrix* input)
 {
+    result->Reshape(layerShape->dimensions[0],layerShape->dimensions[1],layerShape->dimensions[2]);
     Matrix::MaxPool(input, result, filterSize, stride);
     return result;
 }
@@ -69,7 +70,7 @@ std::string MaxPoolLayer::getLayerTitle()
     buf += "MaxPool Layer\n";
     buf += "Size: " + std::to_string(filterSize) + "\n";
     buf += "Stride: " + std::to_string(stride) + "\n";
-
+    buf += "Output : " + layerShape->GetDimensions() + "\n";
     return buf;
 }
 
@@ -83,7 +84,7 @@ Layer* MaxPoolLayer::Load(std::ifstream& reader)
     int _filterSize;
     int _tempStride;
     reader.read(reinterpret_cast<char*>(&_filterSize),sizeof(int));
-    reader.read(reinterpret_cast<char*>(_tempStride),sizeof(int));
+    reader.read(reinterpret_cast<char*>(&_tempStride),sizeof(int));
     return new MaxPoolLayer(_filterSize,_tempStride);
 }
 
