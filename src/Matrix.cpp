@@ -571,6 +571,7 @@ void Matrix::Convolution(const Matrix* input, const Matrix* filter, Matrix* outp
 
     if(outputCols != output->cols || output->rows != outputRows)
     {
+        std::cout << outputRows << "\n";
         throw std::invalid_argument("Convolution : output matrix has not the right shape !");
     }
 #endif

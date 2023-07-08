@@ -13,5 +13,6 @@
 
 int main()
 {
-    Mnist2();
+    Mnist1();
+    //LoadAndTest("./Models/MNIST_11.net",true);
 }

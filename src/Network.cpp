@@ -3,6 +3,7 @@
 #include "Loss.h"
 #include "ThreadArg.h"
 #include "Tools/ProgressBar.h"
+#include "DataLoader.h"
 #include <fstream>
 #include <unistd.h>
 #include <pthread.h>
@@ -10,6 +11,7 @@
 #include <math.h>
 #include <mutex>
 #include <condition_variable>
+
 
 
 Network::Network()
@@ -32,13 +34,18 @@ void* Network::LearnThread(void* args)
     ThreadArg* threadArg = (ThreadArg*)args;
     while (true)
     {
-        std::unique_lock<std::mutex> lock(*threadArg->mutex);
-        threadArg->cv->wait(lock);
-        threadArg->network->ClearDelta();
-        for(int i = 0; i < threadArg->dataLength;i++)
+        for (int j = 0; j < threadArg->numberOfBatch; j++)
         {
-            threadArg->network->BackPropagate((*threadArg->inputs)[i], (*threadArg->outputs)[i]);
+            std::unique_lock<std::mutex> lock(*threadArg->mutex);
+            threadArg->cv->wait(lock);
+            threadArg->network->ClearDelta();
+            for(int i = 0; i < threadArg->batchSize;i++)
+            {
+                int dataIndex = j * threadArg->batchSize + i;
+                threadArg->network->BackPropagate(threadArg->data[dataIndex][0], threadArg->data[dataIndex][1]);
+            }
         }
+        
         // Wait for the main thread to signal
     }
 }
@@ -92,15 +99,16 @@ double Network::FeedForward(Matrix* input, Matrix* desiredOutput)
     {
         output = Layers[i]->FeedForward(output);
     }
-
     return loss->Cost(output,desiredOutput);
 }
 
 
 //Prepare all the elements of the network before using it.
 
-void Network::Compile(Opti opti, Loss* _loss)
+void Network::Compile(Opti _opti, Loss* _loss)
 {
+    opti = _opti;
+
     if(_loss != nullptr)
     {
         loss = _loss;
@@ -181,7 +189,7 @@ void Network::Learn(int epochs, double learningRate, Matrix** inputs, Matrix** o
     
 }
 
-void Network::Learn(int epochs, double learningRate, Matrix** inputs, Matrix** outputs, int batchSize,int dataLength, int threadNumber)
+void Network::Learn(int epochs, double learningRate,DataLoader* dataLoader ,int batchSize, int threadNumber)
 {   
     //Check if the network is compiled
     if(!compiled)
@@ -196,7 +204,7 @@ void Network::Learn(int epochs, double learningRate, Matrix** inputs, Matrix** o
     }
 
     //Initializing the progress bar
-    Tools::TrainBar Bar = Tools::TrainBar(epochs * dataLength);
+    Tools::TrainBar Bar = Tools::TrainBar(epochs);
 
     //Position in the dataset
     int pos = 0;
@@ -230,7 +238,7 @@ void Network::Learn(int epochs, double learningRate, Matrix** inputs, Matrix** o
     int numberPerThread = batchSize / threadNumber;
 
     //Number of batch per epochs
-    int numberOfBatches = dataLength / batchSize;
+    int numberOfBatches = numberPerThread / batchSize;
 
     int rest;
     if(auxThreadNumber != 0)
@@ -243,24 +251,15 @@ void Network::Learn(int epochs, double learningRate, Matrix** inputs, Matrix** o
     }
     double globalLoss = 0;
 
-    //Pointer to the dataset
-    Matrix**** inputsPerThread = new Matrix***[threadNumber];
-    Matrix**** outputsPerThread = new Matrix***[threadNumber];
-
-    for (int i = 0; i < threadNumber; i++)
-    {
-        inputsPerThread[i] = new Matrix**[1];
-        outputsPerThread[i] = new Matrix**[1];
-    }
     
-
+    
     //Creating all the auxiliary threads and networks
     for(int j = 0; j < auxThreadNumber; j++)
     {
         Network* NetworkCopy = new Network(this);
-        NetworkCopy->Compile(Opti::Constant,loss);
+        NetworkCopy->Compile(opti,loss);
         auxiliaryNetwork[j] = NetworkCopy;
-        ThreadArg* threadArg = new ThreadArg(NetworkCopy, inputsPerThread[j], outputsPerThread[j], mutexes[j], cv, numberPerThread);
+        ThreadArg* threadArg = new ThreadArg(NetworkCopy, dataLoader->data + j * numberPerThread, mutexes[j], cv,batchSize,numberOfBatches);
         pthread_create(&threads[j], NULL, LearnThread, (void*)threadArg);
 
     }
@@ -276,27 +275,17 @@ void Network::Learn(int epochs, double learningRate, Matrix** inputs, Matrix** o
         for (int k = 0; k < numberOfBatches; k++)
         {
 
-
-            for (int j = 0; j < threadNumber; j++)
-            {
-                inputsPerThread[j][0] = inputs + pos;
-                outputsPerThread[j][0] = outputs + pos;
-                pos += numberPerThread;
-                if(pos >= dataLength)
-                {
-                    pos = 0;
-                }
-            }
-
             //Notify all threads to start the training
             cv->notify_all();
 
             //Clear Delta
             ClearDelta();
+            std::cout << "before backprop \n";
             for (int i = 0; i < numberPerThread; i++)
             {
+                int index = auxThreadNumber * numberPerThread;
                 //Backpropagate in the main thread
-                globalLoss += BackPropagate(inputsPerThread[threadNumber -1][0][i], outputsPerThread[threadNumber - 1][0][i]);
+                globalLoss += BackPropagate(dataLoader->data[index + i][0],dataLoader->data[index + i][1]);
             }
             
             
@@ -324,7 +313,7 @@ void Network::Learn(int epochs, double learningRate, Matrix** inputs, Matrix** o
             }
 
             //Update the progress bar
-            Bar.ChangeProgress(e*dataLength + pos, globalLoss / (k+1));
+            Bar.ChangeProgress(e, globalLoss / (k+1));
         }
     }
     std::cout << "Learning finished" << std::endl;

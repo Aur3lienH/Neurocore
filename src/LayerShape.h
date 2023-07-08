@@ -1,4 +1,5 @@
 #include "Matrix.h"
+#include "iostream"
 #pragma once
 
 class LayerShape
@@ -25,4 +26,6 @@ public:
     static LayerShape* Load(std::ifstream& reader);
 
     void Save(std::ofstream& save);
+
+    std::string GetDimensions();
 };

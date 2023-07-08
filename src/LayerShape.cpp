@@ -1,7 +1,7 @@
 #include "LayerShape.h"
 #include "Matrix.h"
 #include "Layer.h"
-
+#include "iostream"
 
 LayerShape::LayerShape(int neuronsCount)
 {
@@ -58,4 +58,10 @@ void LayerShape::Save(std::ofstream& writer)
     writer.write(reinterpret_cast<char*>(dimensions+1),sizeof(int));
     writer.write(reinterpret_cast<char*>(dimensions+2),sizeof(int));
     writer.write(reinterpret_cast<char*>(&size),sizeof(int));
+}
+
+
+std::string LayerShape::GetDimensions()
+{
+    return  "(" + std::to_string(dimensions[0]) + "," + std::to_string(dimensions[1]) + "," +  std::to_string(dimensions[2]) + ")";
 }

@@ -1,5 +1,6 @@
 #pragma once
 
+/*
 class Tests
 {
 public:
@@ -9,3 +10,5 @@ public:
     static bool CNNNetwork1();
     static bool CNNSaveTest();
 };
+
+*/

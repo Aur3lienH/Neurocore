@@ -1,11 +1,12 @@
 #include "ThreadArg.h"
 
-ThreadArg::ThreadArg(Network* network, Matrix*** inputs, Matrix*** outputs, std::mutex* mutex, std::condition_variable* cv, int dataLength)
+ThreadArg::ThreadArg(Network* network, Matrix*** data, std::mutex* mutex, std::condition_variable* cv, int batchSize, int numberOfBatch)
 {
     this->network = network;
-    this->inputs = inputs;
-    this->outputs = outputs;
+    this->data = data;
     this->mutex = mutex;
     this->cv = cv;
-    this->dataLength = dataLength;
+    this->batchSize = batchSize;
+    this->numberOfBatch = numberOfBatch;
+
 }

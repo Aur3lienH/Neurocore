@@ -4,6 +4,8 @@
 #include "Matrix.h"
 #include "Loss.h"
 #include "Optimizers.h"
+#include "DataLoader.h"
+#include <mutex>
 
 class Network
 {
@@ -26,7 +28,7 @@ public:
     /// @param batchSize The number of turn before updating weights
     /// @param dataLength The size of the dataset
     /// @param threadNumber The number of thread used to train the model
-    void Learn(int epochs, double learningRate, Matrix** inputs, Matrix** outputs, int batchSize,int dataLength, int threadNumber);
+    void Learn(int epochs, double learningRate, DataLoader* dataLoader, int batchSize, int threadNumber);
     void Learn(int epochs, double learningRate, Matrix** inputs, Matrix** outputs, int dataLength);
 
     //Clear all delta from all layers (partial derivative)
@@ -76,5 +78,7 @@ private:
 
     //The partial derivative of the cost
     Matrix* costDerivative;
+
+    Opti opti;
 };
 
