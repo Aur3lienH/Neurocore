@@ -187,6 +187,18 @@ void Matrix::MultiplyAllDims(double value)
     }
 }
 
+
+void Matrix::DivideAllDims(double value)
+{
+    int size = this->rows * this->cols * this->dim;
+    
+    for (int i = 0; i < size; i++)
+    {
+        this->data[i] *= value;
+    }
+    
+}
+
 void Matrix::Zero()
 {
     for (int i = 0; i < this->rows * this->cols; i++)
@@ -684,8 +696,8 @@ void Matrix::MaxPool(const Matrix* a, Matrix* output, const int filterSize, cons
     }
     a->ResetOffset();
     output->ResetOffset();
-
 }
+
 
 Matrix Matrix::Random(int rows, int cols)
 {

@@ -128,6 +128,7 @@ void Network::Compile(Opti _opti, Loss* _loss)
     //Compile each layer
     for (int i = 0; i < layersCount; i++)
     {
+        std::cout << i << "\n";
         if(i == 0)
             Layers[i]->Compile(nullptr,opti);
         else
@@ -264,7 +265,7 @@ void Network::Learn(int epochs, double learningRate,DataLoader* dataLoader ,int 
 
     }
 
-
+    std::cout << "learning starting ! \n";
 
     for (int e = 0; e < epochs; e++)
     {
@@ -278,12 +279,12 @@ void Network::Learn(int epochs, double learningRate,DataLoader* dataLoader ,int 
             //Notify all threads to start the training
             cv->notify_all();
 
-            //Clear Delta
+            //Clear Deltatd::cout << "epochs : " << e << " numberOfbatches : " << k << " index : " << index << "  \n";
             ClearDelta();
-            std::cout << "before backprop \n";
             for (int i = 0; i < numberPerThread; i++)
-            {
-                int index = auxThreadNumber * numberPerThread;
+            {   
+                int index = auxThreadNumber * numberPerThread + k * numberPerThread;
+
                 //Backpropagate in the main thread
                 globalLoss += BackPropagate(dataLoader->data[index + i][0],dataLoader->data[index + i][1]);
             }
@@ -301,8 +302,10 @@ void Network::Learn(int epochs, double learningRate,DataLoader* dataLoader ,int 
             {
                 for (int j = 0; j < auxThreadNumber; j++)
                 {
+                    auxiliaryNetwork[j]->Layers[i]->AverageGradients(batchSize);
                     Layers[i]->AddDeltaFrom(auxiliaryNetwork[j]->Layers[i]);
                 }
+                Layers[i]->AverageGradients(threadNumber);
                 Layers[i]->UpdateWeights(learningRate, batchSize);
             }
 
@@ -315,6 +318,8 @@ void Network::Learn(int epochs, double learningRate,DataLoader* dataLoader ,int 
             //Update the progress bar
             Bar.ChangeProgress(e, globalLoss / (k+1));
         }
+
+        dataLoader->Shuffle();
     }
     std::cout << "Learning finished" << std::endl;
     

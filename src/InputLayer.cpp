@@ -68,6 +68,10 @@ std::string InputLayer::getLayerTitle()
 
 Layer* InputLayer::Clone()
 {
+    if(layerShape->size == 1)
+    {
+        return new InputLayer(layerShape->dimensions[0]);
+    }
     return new InputLayer(new LayerShape(layerShape->dimensions[0],layerShape->dimensions[1],layerShape->dimensions[2]));
 }
 
@@ -81,4 +85,9 @@ InputLayer* InputLayer::Load(std::ifstream& reader)
 void InputLayer::SpecificSave(std::ofstream& writer) 
 {
     layerShape->Save(writer);
+}
+
+void InputLayer::AverageGradients(int batchSize)
+{
+
 }

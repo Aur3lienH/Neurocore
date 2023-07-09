@@ -17,6 +17,7 @@ public:
     
     virtual void UpdateWeights(double learningRate, int batchSize) = 0;
     virtual void AddDeltaFrom(Layer* layer) = 0;
+    virtual void AverageGradients(int batchSize) = 0;
 
     //Must define the layerShape !
     void Compile(LayerShape* previousOutput, Opti opti);

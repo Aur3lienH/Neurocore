@@ -38,3 +38,8 @@ void PoolingLayer::SpecificSave(std::ofstream& writer)
     writer.write((char*)&filterSize, sizeof(int));
     writer.write((char*)&stride, sizeof(int));
 }
+
+void PoolingLayer::AverageGradients(int batchSize)
+{
+    
+}

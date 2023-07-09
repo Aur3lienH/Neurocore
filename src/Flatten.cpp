@@ -79,3 +79,7 @@ const Matrix* Flatten::getResult() const
     return input;
 }
 
+void Flatten::AverageGradients(int batchSize)
+{
+    
+}

@@ -56,6 +56,7 @@ void ConvLayer::Compile(LayerShape* previousLayer)
 
     nextLayerDelta = new Matrix(previousLayer->dimensions[0],previousLayer->dimensions[1],previousLayer->dimensions[2]);
     delta = filters->Copy();
+    preDelta = filters->Copy();
 
 
     layerShape = new LayerShape(previousLayer->dimensions[0] - filters->getRows() + 1,previousLayer->dimensions[1] - filters->getCols() + 1, size);
@@ -106,7 +107,8 @@ Matrix* ConvLayer::BackPropagate(const Matrix* lastDelta,const Matrix* pastActiv
         {
             Matrix::Flip180(filters,rotatedFilter);
             Matrix::FullConvolution(rotatedFilter,previousDeltaMultiplied,nextLayerDelta);
-            Matrix::Convolution(pastActivation,previousDeltaMultiplied,delta);
+            Matrix::Convolution(pastActivation,previousDeltaMultiplied,preDelta);
+            delta->AddAllDims(preDelta,delta);
             filters->GoToNextMatrix();
             rotatedFilter->GoToNextMatrix();
             previousDeltaMultiplied->GoToNextMatrix();
@@ -179,4 +181,9 @@ Layer* ConvLayer::Load(std::ifstream& reader)
 Layer* ConvLayer::Clone()
 {
     return new ConvLayer(this->filters->Copy(), new LayerShape(layerShape->dimensions[0],layerShape->dimensions[1],layerShape->dimensions[2]),activation);
+}
+
+void ConvLayer::AverageGradients(int batchSize)
+{
+    delta->DivideAllDims(batchSize);
 }
