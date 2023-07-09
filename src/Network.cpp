@@ -238,7 +238,7 @@ void Network::Learn(int epochs, double learningRate,DataLoader* dataLoader ,int 
     int numberPerThread = batchSize / threadNumber;
 
     //Number of batch per epochs
-    int numberOfBatches = numberPerThread / batchSize;
+    int numberOfBatches = dataLoader->dataLength / batchSize;
 
     int rest;
     if(auxThreadNumber != 0)
