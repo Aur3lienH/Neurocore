@@ -13,6 +13,8 @@ public:
 
     const Matrix* FeedForward(const Matrix* input);
     const Matrix* BackPropagate(const Matrix* delta, const Matrix* lastWeigths);
+
+    void AverageGradients(int batchSize);
     void ClearDelta();
     void UpdateWeights(double learningRate, int batchSize);
     void AddDeltaFrom(Layer* otherLayer);

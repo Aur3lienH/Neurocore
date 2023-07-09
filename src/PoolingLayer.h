@@ -18,6 +18,8 @@ public:
 
     void SpecificSave(std::ofstream& writer) override;
 
+    void AverageGradients(int batchSize) override;
+
 
 protected:
     const int filterSize, stride;

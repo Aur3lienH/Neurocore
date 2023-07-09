@@ -123,14 +123,17 @@ void Mnist1()
     network->AddLayer(new FCL(10, new Softmax()));
     std::cout << "before compiling !\n";
     network->Compile(Opti::Adam,new CrossEntropy());
-
+    std::cout << "compiled ! \n";
     int trainLength = dataLength * 0.8;
     int testLength = dataLength - trainLength;
-    network->Learn(5,0.01,new DataLoader(data,1,trainLength), 1,1);
+    network->Learn(20,0.01,new DataLoader(data,1,trainLength), 64,2);
+
+    double trainingAccuracy = TestAccuracy(network,data, 1000);
+    std::cout << "Training Accuracy : " << trainingAccuracy * 100 << "% \n";
 
 
-    double accuracy = TestAccuracy(network,data[0] + trainLength,data[1] + trainLength, testLength);
-    std::cout << "Accurcy : " << accuracy * 100 << "% \n";
+    double testingAccuracy = TestAccuracy(network,data + trainLength, 1000);
+    std::cout << "Testing Accuracy : " << testingAccuracy * 100 << "% \n";
 }
 
 void Mnist2()
@@ -143,18 +146,17 @@ void Mnist2()
 
     for (int i = 0; i < dataLength; i++)
     {
-        data[0][i]->operator*=(1.0/255.0);
+        data[i][0]->operator*=(1.0/255.0);
     }
     
     
 
     Network* network = new Network();
     network->AddLayer(new InputLayer(28,28,1));
-    network->AddLayer(new ConvLayer(new LayerShape(5,5,32),new ReLU()));
-    network->AddLayer(new MaxPoolLayer(2,2));   
-    network->AddLayer(new ConvLayer(new LayerShape(5,5,16),new ReLU()));
-    network->AddLayer(new MaxPoolLayer(2,2));
+    network->AddLayer(new ConvLayer(new LayerShape(4,4,32),new ReLU()));
+    network->AddLayer(new MaxPoolLayer(2,2)); 
     network->AddLayer(new Flatten());
+    network->AddLayer(new FCL(128,new ReLU()));
     network->AddLayer(new FCL(10, new Softmax()));
 
     network->Compile(Opti::Adam,new CrossEntropy());
@@ -164,29 +166,29 @@ void Mnist2()
     int trainLength = dataLength * 0.8;
     int testLength = dataLength - trainLength;
 
-    network->Learn(3,0.1,new DataLoader(data,30,trainLength),1,1);
+    network->Learn(5,0.1,new DataLoader(data,1,trainLength),64,2);
 
     network->Save("./Models/MNIST_11.net");
 
 
-    double trainingAccuracy = TestAccuracy(network,data[0],data[1], 1000);
+    double trainingAccuracy = TestAccuracy(network,data, 1000);
 
     std::cout << "Training Accuracy : " << trainingAccuracy * 100 << "% \n";
 
 
-    double testingAccuracy = TestAccuracy(network,data[0] + trainLength,data[1] + trainLength, 1000);
+    double testingAccuracy = TestAccuracy(network,data + trainLength, 1000);
     std::cout << "Testing Accuracy : " << testingAccuracy * 100 << "% \n";
 }
 
 
 
-double TestAccuracy(Network* network, Matrix** inputs, Matrix** ouputs, int dataLength)
+double TestAccuracy(Network* network, Matrix*** data, int dataLength)
 {
     int correct = 0;
     for(int i = 0; i < dataLength; i++)
     {
-        Matrix* prediction = network->Process(inputs[i]);
-        if(MatrixToLabel(prediction) == MatrixToLabel(ouputs[i]))
+        Matrix* prediction = network->Process(data[i][0]);
+        if(MatrixToLabel(prediction) == MatrixToLabel(data[i][1]))
         {
             correct++;
         }
@@ -209,11 +211,11 @@ void LoadAndTest(std::string filename, bool is2D)
     int testLength = dataLength - trainLength;
 
     
-    double trainingAccuracy = TestAccuracy(network,data[0],data[1], 1000);
+    double trainingAccuracy = TestAccuracy(network,data, 1000);
     std::cout << "Training Accuracy : " << trainingAccuracy * 100 << "% \n";
 
 
-    double testingAccuracy = TestAccuracy(network,data[0] + trainLength,data[1] + trainLength, 1000);
+    double testingAccuracy = TestAccuracy(network,data + trainLength, 1000);
     std::cout << "Testing Accuracy : " << testingAccuracy * 100 << "% \n";
 }
 

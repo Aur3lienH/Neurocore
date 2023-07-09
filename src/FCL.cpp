@@ -65,7 +65,6 @@ void FCL::Compile(LayerShape* previousLayer)
     newDelta = new Matrix(previousNeuronsCount, 1);
 
     layerShape = new LayerShape(NeuronsCount);
-
     optimizer->Compile(NeuronsCount * previousNeuronsCount + NeuronsCount);
 }
 
@@ -164,6 +163,12 @@ void FCL::SpecificSave(std::ofstream& write)
     Weights->Save(write);
     Biases->Save(write);
     activation->Save(write);
+}
+
+void FCL::AverageGradients(int batchSize)
+{
+    Delta->DivideAllDims(batchSize);
+    DeltaBiases->DivideAllDims(batchSize);
 }
 
 

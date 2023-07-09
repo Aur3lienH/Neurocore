@@ -38,6 +38,7 @@ public:
     void SubstractAllDims(const Matrix* other, Matrix* result) const;
     void MultiplyAllDims(const Matrix* other, Matrix* result) const;
     void MultiplyAllDims(double value);
+    void DivideAllDims(double value);
     void Zero();
     double Sum();
     const int getRows() const;
@@ -49,6 +50,7 @@ public:
     Matrix* operator+(const Matrix& other);
     Matrix* operator*=(const Matrix* other);
     Matrix* operator*=(const double other);
+    Matrix* operator/=(const double other);
     Matrix* operator*(const double& other);
     static Matrix* Read(std::ifstream& reader);
     void Save(std::ofstream& writer);

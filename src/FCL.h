@@ -47,6 +47,8 @@ public:
     static FCL* Load(std::ifstream& ifstream);
 
     void SpecificSave(std::ofstream& filename) override;
+
+    void AverageGradients(int batchSize) override;
 protected:
     //Partial derivative of the weights
     Matrix* Delta = nullptr;

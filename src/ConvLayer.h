@@ -28,6 +28,9 @@ public:
     Matrix* BackPropagate(const Matrix* delta, const Matrix* lastWeigths);
 
     void AddDeltaFrom(Layer* ConvLayer);
+    void AverageGradients(int batchSize);
+
+
     void ClearDelta();
     void UpdateWeights(double learningRate, int batchSize);
     Layer* Clone();
@@ -44,6 +47,7 @@ private:
     Matrix* filters = nullptr;
     //Delta for next layer
     Matrix* delta = nullptr;
+    Matrix* preDelta = nullptr;
     Matrix* activationDelta;
     Matrix* z;
     Matrix* previousDeltaMultiplied;

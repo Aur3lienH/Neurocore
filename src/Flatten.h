@@ -27,6 +27,8 @@ public:
 
     const Matrix* getResult() const override;
 
+    void AverageGradients(int batchSize);
+
 private:
     const Matrix* input;
     int rows, cols, dims = 0;
