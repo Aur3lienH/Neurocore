@@ -11,16 +11,20 @@
 
 class DropoutFCL : public FCL
 {
-    DropoutFCL(int NeuronsCount, Activation* activation, double dropoutRate = .5);
     DropoutFCL(int NeuronsCount, Activation* activation, Matrix* weights, Matrix* bias, Matrix* delta, Matrix* deltaActivation, double dropoutRate = .5);
-    Matrix* FeedForward(const Matrix* input) override;
-    void SetDropoutRate(double rate);
-    void SetIsTraining(const bool isTraining_) { this->isTraining = isTraining_; }
     [[nodiscard]] bool IsTraining() const { return isTraining; }
+    void Save();
+    void Drop();
+
+public:
+    void SetIsTraining(bool isTraining_);
+    DropoutFCL(int NeuronsCount, Activation* activation, double dropoutRate = .5);
+
+    void Compile(LayerShape* previousLayer) override;
+
 private:
-    Matrix* droppedWeights = nullptr;
-    Matrix* droppedBiases = nullptr;
-    double dropoutRate = .5;
+    Matrix* savedWeights = nullptr;
+    const double dropoutRate;
     bool isTraining = true;
 };
 
