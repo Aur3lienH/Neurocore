@@ -66,12 +66,11 @@ protected:
     Activation* activation = nullptr;
 
     int NeuronsCount;
+//Result before passing through the activation function
+Matrix* z = nullptr;
 private:
     //Delta passed to the previous network in backpropagation
     Matrix* newDelta = nullptr;
-
-    //Result before passing through the activation function
-    Matrix* z = nullptr;
 
     //Delta from the activation function
     Matrix* deltaActivation = nullptr;
