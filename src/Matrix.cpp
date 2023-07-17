@@ -194,7 +194,7 @@ void Matrix::DivideAllDims(double value)
     
     for (int i = 0; i < size; i++)
     {
-        this->data[i] *= value;
+        this->data[i] /= value;
     }
     
 }
@@ -572,15 +572,14 @@ void Matrix::AveragePool(const Matrix* a, Matrix* output, int filterSize, int st
 
 void Matrix::Convolution(const Matrix* input, const Matrix* filter, Matrix* output, int stride)
 {
+
+
+#if SAFE
     int filterSize = filter->getRows();
     int inputCols = input->getCols();
     int inputRows = input->getRows();
     int outputCols = (inputCols - filterSize) / stride + 1;
     int outputRows = (inputRows - filterSize) / stride + 1;
-
-
-#if SAFE
-
     if(outputCols != output->cols || output->rows != outputRows)
     {
         std::cout << outputRows << "\n";
@@ -588,14 +587,14 @@ void Matrix::Convolution(const Matrix* input, const Matrix* filter, Matrix* outp
     }
 #endif
 
-    for (int i = 0; i < outputRows; i++)
+    for (int i = 0; i < output->rows; i++)
     {
-        for (int j = 0; j < outputCols; j++)
+        for (int j = 0; j < output->cols; j++)
         {
             double sum = 0;
-            for (int k = 0; k < filterSize; k++)
+            for (int k = 0; k < filter->getRows(); k++)
             {
-                for (int l = 0; l < filterSize; l++)
+                for (int l = 0; l < filter->getRows(); l++)
                 {
                     sum += (*input)(i * stride + k, j * stride + l) * (*filter)(k, l);
                 }

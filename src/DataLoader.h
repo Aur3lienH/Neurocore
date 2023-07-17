@@ -8,13 +8,12 @@
 class DataLoader
 {
 public:
-    DataLoader(Matrix*** data, int batchSize, int dataLength);
+    DataLoader(Matrix*** data, int dataLength);
     void Shuffle();
     int dataLength;
     Matrix*** data;
 
 private:
-    int batchSize;
     std::random_device rd;
     std::mt19937 rng;
 };

@@ -49,7 +49,7 @@ void ConvLayer::Compile(LayerShape* previousLayer)
     if(filters == nullptr)
     {
         filters = new Matrix(filterShape->dimensions[0],filterShape->dimensions[1],size);
-        HeInit(filters->getCols() * filters->getRows() * filters->getDim(),filters);
+        HeInit(1,filters);
     }
 
     rotatedFilter = filters->Copy();
@@ -115,7 +115,10 @@ Matrix* ConvLayer::BackPropagate(const Matrix* lastDelta,const Matrix* pastActiv
         }
         pastActivation->GoToNextMatrix();
     }
+
     
+
+
     filters->ResetOffset();
     rotatedFilter->ResetOffset();
     previousDeltaMultiplied->ResetOffset();
@@ -187,3 +190,5 @@ void ConvLayer::AverageGradients(int batchSize)
 {
     delta->DivideAllDims(batchSize);
 }
+
+
