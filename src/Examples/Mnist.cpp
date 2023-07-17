@@ -126,7 +126,7 @@ void Mnist1()
     std::cout << "compiled ! \n";
     int trainLength = dataLength * 0.8;
     int testLength = dataLength - trainLength;
-    network->Learn(20,0.01,new DataLoader(data,1,trainLength), 64,2);
+    network->Learn(20,0.01,new DataLoader(data,trainLength), 64,16);
 
     double trainingAccuracy = TestAccuracy(network,data, 1000);
     std::cout << "Training Accuracy : " << trainingAccuracy * 100 << "% \n";
@@ -153,10 +153,9 @@ void Mnist2()
 
     Network* network = new Network();
     network->AddLayer(new InputLayer(28,28,1));
-    network->AddLayer(new ConvLayer(new LayerShape(4,4,32),new ReLU()));
+    network->AddLayer(new ConvLayer(new LayerShape(3,3,32),new ReLU()));
     network->AddLayer(new MaxPoolLayer(2,2)); 
     network->AddLayer(new Flatten());
-    network->AddLayer(new FCL(128,new ReLU()));
     network->AddLayer(new FCL(10, new Softmax()));
 
     network->Compile(Opti::Adam,new CrossEntropy());
@@ -166,7 +165,7 @@ void Mnist2()
     int trainLength = dataLength * 0.8;
     int testLength = dataLength - trainLength;
 
-    network->Learn(5,0.1,new DataLoader(data,1,trainLength),64,2);
+    network->Learn(3,0.1,new DataLoader(data,trainLength),32,1);
 
     network->Save("./Models/MNIST_11.net");
 

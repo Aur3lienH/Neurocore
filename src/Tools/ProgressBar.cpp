@@ -179,6 +179,7 @@ namespace Tools
     TrainBar::TrainBar(int _totalEpochs) : ProgressBar("Train")
     {
         totalEpochs = _totalEpochs;
+        startTime = std::chrono::high_resolution_clock::now();
     }
 
     void TrainBar::ChangeProgress(int EpochsDone, float _loss)
@@ -193,7 +194,14 @@ namespace Tools
     {
         std::cout << "\r";
         int Width = GetConsoleWidth();
-        std::string beginning =  "Train -> loss : " + std::to_string(loss) + " epoch : " +  std::to_string(epochs) + " ";
+        auto now = std::chrono::high_resolution_clock::now();
+        auto elapsed = now - startTime;
+        auto hours = std::chrono::duration_cast<std::chrono::hours>(elapsed);
+        elapsed -= hours;
+        auto minutes = std::chrono::duration_cast<std::chrono::minutes>(elapsed);
+        elapsed -= minutes;
+        auto seconds = std::chrono::duration_cast<std::chrono::seconds>(elapsed);
+        std::string beginning =  "Train -> loss : " + std::to_string(loss) + " epoch : " +  std::to_string(epochs) + " | " + std::to_string(hours.count()) + ":" + std::to_string(minutes.count()) + ":" + std::to_string(seconds.count()) + " ";
         int BarSize = std::min((unsigned long)(Width - beginning.size()),(unsigned long)100);
         std::cout << beginning;
         unsigned int space = Width - BarSize - beginning.size();

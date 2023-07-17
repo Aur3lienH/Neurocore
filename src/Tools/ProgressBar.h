@@ -61,6 +61,8 @@ namespace Tools
         int epochs;
         float loss;
         int totalEpochs;
+        std::chrono::high_resolution_clock::time_point startTime;
+    
     };
 
 

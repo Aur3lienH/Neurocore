@@ -11,8 +11,10 @@
 #include <bits/stdc++.h>
 
 
+
 int main()
 {
-    Mnist1();
+
+    Mnist2();
     //LoadAndTest("./Models/MNIST_11.net",true);
 }

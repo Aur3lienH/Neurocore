@@ -39,6 +39,7 @@ void* Network::LearnThread(void* args)
             std::unique_lock<std::mutex> lock(*threadArg->mutex);
             threadArg->cv->wait(lock);
             threadArg->network->ClearDelta();
+
             for(int i = 0; i < threadArg->batchSize;i++)
             {
                 int dataIndex = j * threadArg->batchSize + i;
@@ -260,9 +261,8 @@ void Network::Learn(int epochs, double learningRate,DataLoader* dataLoader ,int 
         Network* NetworkCopy = new Network(this);
         NetworkCopy->Compile(opti,loss);
         auxiliaryNetwork[j] = NetworkCopy;
-        ThreadArg* threadArg = new ThreadArg(NetworkCopy, dataLoader->data + j * numberPerThread, mutexes[j], cv,batchSize,numberOfBatches);
+        ThreadArg* threadArg = new ThreadArg(NetworkCopy, dataLoader->data + j * numberPerThread, mutexes[j], cv,numberPerThread,numberOfBatches);
         pthread_create(&threads[j], NULL, LearnThread, (void*)threadArg);
-
     }
 
     std::cout << "learning starting ! \n";
@@ -302,10 +302,9 @@ void Network::Learn(int epochs, double learningRate,DataLoader* dataLoader ,int 
             {
                 for (int j = 0; j < auxThreadNumber; j++)
                 {
-                    auxiliaryNetwork[j]->Layers[i]->AverageGradients(batchSize);
                     Layers[i]->AddDeltaFrom(auxiliaryNetwork[j]->Layers[i]);
                 }
-                Layers[i]->AverageGradients(threadNumber);
+                Layers[i]->AverageGradients(batchSize);
                 Layers[i]->UpdateWeights(learningRate, batchSize);
             }
 

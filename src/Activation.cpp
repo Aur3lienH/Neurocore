@@ -34,7 +34,7 @@ void Activation::FeedForward(const Matrix* input, Matrix* output)
         throw std::invalid_argument("Activation::FeedForward : Both matrix must have the same shape !");
     }
 
-    for (int i = 0; i < input->getCols() * input->getRows() * input->getDim(); i++)
+    for (int i = 0; i < input->size(); i++)
     {
         output[0][i] = Function(input[0][i]);
     }
@@ -47,7 +47,7 @@ void Activation::Derivative(const Matrix * input, Matrix* output)
         throw std::invalid_argument("Activation::Derivative() : Both matrix must have the same shape !");
     }
 
-    for (int i = 0; i < input->getCols() * input->getRows() * input->getDim(); i++)
+    for (int i = 0; i < input->size(); i++)
     {
         output[0][i] = Derivate(input[0][i]);
     }
@@ -217,7 +217,7 @@ void Softmax::FeedForward(const Matrix* input, Matrix* output)
 {
     double sum = 0;
     double max = input[0][0];
-    for (int i = 0; i < input->getCols()*input->getRows(); i++)
+    for (int i = 0; i < input->size(); i++)
     {
         if(input[0][i] > max)
         {
@@ -225,11 +225,11 @@ void Softmax::FeedForward(const Matrix* input, Matrix* output)
         }
     }
     
-    for (int i = 0; i < input->getCols() * input->getRows(); i++)
+    for (int i = 0; i < input->size(); i++)
     {
         sum += exp(input[0][i] - max);
     }
-    for (int i = 0; i < input->getCols() * input->getRows(); i++)
+    for (int i = 0; i < input->size(); i++)
     {
         output[0][i] = exp(input[0][i] - max) / sum;
     }
@@ -237,7 +237,7 @@ void Softmax::FeedForward(const Matrix* input, Matrix* output)
 
 void Softmax::Derivative(const Matrix* input, Matrix* output)
 {
-    for (int i = 0; i < input->getCols() * input->getRows(); i++)
+    for (int i = 0; i < input->size(); i++)
     {
         output[0][i] = 1;
     }
