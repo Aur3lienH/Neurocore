@@ -1,4 +1,4 @@
-CC = g++
+CC = g++ -std=c++17 -pthread
 
 TARGET_EXEC ?= final_program
 BUILD_DIR ?= ./build
