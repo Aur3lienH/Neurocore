@@ -17,7 +17,8 @@
 #include <math.h>
 #include <sstream>
 
-std::pair<int, int> GetDataLengthAndNumCategories(const std::string& path){
+std::pair<int, int> GetDataLengthAndNumCategories(const std::string& path, const int numDrawingsPerCategory)
+{
     using recursive_directory_iterator = std::filesystem::recursive_directory_iterator;
 
     int numInputs = 0, numCategories = 0;
@@ -28,9 +29,10 @@ std::pair<int, int> GetDataLengthAndNumCategories(const std::string& path){
             continue;
 
         std::ifstream in(dirEntry.path(), std::ios::binary | std::ios::in);
-        int numDrawingsInFile = 20000;
+        //int numDrawingsInFile;
         //in.read((char*)(&numDrawingsInFile), sizeof(numDrawingsInFile));
-        numInputs += numDrawingsInFile;
+        //numInputs += numDrawingsInFile;
+        numInputs += numDrawingsPerCategory;
         numCategories++;
         in.close();
     }
@@ -38,27 +40,28 @@ std::pair<int, int> GetDataLengthAndNumCategories(const std::string& path){
     return {numInputs, numCategories};
 }
 
-void QuickDraw1(){
+void QuickDraw1(const int numDrawingsPerCategory)
+{
     std::cout << "quickdraw 1\n";
-    std::pair<int, int> dataInfo = GetDataLengthAndNumCategories("datasets/Quickdraw");
-    std::cout<<"info"<<std::endl;
+    std::pair<int, int> dataInfo = GetDataLengthAndNumCategories("datasets/Quickdraw", numDrawingsPerCategory);
     const int dataLength = dataInfo.first;
     const int numCategories = dataInfo.second;
-    Matrix*** data = GetQuickdrawDataset("datasets/Quickdraw", dataLength, numCategories);
+    Matrix*** data = GetQuickdrawDataset("datasets/Quickdraw", dataLength, numCategories, numDrawingsPerCategory, false);
     std::cout<<"loaded"<<std::endl;
-
-    
 
     Network* network = new Network();
     network->AddLayer(new InputLayer(784));
     network->AddLayer(new FCL(128, new ReLU()));
-    network->AddLayer(new FCL(10, new Softmax()));
+    network->AddLayer(new FCL(numCategories, new Softmax()));
     std::cout << "before compiling !\n";
     network->Compile(Opti::Adam,new CrossEntropy());
     std::cout << "compiled ! \n";
+
     int trainLength = dataLength * 0.8;
     int testLength = dataLength - trainLength;
-    network->Learn(20,0.01,new DataLoader(data,trainLength), 64,16);
+    DataLoader* dataLoader = new DataLoader(data,trainLength);
+    dataLoader->Shuffle();
+    network->Learn(20,0.01, dataLoader, 64,16);
 
     double trainingAccuracy = TestAccuracy(network,data, 1000);
     std::cout << "Training Accuracy : " << trainingAccuracy * 100 << "% \n";
@@ -68,12 +71,50 @@ void QuickDraw1(){
     std::cout << "Testing Accuracy : " << testingAccuracy * 100 << "% \n";
 }
 
-Matrix*** GetQuickdrawDataset(const std::string& path, const int dataLength, const int numCategories){
+void QuickDraw2(const int numDrawingsPerCategory)
+{
+    std::cout << "quickdraw 1\n";
+    std::pair<int, int> dataInfo = GetDataLengthAndNumCategories("datasets/Quickdraw", numDrawingsPerCategory);
+    const int dataLength = dataInfo.first;
+    const int numCategories = dataInfo.second;
+    Matrix*** data = GetQuickdrawDataset("datasets/Quickdraw", dataLength, numCategories, numDrawingsPerCategory, true);
+    std::cout<<"loaded"<<std::endl;
+
+    Network* network = new Network();
+    network->AddLayer(new InputLayer(28,28,1));
+    network->AddLayer(new ConvLayer(new LayerShape(3,3,32),new ReLU()));
+    network->AddLayer(new MaxPoolLayer(2,2));
+    network->AddLayer(new Flatten());
+    network->AddLayer(new FCL(numCategories, new Softmax()));
+
+    network->Compile(Opti::Adam,new CrossEntropy());
+
+    network->PrintNetwork();
+    int trainLength = dataLength * 0.8;
+    int testLength = dataLength - trainLength;
+    DataLoader* dataLoader = new DataLoader(data,trainLength);
+    dataLoader->Shuffle();
+    network->Learn(20,0.01, dataLoader, 64,16);
+
+    double trainingAccuracy = TestAccuracy(network,data, 1000);
+    std::cout << "Training Accuracy : " << trainingAccuracy * 100 << "% \n";
+
+
+    double testingAccuracy = TestAccuracy(network,data + trainLength, 1000);
+    std::cout << "Testing Accuracy : " << testingAccuracy * 100 << "% \n";
+}
+
+Matrix***
+GetQuickdrawDataset(const std::string& path, int dataLength, int numCategories, const int numDrawingsPerCategory,
+                    bool format2D)
+{
     using recursive_directory_iterator = std::filesystem::recursive_directory_iterator;
 
     Matrix*** dataset = new Matrix**[dataLength];
 
     int inputIndex = 0, categoryIndex = 0;
+    const int rows = format2D ? 28 : 28 * 28;
+    const int cols = format2D ? 28 : 1;
 
     for (const auto& dirEntry : recursive_directory_iterator(path))
     {
@@ -81,17 +122,17 @@ Matrix*** GetQuickdrawDataset(const std::string& path, const int dataLength, con
             continue;
 
         std::ifstream in(dirEntry.path(), std::ios::binary | std::ios::in);
-        int numDrawingsInFile = 20000;
+        int numDrawingsInFile = numDrawingsPerCategory;
         //in.read((char*)(&numDrawingsInFile), sizeof(numDrawingsInFile));
         
         for (int i = 0; i < numDrawingsInFile; i++){
             dataset[inputIndex] = new Matrix*[2];
-            dataset[inputIndex][0] = LabelToMatrix(categoryIndex, numCategories);
-            dataset[inputIndex][1] = new Matrix(28*28,1);
+            dataset[inputIndex][1] = LabelToMatrix(categoryIndex, numCategories);
+            dataset[inputIndex][0] = new Matrix(rows, cols);
             for (int p = 0; p < 28 * 28; p++){
                 unsigned char pixVal;
                 in.read((char*)&pixVal, 1);
-                (*dataset[inputIndex][1])[p] = static_cast<double>(pixVal) / 255.0;
+                (*dataset[inputIndex][0])[p] = static_cast<double>(pixVal) / 255.0;
             }
 
             inputIndex++;

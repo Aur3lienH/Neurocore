@@ -1,22 +1,25 @@
 import numpy
 import os
-import struct
 
 dirname = os.path.dirname(__file__)
+datasetPath = os.path.join(dirname, "../datasets/Quickdraw/")
 
-data = numpy.load(os.path.join(dirname, "../datasets/Quickdraw/full_numpy_bitmap_horse.npy"))
+for filename in os.listdir(datasetPath):
+    if filename.endswith(".npy"):
+        print(filename)
+        data = numpy.load(datasetPath + filename)
 
-out = open(os.path.join(dirname, "../datasets/Quickdraw/custom_bin_horse.bin"), "wb")
-i = 0
-binimgs = []
-for img in data:
-    binimgs.append(img.tobytes())
-    i+=1
+        out = open(os.path.join(dirname, "../datasets/Quickdraw/custom_bin_" + filename[:-4] + ".bin"), "wb")
+        i = 0
+        binimgs = []
+        for img in data:
+            binimgs.append(img.tobytes())
+            i += 1
 
-out.write(i.to_bytes(4, "little"))
-print(i)
+        out.write(i.to_bytes(4, "little"))
+        print("Drawings: ", i)
 
-for binimg in binimgs:
-    out.write(binimg)
+        for binimg in binimgs:
+            out.write(binimg)
 
-out.close()
+        out.close()
