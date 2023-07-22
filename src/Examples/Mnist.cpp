@@ -165,7 +165,7 @@ void Mnist2()
     int trainLength = dataLength * 0.8;
     int testLength = dataLength - trainLength;
 
-    network->Learn(3,0.1,new DataLoader(data,trainLength),32,1);
+    network->Learn(3,0.1,new DataLoader(data,trainLength),96*8,16);
 
     network->Save("./Models/MNIST_11.net");
 

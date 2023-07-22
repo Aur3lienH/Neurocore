@@ -13,57 +13,45 @@
 #include <condition_variable>
 
 
-
 Network::Network()
 {
-    
+
 }
 
 Network::Network(Network* network)
 {
     this->layersCount = network->layersCount;
-    this->Layers = new Layer*[layersCount];
-    for(int i = 0; i < layersCount; i++)
-    {
+    this->Layers = new Layer* [layersCount];
+    for (int i = 0; i < layersCount; i++)
         this->Layers[i] = network->Layers[i]->Clone();
-    }
+
 }
 
-void* Network::LearnThread(void* args)
+void
+LearnThread2(Network* network, Matrix*** data, const int batchSize, const int batchIndex, const int numDataPerThread)
 {
-    ThreadArg* threadArg = (ThreadArg*)args;
-    while (true)
+    //std::cout<<j<<" " << threadArg->batchSize<<std::endl;
+    //std::cout<< "Aux = [" << j * threadArg->batchSize << ";" << j * threadArg->batchSize + numDataPerThread - 1 << "]" << std::endl;
+    network->ClearDelta();
+    for (int i = 0; i < numDataPerThread; i++)
     {
-        for (int j = 0; j < threadArg->numberOfBatch; j++)
-        {
-            std::unique_lock<std::mutex> lock(*threadArg->mutex);
-            threadArg->cv->wait(lock);
-            threadArg->network->ClearDelta();
-
-            for(int i = 0; i < threadArg->batchSize;i++)
-            {
-                int dataIndex = j * threadArg->batchSize + i;
-                threadArg->network->BackPropagate(threadArg->data[dataIndex][0], threadArg->data[dataIndex][1]);
-            }
-        }
-        
-        // Wait for the main thread to signal
+        const int dataIndex = batchIndex * batchSize + i;
+        network->BackPropagate(data[dataIndex][0], data[dataIndex][1]);
     }
+    //std::cout<<"batch " << j << " finished\n";
 }
 
 void Network::AddLayer(Layer* layer)
 {
-
-
     if (layersCount == 0)
     {
-        Layers = new Layer*[1];
+        Layers = new Layer* [1];
         Layers[0] = layer;
         layersCount++;
     }
     else
     {
-        Layer** temp = new Layer*[layersCount + 1];
+        auto** temp = new Layer* [layersCount + 1];
         for (int i = 0; i < layersCount; i++)
         {
             temp[i] = Layers[i];
@@ -83,13 +71,12 @@ Matrix* Network::Process(Matrix* input)
 }
 
 
-const Matrix* Network::FeedForward(Matrix* input) 
+const Matrix* Network::FeedForward(Matrix* input)
 {
     output = input;
     for (int i = 0; i < layersCount; i++)
-    { 
         output = Layers[i]->FeedForward(output);
-    }
+
     return output;
 }
 
@@ -97,10 +84,9 @@ double Network::FeedForward(Matrix* input, Matrix* desiredOutput)
 {
     output = input;
     for (int i = 0; i < layersCount; i++)
-    {
         output = Layers[i]->FeedForward(output);
-    }
-    return loss->Cost(output,desiredOutput);
+
+    return loss->Cost(output, desiredOutput);
 }
 
 
@@ -110,139 +96,109 @@ void Network::Compile(Opti _opti, Loss* _loss)
 {
     opti = _opti;
 
-    if(_loss != nullptr)
-    {
+    if (_loss != nullptr)
         loss = _loss;
-    }
+
 
     //Cannot compile a network which has no loss function
-    if(loss == nullptr)
-    {
+    if (loss == nullptr)
         throw std::invalid_argument("Must have a lost function !");
-    }
+
     //All network need to have more than 2 layers
-    if(layersCount < 2)
-    {
+    if (layersCount < 2)
         throw std::invalid_argument("Network must have at least 2 layers");
-    }
+
 
     //Compile each layer
     for (int i = 0; i < layersCount; i++)
     {
         std::cout << i << "\n";
-        if(i == 0)
-            Layers[i]->Compile(nullptr,opti);
+        if (i == 0)
+            Layers[i]->Compile(nullptr, opti);
         else
-            Layers[i]->Compile(Layers[i - 1]->GetLayerShape(),opti);
+            Layers[i]->Compile(Layers[i - 1]->GetLayerShape(), opti);
     }
 
     //Initialize the matrix which holds the values of the cost derivative.
-    costDerivative = Layers[layersCount -1]->GetLayerShape()->ToMatrix();
+    costDerivative = Layers[layersCount - 1]->GetLayerShape()->ToMatrix();
 
 
-    InputLayer* inputLayer = (InputLayer*)Layers[0];
-    if(inputLayer == nullptr)
-    {
+    auto* inputLayer = (InputLayer*) Layers[0];
+    if (inputLayer == nullptr)
         throw std::invalid_argument("First layer must be an input layer");
-    }
-
 
     compiled = true;
 
 }
 
-double Network::BackPropagate(Matrix* input,Matrix* desiredOutput)
+double Network::BackPropagate(Matrix* input, Matrix* desiredOutput)
 {
     double NetworkLoss = FeedForward(input, desiredOutput);
-    loss->CostDerivative(Layers[layersCount - 1]->getResult(),desiredOutput,costDerivative);
+    loss->CostDerivative(Layers[layersCount - 1]->getResult(), desiredOutput, costDerivative);
     output = costDerivative;
     for (int i = layersCount - 1; i > 0; i--)
-    {
         output = Layers[i]->BackPropagate(output, Layers[i - 1]->getResult());
-    }
+
     return NetworkLoss;
 }
 
 void Network::ClearDelta()
 {
     for (int i = 0; i < layersCount; i++)
-    {
         Layers[i]->ClearDelta();
-    }
+
 }
 
-void Network::Learn(int epochs, double learningRate, Matrix** inputs, Matrix** outputs, int dataLength)
+void
+Network::Learn(const int epochs, const double learningRate, Matrix** inputs, Matrix** outputs, const int dataLength)
 {
     Tools::TrainBar Bar = Tools::TrainBar(epochs * dataLength);
-    double globalLoss = 0;
+    double globalLoss;
     for (int e = 0; e < epochs; e++)
     {
         globalLoss = 0;
         for (int i = 0; i < dataLength; i++)
         {
-            double loss = BackPropagate(inputs[i], outputs[i]);
-            globalLoss += loss; 
+            globalLoss += BackPropagate(inputs[i], outputs[i]);
             UpdateWeights(learningRate, 1);
-            Bar.ChangeProgress(e*dataLength+i,globalLoss / (i+1));
+            Bar.ChangeProgress(e * dataLength + i, globalLoss / (i + 1));
         }
-
     }
-    
-    
 }
 
-void Network::Learn(int epochs, double learningRate,DataLoader* dataLoader ,int batchSize, int threadNumber)
-{   
+void Network::Learn(const int epochs, const double learningRate, DataLoader* dataLoader, const int batchSize,
+                    const int threadNumber)
+{
     //Check if the network is compiled
-    if(!compiled)
-    {
+    if (!compiled)
         throw std::invalid_argument("Network must be compiled before learning");
-    }
 
     //Check if there is enough thread to have a minimum of 1 inputs per thread
-    if(batchSize < threadNumber)
-    {
+    if (batchSize < threadNumber)
         throw std::invalid_argument("More thread than batch size !");
-    }
+
 
     //Initializing the progress bar
     Tools::TrainBar Bar = Tools::TrainBar(epochs);
 
-    //Position in the dataset
-    int pos = 0;
-
     //Number of threads excluding the main one
-    int auxThreadNumber = threadNumber - 1;
-
-    //Array of the threads
-    pthread_t* threads;
-
-    //Waiter for auxiliary threads
-    std::condition_variable* cv = new std::condition_variable;
-    Network** auxiliaryNetwork;
-
-    //Locker for threads
-    std::mutex** mutexes;
-
-    //If there is some auxiliary threads intiliaze varialbles
-    if(auxThreadNumber > 0)
-    {
-        mutexes = new std::mutex*[auxThreadNumber];
-        for (int i = 0; i < auxThreadNumber; i++)
-        {
-            mutexes[i] = new std::mutex;
-        }
-        threads = new pthread_t[auxThreadNumber];
-        auxiliaryNetwork = new Network*[auxThreadNumber];
-
-    }
+    const int auxThreadNumber = threadNumber - 1;
     //Number of data per thread
-    int numberPerThread = batchSize / threadNumber;
+    const int numberPerThread = batchSize / threadNumber;
+    //Number of batch per epoch
+    const int numberOfBatches = dataLoader->dataLength / batchSize;
 
-    //Number of batch per epochs
-    int numberOfBatches = dataLoader->dataLength / batchSize;
+    std::thread* threads;
+    Network** auxiliaryNetworks;
 
-    int rest;
+    //If there are some auxiliary threads initialize variables
+    if (auxThreadNumber > 0)
+    {
+        threads = new std::thread[auxThreadNumber];
+        auxiliaryNetworks = new Network* [auxThreadNumber];
+    }
+
+    /*int rest;
     if(auxThreadNumber != 0)
     {
         rest = batchSize % auxThreadNumber;
@@ -250,140 +206,126 @@ void Network::Learn(int epochs, double learningRate,DataLoader* dataLoader ,int 
     else
     {
         rest = batchSize;
-    }
-    double globalLoss = 0;
+    }*/
+    double globalLoss;
 
-    
-    
     //Creating all the auxiliary threads and networks
-    for(int j = 0; j < auxThreadNumber; j++)
+    for (int j = 0; j < auxThreadNumber; j++)
     {
-        Network* NetworkCopy = new Network(this);
-        NetworkCopy->Compile(opti,loss);
-        auxiliaryNetwork[j] = NetworkCopy;
-        ThreadArg* threadArg = new ThreadArg(NetworkCopy, dataLoader->data + j * numberPerThread, mutexes[j], cv,numberPerThread,numberOfBatches);
-        pthread_create(&threads[j], NULL, LearnThread, (void*)threadArg);
+        auto* NetworkCopy = new Network(this);
+        NetworkCopy->Compile(opti, loss);
+        auxiliaryNetworks[j] = NetworkCopy;
     }
 
     std::cout << "learning starting ! \n";
 
+    // Computing data offset for each thread
+    const int mainThreadDataOffset = auxThreadNumber * numberPerThread;
+    int* auxThreadsDataOffset = new int[auxThreadNumber];
+    for (int i = 0; i < auxThreadNumber; i++)
+        auxThreadsDataOffset[i] = i * numberPerThread;
+
     for (int e = 0; e < epochs; e++)
     {
-        //Resseting the loss for each epochs
+        //Resetting the loss for each epoch
         globalLoss = 0;
-
 
         for (int k = 0; k < numberOfBatches; k++)
         {
+            // Start auxiliary threads
+            for (int i = 0; i < auxThreadNumber; ++i)
+            {
+                threads[i] = std::thread(&LearnThread2, auxiliaryNetworks[i],
+                                         dataLoader->data + auxThreadsDataOffset[i],
+                                         batchSize, k, numberPerThread);
+            }
 
-            //Notify all threads to start the training
-            cv->notify_all();
-
-            //Clear Deltatd::cout << "epochs : " << e << " numberOfbatches : " << k << " index : " << index << "  \n";
+            //Clear Deltatd::cout << "epochs : " << e << " numberOfbatches : " < < k << " index : " << index << "  \n";
             ClearDelta();
+            //std::cout<< "Main = [" << mainThreadDataOffset + k * batchSize << ";" << mainThreadDataOffset + k * batchSize + numberPerThread - 1 << "]" << std::endl;
             for (int i = 0; i < numberPerThread; i++)
-            {   
-                int index = auxThreadNumber * numberPerThread + k * numberPerThread;
+            {
+                const int index = mainThreadDataOffset + k * batchSize;
 
                 //Backpropagate in the main thread
-                globalLoss += BackPropagate(dataLoader->data[index + i][0],dataLoader->data[index + i][1]);
+                globalLoss += BackPropagate(dataLoader->data[index + i][0], dataLoader->data[index + i][1]);
             }
-            
-            
-            //Lock every auxiliary threads
-            for (int i = 0; i < auxThreadNumber; i++)
-            {
-                mutexes[i]->lock();
-            }
-            
-            
+            //std::cout<<"Main batch " << k << " finished\n";
+
+            // Sync auxiliary threads
+            for (int i = 0; i < auxThreadNumber; ++i)
+                threads[i].join();
+
             //Get the delta from all threads and update weights
             for (int i = 1; i < layersCount; i++)
             {
                 for (int j = 0; j < auxThreadNumber; j++)
-                {
-                    Layers[i]->AddDeltaFrom(auxiliaryNetwork[j]->Layers[i]);
-                }
+                    Layers[i]->AddDeltaFrom(auxiliaryNetworks[j]->Layers[i]);
+
                 Layers[i]->AverageGradients(batchSize);
                 Layers[i]->UpdateWeights(learningRate, batchSize);
             }
 
-            //Unlock auxiliary threads
-            for (int i = 0; i < auxThreadNumber; i++)
-            {
-                mutexes[i]->unlock();
-            }
-
             //Update the progress bar
-            Bar.ChangeProgress(e, globalLoss / (k+1));
+            Bar.ChangeProgress(e, globalLoss / (k + 1));
         }
 
         dataLoader->Shuffle();
     }
     std::cout << "Learning finished" << std::endl;
-    
-    /*
-    for (int i = 0; i < threadNumber; i++)
-    {
-        pthread_join(threads[i], NULL);
-    }
-    */
-    
+
+    delete[] threads;
+    delete[] auxiliaryNetworks;
+    delete[] auxThreadsDataOffset;
+    delete dataLoader;
 }
 
-void Network::UpdateWeights(double learningRate, int batchSize)
+void Network::UpdateWeights(const double learningRate, const int batchSize)
 {
     for (int i = 1; i < layersCount; i++)
-    {
         Layers[i]->UpdateWeights(learningRate, batchSize);
-    }
 }
-
 
 
 void Network::PrintNetwork()
 {
     for (int i = 0; i < layersCount; i++)
-    {
         std::cout << Layers[i]->getLayerTitle() << std::endl;
-    }
 }
 
 
-
-void Network::Save(std::string filename)
+void Network::Save(const std::string& filename)
 {
     std::ofstream writer;
     writer.open(filename, std::ios::binary | std::ios::trunc);
 
     loss->Save(writer);
     //First save the number of layers
-    writer.write(reinterpret_cast<char*>(&layersCount),sizeof(int));
+    writer.write(reinterpret_cast<char*>(&layersCount), sizeof(int));
 
     for (int i = 0; i < layersCount; i++)
-    {
         Layers[i]->Save(writer);
-    }
+
     writer.close();
 }
 
-Network* Network::Load(std::string filename)
+Network* Network::Load(const std::string& filename)
 {
     std::ifstream reader;
     reader.open(filename, std::ios::binary);
-    Network* network = new Network();
+    auto* network = new Network();
     //Load number of layers
 
     Loss* loss = Loss::Read(reader);
     int layersCount;
-    reader.read(reinterpret_cast<char*>(&layersCount),sizeof(int));
+    reader.read(reinterpret_cast<char*>(&layersCount), sizeof(int));
 
     //Load each Layer
     for (int i = 0; i < layersCount; i++)
-    {
         network->AddLayer(Layer::Load(reader));
-    }
+
     network->Compile(Opti::Constant, loss);
     reader.close();
+
     return network;
 }

@@ -5,7 +5,7 @@
 #include <mutex>
 #include <condition_variable>
 
-class ThreadArg
+class   ThreadArg
 {
 public:
     ThreadArg(Network* network, Matrix*** data, std::mutex* mutex, std::condition_variable* cv, int batchSize, int numberOfBatch);
