@@ -38,6 +38,13 @@ Matrix* MaxPoolLayer::BackPropagate(const Matrix* delta, const Matrix* previousA
                         //std::cout << m  << "  " << i << "  " << j << "  " << k << "  " << l << "\n";
                         //std::cout << r << " : x y : " << c << "\n";
                         //std::cout << (*previousActivation)(r,c) << "\n";
+
+                        if (r >= previousActivation->getRows())
+                            continue;
+                        if (c >= previousActivation->getCols())
+                            continue;
+
+
                         if ((*previousActivation)(r,c) == (*result)(i,j))
                             (*newDelta)(r,c) = (*delta)(i,j);
                         // Should already be 0
