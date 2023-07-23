@@ -15,6 +15,6 @@
 int main()
 {
 
-    Mnist2();
+    FashionMnist2();
     //LoadAndTest("./Models/MNIST_11.net",true);
 }

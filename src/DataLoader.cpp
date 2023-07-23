@@ -15,3 +15,4 @@ void DataLoader::Shuffle()
     std::shuffle(data,data + dataLength,rng);
 }
 
+

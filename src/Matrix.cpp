@@ -731,7 +731,7 @@ MatrixDiagonale::MatrixDiagonale(int size, double value) : Matrix(size, size)
 {
     for (int i = 0; i < size; i++)
     {
-        this->operator[](i * size + i) = value;
+        this->operator[](i * size + i) = value; 
     }
 }
 

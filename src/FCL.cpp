@@ -104,15 +104,8 @@ void FCL::AddDeltaFrom(Layer* otherLayer)
 {
 
     FCL* _FCLLayer = (FCL*)otherLayer;
-    for (int i = 0; i < Weights->getCols() * Weights->getRows(); i++)
-    {
-        Delta[0][i] += _FCLLayer->Delta[0][i];
-    }
-    for (int i = 0; i < Biases->getCols() * Biases->getRows(); i++)
-    {
-       DeltaBiases[0][i] += _FCLLayer->DeltaBiases[0][i];
-    }
-    
+    Delta->AddAllDims(_FCLLayer->Delta,Delta);
+    DeltaBiases->AddAllDims(_FCLLayer->DeltaBiases,DeltaBiases);
 }
 
 const Matrix* FCL::getResult() const

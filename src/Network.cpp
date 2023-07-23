@@ -315,7 +315,7 @@ void Network::Learn(int epochs, double learningRate,DataLoader* dataLoader ,int 
             }
 
             //Update the progress bar
-            Bar.ChangeProgress(e, globalLoss / (k+1));
+            Bar.ChangeProgress(e, globalLoss / (k+1) * batchSize);
         }
 
         dataLoader->Shuffle();

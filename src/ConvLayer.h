@@ -22,24 +22,23 @@ public:
     ConvLayer(Matrix* filters, LayerShape* layerShape, Activation* activation);
     ConvLayer(LayerShape* filterShape, Activation* activation);
     
-    void Compile(LayerShape* previousLayer);
+    void Compile(LayerShape* previousLayer) override;
 
-    Matrix* FeedForward(const Matrix* input);
-    Matrix* BackPropagate(const Matrix* delta, const Matrix* lastWeigths);
+    Matrix* FeedForward(const Matrix* input) override;
+    Matrix* BackPropagate(const Matrix* delta, const Matrix* lastWeigths) override;
 
-    void AddDeltaFrom(Layer* ConvLayer);
-    void AverageGradients(int batchSize);
+    void AddDeltaFrom(Layer* ConvLayer) override;
+    void AverageGradients(int batchSize) override;
 
 
-    void ClearDelta();
-    void UpdateWeights(double learningRate, int batchSize);
-    Layer* Clone();
-    void SpecificSave(std::ofstream& writer);
+    void ClearDelta() override;
+    void UpdateWeights(double learningRate, int batchSize) override;
+    void SpecificSave(std::ofstream& writer) override;
     static Layer* Load(std::ifstream& reader);
-    Matrix* getResult() const;
+    Matrix* getResult() const override;
 
-    std::string getLayerTitle();
-    Layer* Clone(Matrix* delta, Matrix* deltaBiases);
+    std::string getLayerTitle() override;
+    Layer* Clone() override;
 
 private:
     Matrix* result = nullptr;
@@ -59,9 +58,11 @@ private:
     uint filterCount = 0;
     uint preivousDimCount = 0;
 
+
     LayerShape* filterShape = nullptr;
 
     Activation* activation = nullptr;
+    
 
 
 };
