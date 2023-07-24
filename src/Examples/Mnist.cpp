@@ -181,47 +181,6 @@ void Mnist2()
 }
 
 
-void FashionMnist1()
-{
-    int dataLength;
-    Matrix*** data = GetFashionDataset(MNIST_FASHION_DATA_PATH,MNIST_FASHIOIN_LABEL_PATH,dataLength, false);
-    
-    std::cout << "Data length: " << dataLength << std::endl;
-    
-
-    for (int i = 0; i < dataLength; i++)
-    {
-        data[i][0]->operator*=(1.0/255.0);
-    }
-    
-    
-
-    Network* network = new Network();
-    network->AddLayer(new InputLayer(784));
-    network->AddLayer(new FCL(512, new Tanh()));
-    network->AddLayer(new FCL(10, new Softmax()));
-
-    network->Compile(Opti::Adam,new CrossEntropy());
-
-    network->PrintNetwork();
-    
-    int trainLength = dataLength * 0.8;
-    int testLength = dataLength - trainLength;
-
-    network->Learn(10,0.1,new DataLoader(data,trainLength),64,4);
-
-    network->Save("./Models/MNIST_11.net");
-
-
-    double trainingAccuracy = TestAccuracy(network,data, 1000);
-
-    std::cout << "Training Accuracy : " << trainingAccuracy * 100 << "% \n";
-
-
-    double testingAccuracy = TestAccuracy(network,data + trainLength, 1000);
-    std::cout << "Testing Accuracy : " << testingAccuracy * 100 << "% \n";
-}
-
 
 void FashionMnist1()
 {
@@ -264,49 +223,6 @@ void FashionMnist1()
     std::cout << "Testing Accuracy : " << testingAccuracy * 100 << "% \n";
 }
 
-void FashionMnist2()
-{
-    int dataLength;
-    Matrix*** data = GetFashionDataset(MNIST_FASHION_DATA_PATH,MNIST_FASHIOIN_LABEL_PATH,dataLength, true);
-    
-    std::cout << "Data length: " << dataLength << std::endl;
-    
-
-    for (int i = 0; i < dataLength; i++)
-    {
-        data[i][0]->operator*=(1.0/255.0);
-    }
-    
-    
-
-    Network* network = new Network();
-    network->AddLayer(new InputLayer(28,28,1));
-    network->AddLayer(new ConvLayer(new LayerShape(3,3,32),new ReLU()));
-    network->AddLayer(new MaxPoolLayer(2,2));
-    network->AddLayer(new Flatten());
-    network->AddLayer(new FCL(128, new ReLU()));
-    network->AddLayer(new FCL(10, new Softmax()));
-
-    network->Compile(Opti::Adam,new CrossEntropy());
-
-    network->PrintNetwork();
-    
-    int trainLength = dataLength * 0.8;
-    int testLength = dataLength - trainLength;
-
-    network->Learn(5,0.1,new DataLoader(data,trainLength),64,16);
-
-    network->Save("./Models/MNIST_11.net");
-
-
-    double trainingAccuracy = TestAccuracy(network,data, 1000);
-
-    std::cout << "Training Accuracy : " << trainingAccuracy * 100 << "% \n";
-
-
-    double testingAccuracy = TestAccuracy(network,data + trainLength, 1000);
-    std::cout << "Testing Accuracy : " << testingAccuracy * 100 << "% \n";
-}
 
 void FashionMnist2()
 {
