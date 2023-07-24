@@ -1,4 +1,5 @@
 #pragma once
+
 #include <iostream>
 #include "Layer.h"
 #include "Matrix.h"
@@ -11,14 +12,16 @@ class Network
 {
 public:
     Network();
+
     Network(Loss* loss);
+
     Network(Network* network);
 
     //Add a layer to the network
     void AddLayer(Layer* layer);
 
     //Backpropagate threw the Network and store all the derivative
-    double BackPropagate(Matrix* input,Matrix* output);
+    double BackPropagate(Matrix* input, Matrix* output);
 
     /// @brief Multithreading learning 
     /// @param epochs Number of times which the neural network will see the dataset
@@ -29,6 +32,7 @@ public:
     /// @param dataLength The size of the dataset
     /// @param threadNumber The number of thread used to train the model
     void Learn(int epochs, double learningRate, DataLoader* dataLoader, int batchSize, int threadNumber);
+
     void Learn(int epochs, double learningRate, Matrix** inputs, Matrix** outputs, int dataLength);
 
     //Clear all delta from all layers (partial derivative)
@@ -46,16 +50,17 @@ public:
     double TestAccuracy(Matrix** inputs, Matrix** outputs, int dataLength);
 
     //Initialize variable and check for error in the architecture of the model
-    void Compile(Opti opti = Opti::Constant,Loss* loss = nullptr);
+    void Compile(Opti opti = Opti::Constant, Loss* loss = nullptr);
 
     //Load network from a file
-    static Network* Load(std::string filename);
+    static Network* Load(const std::string& filename);
+
     //Save network to a file
-    void Save(std::string filename);
+    void Save(const std::string& filename);
 
     //Compute values through the neural network
     const Matrix* FeedForward(Matrix* input);
-    
+
 private:
     void UpdateWeights(double learningRate, int batchSize);
 
