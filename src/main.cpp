@@ -9,7 +9,7 @@
 #include "Examples/Mnist.h"
 #include "Examples/Tests.h"
 #include <bits/stdc++.h>
-#include "Quickdraw.h"
+#include "./Examples/Quickdraw.h"
 
 
 
