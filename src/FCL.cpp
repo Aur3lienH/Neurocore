@@ -133,8 +133,8 @@ std::string FCL::getLayerTitle()
 }
 
 Layer* FCL::Clone()
-{
-    return new FCL(NeuronsCount, activation, Weights, Biases, nullptr, nullptr);
+{   
+    return new FCL(NeuronsCount, activation, Weights->CopyWithSameData(), Biases->CopyWithSameData(), nullptr, nullptr);
 }
 
 FCL* FCL::Load(std::ifstream& reader)

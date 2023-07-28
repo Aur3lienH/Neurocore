@@ -76,6 +76,7 @@ void ConvLayer::Compile(LayerShape* previousLayer)
 Matrix* ConvLayer::FeedForward(const Matrix* input)
 {
     result->Reshape(layerShape->dimensions[0],layerShape->dimensions[1],layerShape->dimensions[2]);
+    result->PrintSize();
     for (uint j = 0; j < preivousDimCount; j++)
     {
         for (int i = 0; i < filterCount; i++)
@@ -183,12 +184,14 @@ Layer* ConvLayer::Load(std::ifstream& reader)
 
 Layer* ConvLayer::Clone()
 {
-    return new ConvLayer(this->filters->Copy(), new LayerShape(layerShape->dimensions[0],layerShape->dimensions[1],layerShape->dimensions[2]),activation);
+    Matrix* filterCopy = new Matrix(filters->getRows(), filters->getCols(),filters->getDim(),filters->GetData());
+    return new ConvLayer(filterCopy, new LayerShape(layerShape->dimensions[0],layerShape->dimensions[1],layerShape->dimensions[2]),activation);
 }
 
 void ConvLayer::AverageGradients(int batchSize)
 {
     delta->DivideAllDims(batchSize);
 }
+
 
 

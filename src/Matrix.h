@@ -29,6 +29,8 @@ public:
     void SetOffset(int offset) const;
     int GetOffset() const;
 
+    double* GetData();
+
 
     void Flatten() const;
     void Reshape(int rows, int cols, int dims) const;
@@ -66,6 +68,7 @@ public:
     void PrintSize() const;
     static float Distance(Matrix* a, Matrix* b);
     Matrix* Copy();
+    Matrix* CopyWithSameData();
     static Matrix* Copy(const Matrix* a);
 
 protected:

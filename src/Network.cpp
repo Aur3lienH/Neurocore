@@ -4,6 +4,7 @@
 #include "ThreadArg.h"
 #include "Tools/ProgressBar.h"
 #include "DataLoader.h"
+#include "ConvLayer.h"
 #include <fstream>
 #include <unistd.h>
 #include <pthread.h>
@@ -76,7 +77,9 @@ const Matrix* Network::FeedForward(Matrix* input)
 {
     output = input;
     for (int i = 0; i < layersCount; i++)
+    {
         output = Layers[i]->FeedForward(output);
+    }
 
     return output;
 }
@@ -85,7 +88,10 @@ double Network::FeedForward(Matrix* input, Matrix* desiredOutput)
 {
     output = input;
     for (int i = 0; i < layersCount; i++)
+    {
+        std::cout << "feedforward : " << i << "\n";
         output = Layers[i]->FeedForward(output);
+    }
 
     return loss->Cost(output, desiredOutput);
 }
@@ -134,11 +140,17 @@ void Network::Compile(Opti _opti, Loss* _loss)
 
 double Network::BackPropagate(Matrix* input, Matrix* desiredOutput)
 {
+    std::cout << "feeding forward ! \n";
     double NetworkLoss = FeedForward(input, desiredOutput);
+    std::cout << "feeding stoped ! \n";
     loss->CostDerivative(Layers[layersCount - 1]->getResult(), desiredOutput, costDerivative);
     output = costDerivative;
     for (int i = layersCount - 1; i > 0; i--)
+    {
+        std::cout << "i : " << i << "\n";
         output = Layers[i]->BackPropagate(output, Layers[i - 1]->getResult());
+    }
+        
 
     return NetworkLoss;
 }
@@ -254,7 +266,7 @@ void Network::Learn(const int epochs, const double learningRate, DataLoader* dat
             //std::cout<<"Main batch " << k << " finished\n";
 
             // Sync auxiliary threads
-            for (int i = 0; i < auxThreadNumber; ++i)
+            for (int i = 0; i < auxThreadNumber; i++)
                 threads[i].join();
 
             //Get the delta from all threads and update weights
@@ -268,7 +280,7 @@ void Network::Learn(const int epochs, const double learningRate, DataLoader* dat
             }
 
             //Update the progress bar
-            Bar.ChangeProgress(e, globalLoss / (k+1) * batchSize);
+            Bar.ChangeProgress(e, globalLoss / ((k+1) * batchSize));
         }
 
         dataLoader->Shuffle();

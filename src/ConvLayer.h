@@ -30,7 +30,6 @@ public:
     void AddDeltaFrom(Layer* ConvLayer) override;
     void AverageGradients(int batchSize) override;
 
-
     void ClearDelta() override;
     void UpdateWeights(double learningRate, int batchSize) override;
     void SpecificSave(std::ofstream& writer) override;
