@@ -271,6 +271,17 @@ const double& Matrix::operator()(int _rows, int _cols) const
     return data[_rows * this->cols + _cols];
 }
 
+const double& Matrix::operator()(int _rows, int _cols, int _dims) const
+{
+#if SAFE
+    if(_rows >= rows || _cols >= cols || _dims >= dim)
+    {
+        throw std::out_of_range("Matrix : Index out of bounds");
+    }
+#endif
+    return data[_dims * matrixSize + _rows * cols + _cols];
+}
+
 Matrix* Matrix::operator*=(const Matrix* other)
 {
 #if SAFE
@@ -450,6 +461,12 @@ Matrix* Matrix::Copy()
         resArray[i] = data[i];
     }
     return new Matrix(rows,cols,dim,resArray);
+}
+
+
+Matrix* Matrix::CopyWithSameData()
+{
+    return new Matrix(rows,cols,dim,data);
 }
 
 void Matrix::Flip180(const Matrix* input, Matrix* output)
@@ -707,7 +724,10 @@ Matrix Matrix::Random(int rows, int cols)
     return res;
 }
 
-
+double* Matrix::GetData()
+{
+    return data;
+}
 
 
 //MATRIX CARRE

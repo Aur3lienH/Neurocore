@@ -34,11 +34,25 @@ Adam::Adam(double alpha, double _beta1, double _beta2, double gamma) : beta1(_be
 
 void Adam::Compile(int size)
 {
-    momentum1 = new double[size];
-    momentum2 = new double[size];
+    std::cout << "Compiling optimizer ! \n";
+    if(momentum1 == nullptr)
+    {
+        momentum1 = new double[size];
+    }
+    if(momentum2 == nullptr)
+    {
+        momentum2 = new double[size];
+    }
 
-    biasCorrectedMomentum1 = new double[size];
-    biasCorrectedMomentum2 = new double[size];
+    if(biasCorrectedMomentum1 == nullptr)
+    {
+        biasCorrectedMomentum1 = new double[size];
+    }
+
+    if(biasCorrectedMomentum2 == nullptr)
+    {
+        biasCorrectedMomentum2 = new double[size];
+    }
     
 }
 

@@ -243,6 +243,8 @@ void FashionMnist2()
     network->AddLayer(new InputLayer(28,28,1));
     network->AddLayer(new ConvLayer(new LayerShape(3,3,32),new ReLU()));
     network->AddLayer(new MaxPoolLayer(2,2));
+    network->AddLayer(new ConvLayer(new LayerShape(2,2,32),new ReLU()));
+    network->AddLayer(new MaxPoolLayer(2,2));
     network->AddLayer(new Flatten());
     network->AddLayer(new FCL(128, new ReLU()));
     network->AddLayer(new FCL(10, new Softmax()));
@@ -254,8 +256,7 @@ void FashionMnist2()
     int trainLength = dataLength * 0.8;
     int testLength = dataLength - trainLength;
 
-    network->Learn(5,0.1,new DataLoader(data,trainLength),64,16);
-
+    network->Learn(5,0.1,new DataLoader(data,trainLength),64,2);
     network->Save("./Models/MNIST_11.net");
 
 

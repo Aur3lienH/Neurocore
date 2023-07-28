@@ -44,10 +44,10 @@ private:
 
 
     double gamma;
-    double* momentum1;
-    double* momentum2;
+    double* momentum1 = nullptr;
+    double* momentum2 = nullptr;
 
-    double* biasCorrectedMomentum1;
-    double* biasCorrectedMomentum2;
+    double* biasCorrectedMomentum1 = nullptr;
+    double* biasCorrectedMomentum2 = nullptr;
 
 };
