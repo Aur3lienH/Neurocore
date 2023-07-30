@@ -8,6 +8,8 @@ class Loss
 public:
     Loss();
 
+    virtual ~Loss() = default;
+
     virtual double Cost(const Matrix* output, const Matrix* target) = 0;
 
     virtual void CostDerivative(const Matrix* output, const Matrix* target, Matrix* result) = 0;

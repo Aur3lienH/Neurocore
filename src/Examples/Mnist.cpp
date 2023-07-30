@@ -180,6 +180,8 @@ void Mnist2()
 
     double testingAccuracy = TestAccuracy(network, data + trainLength, 1000);
     std::cout << "Testing Accuracy : " << testingAccuracy * 100 << "% \n";
+
+    delete network;
 }
 
 

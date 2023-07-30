@@ -14,6 +14,8 @@ public:
     FCL(int NeuronsCount, Activation* activation, Matrix* weights, Matrix* bias, Matrix* delta,
         Matrix* deltaActivation);
 
+    ~FCL() override;
+
     //Compute the input threw the layer
     Matrix* FeedForward(const Matrix* input) override;
 

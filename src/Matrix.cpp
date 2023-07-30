@@ -463,7 +463,7 @@ Matrix* Matrix::Copy()
 
 Matrix* Matrix::CopyWithSameData()
 {
-    return new Matrix(rows, cols, dim, data);
+    return new CloneMatrix(rows, cols, dim, data);
 }
 
 void Matrix::Flip180(const Matrix* input, Matrix* output)

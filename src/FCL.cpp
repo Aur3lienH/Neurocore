@@ -158,4 +158,16 @@ void FCL::AverageGradients(int batchSize)
     DeltaBiases->DivideAllDims(batchSize);
 }
 
+FCL::~FCL()
+{
+    delete Weights;
+    delete Biases;
+    delete Delta;
+    delete DeltaBiases;
+    delete deltaActivation;
+    delete Result;
+    delete z;
+    delete newDelta;
+}
+
 

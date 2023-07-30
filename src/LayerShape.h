@@ -9,6 +9,8 @@ public:
     //Constructor for 1D neurons layer
     explicit LayerShape(int neuronsCount);
 
+    ~LayerShape();
+
     //Constructor for 3D neurons layer (ConvLayer,Pooling, ect ...)
     LayerShape(int rows, int cols, int dims);
 
@@ -16,7 +18,7 @@ public:
 
 
     //Convert the format of the layer to an array of matrix.
-    Matrix* ToMatrix() const;
+    [[nodiscard]] Matrix* ToMatrix() const;
 
     //The size of each dimensions
     int* dimensions;
@@ -28,5 +30,5 @@ public:
 
     void Save(std::ofstream& save);
 
-    std::string GetDimensions() const;
+    [[nodiscard]] std::string GetDimensions() const;
 };

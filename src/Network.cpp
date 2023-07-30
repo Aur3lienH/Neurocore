@@ -342,3 +342,14 @@ Network* Network::Load(const std::string& filename)
 
     return network;
 }
+
+Network::~Network()
+{
+    for (int i = 0; i < layersCount; i++)
+        delete Layers[i];
+
+    delete[] Layers;
+    delete loss;
+    //delete output; // It is already deleted when deleting the last layer
+    delete costDerivative;
+}
