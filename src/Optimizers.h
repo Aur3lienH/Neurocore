@@ -12,6 +12,8 @@ enum class Opti
 class Optimizer
 {
 public:
+    virtual ~Optimizer() = default;
+
     virtual void Compile(int size) = 0;
 
     virtual void Compute(Matrix* gradient, Matrix* parameters, int offset = 0) = 0;

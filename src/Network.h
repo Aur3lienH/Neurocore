@@ -13,6 +13,8 @@ class Network
 public:
     Network();
 
+    ~Network();
+
     explicit Network(Network* network);
 
     //Add a layer to the network

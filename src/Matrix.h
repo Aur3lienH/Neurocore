@@ -4,7 +4,6 @@
 #include <fstream>
 #include "Tools/Serializer.h"
 
-
 class Matrix
 {
 public:
@@ -20,7 +19,7 @@ public:
 
     Matrix(int rows, int cols, int dims, double* data);
 
-    ~Matrix();
+    virtual ~Matrix();
 
     static void Flip180(const Matrix* input, Matrix* output);
 
@@ -149,4 +148,28 @@ public:
     ~MatrixDiagonale();
 };
 
+/// @brief Same as Matrix but with a different destructor: it doesn't delete the data because it's a clone, the data
+/// is deleted by the original matrix
+class CloneMatrix : public Matrix
+{
+public:
+    ~CloneMatrix() override = default;
 
+    CloneMatrix() : Matrix()
+    {};
+
+    CloneMatrix(int rows, int cols) : Matrix(rows, cols)
+    {};
+
+    CloneMatrix(int rows, int cols, int size) : Matrix(rows, cols, size)
+    {};
+
+    CloneMatrix(int rows, int cols, double value) : Matrix(rows, cols, value)
+    {};
+
+    CloneMatrix(int rows, int cols, double* data) : Matrix(rows, cols, data)
+    {};
+
+    CloneMatrix(int rows, int cols, int dims, double* data) : Matrix(rows, cols, dims, data)
+    {};
+};

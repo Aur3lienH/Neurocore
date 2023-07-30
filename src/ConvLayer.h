@@ -24,6 +24,8 @@ public:
 
     ConvLayer(LayerShape* filterShape, Activation* activation);
 
+    ~ConvLayer() override;
+
     void Compile(LayerShape* previousLayer) override;
 
     Matrix* FeedForward(const Matrix* input) override;

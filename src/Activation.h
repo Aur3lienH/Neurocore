@@ -7,6 +7,7 @@
 class Activation
 {
 public:
+    virtual ~Activation() = default;
 
     virtual void FeedForward(const Matrix* input, Matrix* output);
 

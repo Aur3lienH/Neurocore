@@ -180,7 +180,7 @@ Layer* ConvLayer::Load(std::ifstream& reader)
 
 Layer* ConvLayer::Clone()
 {
-    auto* filterCopy = new Matrix(filters->getRows(), filters->getCols(), filters->getDim(), filters->GetData());
+    auto* filterCopy = filters->CopyWithSameData();
     return new ConvLayer(filterCopy, new LayerShape(layerShape->dimensions[0], layerShape->dimensions[1],
                                                     layerShape->dimensions[2]), activation);
 }
@@ -188,6 +188,21 @@ Layer* ConvLayer::Clone()
 void ConvLayer::AverageGradients(int batchSize)
 {
     delta->DivideAllDims(batchSize);
+}
+
+ConvLayer::~ConvLayer()
+{
+    delete filters;
+    delete filterShape;
+    delete activation;
+    delete result;
+    delete z;
+    delete delta;
+    delete preDelta;
+    delete previousDeltaMultiplied;
+    delete activationDelta;
+    delete nextLayerDelta;
+    delete rotatedFilter;
 }
 
 

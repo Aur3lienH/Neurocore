@@ -66,3 +66,8 @@ std::string LayerShape::GetDimensions() const
     return "(" + std::to_string(dimensions[0]) + "," + std::to_string(dimensions[1]) + "," +
            std::to_string(dimensions[2]) + ")";
 }
+
+LayerShape::~LayerShape()
+{
+    delete[] dimensions;
+}

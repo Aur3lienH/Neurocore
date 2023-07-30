@@ -81,5 +81,11 @@ void Layer::Save(std::ofstream& writer)
     SpecificSave(writer);
 }
 
+Layer::~Layer()
+{
+    delete layerShape;
+    delete optimizer;
+}
+
 
 

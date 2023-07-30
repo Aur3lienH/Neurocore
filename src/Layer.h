@@ -12,6 +12,8 @@ class Layer
 public:
     Layer();
 
+    virtual ~Layer();
+
     virtual const Matrix* FeedForward(const Matrix* input) = 0;
 
     virtual const Matrix* BackPropagate(const Matrix* delta, const Matrix* previousActivation) = 0;
