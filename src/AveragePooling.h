@@ -30,7 +30,6 @@ public:
 private:
     // Filter size squared
     const int fs_2;
-
 };
 
 

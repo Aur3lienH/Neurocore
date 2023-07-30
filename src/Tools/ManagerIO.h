@@ -1,26 +1,32 @@
 #pragma once
+
 #include "Bytes.h"
 #include <vector>
 #include <iostream>
 
 namespace Tools
 {
-    int WriteUnsignedChar(std::string filename, unsigned char* bytes, int size);
-    Bytes ReadUnsignedChar(std::string filename);
+    int WriteUnsignedChar(const std::string& filename, unsigned char* bytes, int size);
 
-    int WriteText(std::string filename, std::string text);
-    std::string ReadText(std::string filename);
+    Bytes ReadUnsignedChar(const std::string& filename);
 
-    int ContinueWritingText(std::string filename, std::string text);
+    int WriteText(const std::string& filename, const std::string& text);
 
-    int CreatePathDirectory(std::string path);
-    int CreatePathFile(std::string filePath);
-    
+    std::string ReadText(const std::string& filename);
+
+    int ContinueWritingText(const std::string& filename, const std::string& text);
+
+    int CreatePathDirectory(const std::string& path);
+
+    int CreatePathFile(const std::string& filePath);
+
     int StringToBytes(std::string str, unsigned char* bytes);
+
     std::string BytesToString(unsigned char* bytes, int* length);
 
     int IntToBytes(int value, unsigned char* bytes);
-    int BytesToInt(unsigned char* bytes);
+
+    int BytesToInt(const unsigned char* bytes);
 
     template<typename T>
     int VectorToBytes(std::vector<T> values, unsigned char* buf)
@@ -29,7 +35,7 @@ namespace Tools
         IntToBytes(values.size(), buf);
         for (int i = 0; i < values.size(); i++)
         {
-            if(std::is_same<int,T>())
+            if (std::is_same<int, T>())
             {
                 length = IntToBytes(values[i], buf + length);
             }
@@ -70,6 +76,5 @@ namespace Tools
         }
         return length;
     }
-
 }
 

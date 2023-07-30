@@ -1,4 +1,5 @@
 #pragma once
+
 #include "Matrix.h"
 #include "Activation.h"
 #include "Layer.h"
@@ -9,7 +10,9 @@ class FCL : public Layer
 {
 public:
     FCL(int NeuronsCount, Activation* activation);
-    FCL(int NeuronsCount, Activation* activation, Matrix* weights, Matrix* bias, Matrix* delta, Matrix* deltaActivation);
+
+    FCL(int NeuronsCount, Activation* activation, Matrix* weights, Matrix* bias, Matrix* delta,
+        Matrix* deltaActivation);
 
     //Compute the input threw the layer
     Matrix* FeedForward(const Matrix* input) override;
@@ -36,7 +39,7 @@ public:
     const Matrix* getDeltaBiases();
 
     //Getter for the result of the layer
-    const Matrix* getResult() const override;
+    [[nodiscard]] const Matrix* getResult() const override;
 
     //Return information on the layer (neurons count)
     std::string getLayerTitle() override;
@@ -49,6 +52,7 @@ public:
     void SpecificSave(std::ofstream& filename) override;
 
     void AverageGradients(int batchSize) override;
+
 protected:
     //Partial derivative of the weights
     Matrix* Delta = nullptr;
@@ -61,13 +65,13 @@ protected:
 
     Matrix* Weights = nullptr;
     Matrix* Biases = nullptr;
-    
+
     //Activation function
     Activation* activation = nullptr;
 
     int NeuronsCount;
 //Result before passing through the activation function
-Matrix* z = nullptr;
+    Matrix* z = nullptr;
 private:
     //Delta passed to the previous network in backpropagation
     Matrix* newDelta = nullptr;

@@ -1,17 +1,12 @@
 #include "Network.h"
 #include "InputLayer.h"
 #include "Loss.h"
-#include "ThreadArg.h"
 #include "Tools/ProgressBar.h"
 #include "DataLoader.h"
-#include "ConvLayer.h"
 #include <fstream>
-#include <unistd.h>
-#include <pthread.h>
 #include <iostream>
-#include <math.h>
+#include <cmath>
 #include <mutex>
-#include <condition_variable>
 #include <thread>
 
 
@@ -89,7 +84,7 @@ double Network::FeedForward(Matrix* input, Matrix* desiredOutput)
     output = input;
     for (int i = 0; i < layersCount; i++)
     {
-        std::cout << "feedforward : " << i << "\n";
+        //std::cout << "feedforward : " << i << "\n";
         output = Layers[i]->FeedForward(output);
     }
 
@@ -140,17 +135,17 @@ void Network::Compile(Opti _opti, Loss* _loss)
 
 double Network::BackPropagate(Matrix* input, Matrix* desiredOutput)
 {
-    std::cout << "feeding forward ! \n";
+    //std::cout << "feeding forward ! \n";
     double NetworkLoss = FeedForward(input, desiredOutput);
-    std::cout << "feeding stoped ! \n";
+    //std::cout << "feeding stoped ! \n";
     loss->CostDerivative(Layers[layersCount - 1]->getResult(), desiredOutput, costDerivative);
     output = costDerivative;
     for (int i = layersCount - 1; i > 0; i--)
     {
-        std::cout << "i : " << i << "\n";
+        //std::cout << "i : " << i << "\n";
         output = Layers[i]->BackPropagate(output, Layers[i - 1]->getResult());
     }
-        
+
 
     return NetworkLoss;
 }
@@ -280,16 +275,21 @@ void Network::Learn(const int epochs, const double learningRate, DataLoader* dat
             }
 
             //Update the progress bar
-            Bar.ChangeProgress(e, globalLoss / ((k+1) * batchSize));
+            std::cout << "\repochs : " << e << " loss: " << globalLoss / ((k + 1) * batchSize)
+                      << std::flush;
+            //Bar.ChangeProgress(e, globalLoss / ((k + 1) * batchSize));
         }
 
         dataLoader->Shuffle();
     }
     std::cout << "Learning finished" << std::endl;
 
-    delete[] threads;
-    delete[] auxiliaryNetworks;
-    delete[] auxThreadsDataOffset;
+    if (auxThreadNumber)
+    {
+        delete[] threads;
+        delete[] auxiliaryNetworks;
+        delete[] auxThreadsDataOffset;
+    }
     delete dataLoader;
 }
 

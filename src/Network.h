@@ -13,9 +13,7 @@ class Network
 public:
     Network();
 
-    Network(Loss* loss);
-
-    Network(Network* network);
+    explicit Network(Network* network);
 
     //Add a layer to the network
     void AddLayer(Layer* layer);
@@ -38,16 +36,10 @@ public:
     //Clear all delta from all layers (partial derivative)
     void ClearDelta();
 
-    //Function to start a thread 
-    static void* LearnThread(void* args);
-
     void PrintNetwork();
 
     //Compute a value threw the neural network
     Matrix* Process(Matrix* input);
-
-    //Only SOFTMAX ! Test the accuracy of the model on a given testset
-    double TestAccuracy(Matrix** inputs, Matrix** outputs, int dataLength);
 
     //Initialize variable and check for error in the architecture of the model
     void Compile(Opti opti = Opti::Constant, Loss* loss = nullptr);
