@@ -1,7 +1,7 @@
 #include "MaxPooling.h"
 
 
-MaxPoolLayer::MaxPoolLayer(int filterSize, int stride) : PoolingLayer(filterSize,stride)
+MaxPoolLayer::MaxPoolLayer(int filterSize, int stride) : PoolingLayer(filterSize, stride)
 {
     LayerID = 4;
 }
@@ -9,7 +9,7 @@ MaxPoolLayer::MaxPoolLayer(int filterSize, int stride) : PoolingLayer(filterSize
 
 const Matrix* MaxPoolLayer::FeedForward(const Matrix* input)
 {
-    result->Reshape(layerShape->dimensions[0],layerShape->dimensions[1],layerShape->dimensions[2]);
+    result->Reshape(layerShape->dimensions[0], layerShape->dimensions[1], layerShape->dimensions[2]);
     Matrix::MaxPool(input, result, filterSize, stride);
     return result;
 }
@@ -45,8 +45,8 @@ Matrix* MaxPoolLayer::BackPropagate(const Matrix* delta, const Matrix* previousA
                             continue;
 
 
-                        if ((*previousActivation)(r,c) == (*result)(i,j))
-                            (*newDelta)(r,c) = (*delta)(i,j);
+                        if ((*previousActivation)(r, c) == (*result)(i, j))
+                            (*newDelta)(r, c) = (*delta)(i, j);
                         // Should already be 0
                         //else
                         //    (*newDelta)(r,c) = 0.0;
@@ -65,8 +65,7 @@ Matrix* MaxPoolLayer::BackPropagate(const Matrix* delta, const Matrix* previousA
     result->ResetOffset();
     newDelta->ResetOffset();
     delta->ResetOffset();
-    
-    
+
 
     return newDelta;
 }
@@ -90,15 +89,15 @@ Layer* MaxPoolLayer::Load(std::ifstream& reader)
 {
     int _filterSize;
     int _tempStride;
-    reader.read(reinterpret_cast<char*>(&_filterSize),sizeof(int));
-    reader.read(reinterpret_cast<char*>(&_tempStride),sizeof(int));
-    return new MaxPoolLayer(_filterSize,_tempStride);
+    reader.read(reinterpret_cast<char*>(&_filterSize), sizeof(int));
+    reader.read(reinterpret_cast<char*>(&_tempStride), sizeof(int));
+    return new MaxPoolLayer(_filterSize, _tempStride);
 }
 
 void MaxPoolLayer::SpecificSave(std::ofstream& writer)
 {
     int tempFilterSize = filterSize;
     int tempStride = stride;
-    writer.write(reinterpret_cast<char*>(&tempFilterSize),sizeof(int));
-    writer.write(reinterpret_cast<char*>(&tempStride),sizeof(int));
+    writer.write(reinterpret_cast<char*>(&tempFilterSize), sizeof(int));
+    writer.write(reinterpret_cast<char*>(&tempStride), sizeof(int));
 }

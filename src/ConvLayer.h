@@ -1,4 +1,5 @@
 #pragma once
+
 #include "Layer.h"
 #include "LayerShape.h"
 #include "Activation.h"
@@ -20,23 +21,31 @@ class ConvLayer : public Layer
 
 public:
     ConvLayer(Matrix* filters, LayerShape* layerShape, Activation* activation);
+
     ConvLayer(LayerShape* filterShape, Activation* activation);
-    
+
     void Compile(LayerShape* previousLayer) override;
 
     Matrix* FeedForward(const Matrix* input) override;
-    Matrix* BackPropagate(const Matrix* delta, const Matrix* lastWeigths) override;
+
+    Matrix* BackPropagate(const Matrix* delta, const Matrix* lastWeights) override;
 
     void AddDeltaFrom(Layer* ConvLayer) override;
+
     void AverageGradients(int batchSize) override;
 
     void ClearDelta() override;
+
     void UpdateWeights(double learningRate, int batchSize) override;
+
     void SpecificSave(std::ofstream& writer) override;
+
     static Layer* Load(std::ifstream& reader);
-    Matrix* getResult() const override;
+
+    [[nodiscard]] Matrix* getResult() const override;
 
     std::string getLayerTitle() override;
+
     Layer* Clone() override;
 
 private:
@@ -50,7 +59,7 @@ private:
     Matrix* z;
     Matrix* previousDeltaMultiplied;
 
-    
+
     Matrix* nextLayerDelta = nullptr;
 
     //Result from the previous layer (don't initialize when compiling the layer)
@@ -61,7 +70,6 @@ private:
     LayerShape* filterShape = nullptr;
 
     Activation* activation = nullptr;
-    
 
 
 };

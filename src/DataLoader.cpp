@@ -12,7 +12,7 @@ DataLoader::DataLoader(Matrix*** _data, int _dataLength)
 
 void DataLoader::Shuffle()
 {
-    std::shuffle(data,data + dataLength,rng);
+    std::shuffle(data, data + dataLength, rng);
 }
 
 

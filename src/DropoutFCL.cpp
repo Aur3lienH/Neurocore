@@ -5,13 +5,16 @@
 #include "DropoutFCL.h"
 #include "InitFunc.h"
 
-DropoutFCL::DropoutFCL(int NeuronsCount, Activation* activation, double dropoutRate) : FCL(NeuronsCount, activation), dropoutRate(dropoutRate)
+DropoutFCL::DropoutFCL(int NeuronsCount, Activation* activation, double dropoutRate) : FCL(NeuronsCount, activation),
+                                                                                       dropoutRate(dropoutRate)
 {
 
 }
 
 DropoutFCL::DropoutFCL(int NeuronsCount, Activation* activation, Matrix* weights, Matrix* bias, Matrix* delta,
-                       Matrix* deltaActivation, double dropoutRate) : FCL(NeuronsCount, activation, weights, bias, delta, deltaActivation), dropoutRate(dropoutRate)
+                       Matrix* deltaActivation, double dropoutRate) : FCL(NeuronsCount, activation, weights, bias,
+                                                                          delta, deltaActivation),
+                                                                      dropoutRate(dropoutRate)
 {
 
 }
@@ -64,14 +67,19 @@ void DropoutFCL::Drop()
     const double scale = 1.0 / (1.0 - dropoutRate);
 
     // Zero out columns of droppedWeights and droppedBiases and scale the rest
-    for (int i = 0; i < Weights->getCols(); i++){
-        if (rand() / ((double)RAND_MAX) < dropoutRate){
-            for (int j = 0; j < Weights->getRows(); j++){
+    for (int i = 0; i < Weights->getCols(); i++)
+    {
+        if (rand() / ((double) RAND_MAX) < dropoutRate)
+        {
+            for (int j = 0; j < Weights->getRows(); j++)
+            {
                 (*Weights)(j, i) = 0;
             }
         }
-        else {
-            for (int j = 0; j < Weights->getRows(); j++){
+        else
+        {
+            for (int j = 0; j < Weights->getRows(); j++)
+            {
                 (*Weights)(j, i) *= scale;
             }
         }

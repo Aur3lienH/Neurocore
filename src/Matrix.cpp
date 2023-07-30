@@ -1,7 +1,7 @@
+#include <cmath>
 #include <iostream>
 #include <fstream>
-#include <cmath>
-#include <float.h>
+#include <cfloat>
 #include "Matrix.h"
 
 
@@ -15,7 +15,7 @@ Matrix::Matrix()
 }
 
 
-Matrix::Matrix(int rows, int cols)
+Matrix::Matrix(const int rows, const int cols)
 {
     this->rows = rows;
     this->cols = cols;
@@ -29,17 +29,17 @@ Matrix::Matrix(int rows, int cols)
     }
 }
 
-Matrix::Matrix(int rows, int cols, int dim)
+Matrix::Matrix(const int rows, int cols, int dim)
 {
     this->rows = rows;
     this->cols = cols;
-    this->dim = dim;  
+    this->dim = dim;
     matrixSize = rows * cols;
     this->data = new double[rows * cols * dim];
 }
 
 
-Matrix::Matrix(int rows, int cols, double value)
+Matrix::Matrix(const int rows, const int cols, double value)
 {
     this->rows = rows;
     this->cols = cols;
@@ -52,7 +52,7 @@ Matrix::Matrix(int rows, int cols, double value)
     }
 }
 
-Matrix::Matrix(int rows, int cols, double* newArray)
+Matrix::Matrix(const int rows, const int cols, double* newArray)
 {
     this->rows = rows;
     this->cols = cols;
@@ -61,7 +61,7 @@ Matrix::Matrix(int rows, int cols, double* newArray)
     matrixSize = rows * cols;
 }
 
-Matrix::Matrix(int rows, int cols, int dims, double* data)
+Matrix::Matrix(const int rows, const int cols, const int dims, double* data)
 {
     this->rows = rows;
     this->cols = cols;
@@ -75,24 +75,24 @@ Matrix::~Matrix()
     delete[] this->data;
 }
 
-const int Matrix::getRows () const
+int Matrix::getRows() const
 {
     return this->rows;
 }
 
-const int Matrix::getCols() const
+int Matrix::getCols() const
 {
     return this->cols;
 }
 
-const int Matrix::getDim() const
+int Matrix::getDim() const
 {
     return this->dim;
 }
 
 void Matrix::Add(Matrix* other, Matrix* result)
 {
-    
+
 #if SAFE
     if (this->rows != other->rows || this->cols != other->cols)
     {
@@ -102,7 +102,7 @@ void Matrix::Add(Matrix* other, Matrix* result)
         return;
     }
 #endif
-    
+
     for (int i = 0; i < this->rows * this->cols; i++)
     {
         result->data[i] = this->data[i] + other->data[i];
@@ -111,7 +111,7 @@ void Matrix::Add(Matrix* other, Matrix* result)
 
 void Matrix::AddAllDims(Matrix* other, Matrix* result)
 {
-    #if SAFE
+#if SAFE
     if (this->rows != other->rows || this->cols != other->cols || this->dim != other->dim)
     {
         std::cout << "Error: Matrix dimensions must agree." << std::endl;
@@ -119,14 +119,14 @@ void Matrix::AddAllDims(Matrix* other, Matrix* result)
     }
 #endif
     int size = this->rows * this->cols * this->dim;
-    
+
     for (int i = 0; i < size; i++)
     {
         result->data[i] = this->data[i] + other->data[i];
     }
 }
 
-void Matrix::Substract(const Matrix* other, Matrix* result) const 
+void Matrix::Substract(const Matrix* other, Matrix* result) const
 {
 #if SAFE
     if (this->rows != other->rows || this->cols != other->cols)
@@ -135,7 +135,7 @@ void Matrix::Substract(const Matrix* other, Matrix* result) const
         return;
     }
 #endif
-    
+
     for (int i = 0; i < this->rows * this->cols; i++)
     {
         result->data[i] = this->data[i] - other->data[i];
@@ -144,7 +144,7 @@ void Matrix::Substract(const Matrix* other, Matrix* result) const
 
 void Matrix::SubstractAllDims(const Matrix* other, Matrix* result) const
 {
-    #if SAFE
+#if SAFE
     if (this->rows != other->rows || this->cols != other->cols || this->dim != other->dim)
     {
         std::cout << "Error: Matrix dimensions must agree." << std::endl;
@@ -152,7 +152,7 @@ void Matrix::SubstractAllDims(const Matrix* other, Matrix* result) const
     }
 #endif
     int size = this->rows * this->cols * this->dim;
-    
+
     for (int i = 0; i < size; i++)
     {
         result->data[i] = this->data[i] - other->data[i];
@@ -170,7 +170,7 @@ void Matrix::MultiplyAllDims(const Matrix* other, Matrix* result) const
     }
 #endif
     int size = this->rows * this->cols * this->dim;
-    
+
     for (int i = 0; i < size; i++)
     {
         result->data[i] = this->data[i] * other->data[i];
@@ -180,7 +180,7 @@ void Matrix::MultiplyAllDims(const Matrix* other, Matrix* result) const
 void Matrix::MultiplyAllDims(double value)
 {
     int size = this->rows * this->cols * this->dim;
-    
+
     for (int i = 0; i < size; i++)
     {
         this->data[i] *= value;
@@ -191,12 +191,12 @@ void Matrix::MultiplyAllDims(double value)
 void Matrix::DivideAllDims(double value)
 {
     int size = this->rows * this->cols * this->dim;
-    
+
     for (int i = 0; i < size; i++)
     {
         this->data[i] /= value;
     }
-    
+
 }
 
 void Matrix::Zero()
@@ -216,7 +216,7 @@ std::ostream& operator<<(std::ostream& os, const Matrix& matrix)
         for (int j = 0; j < matrix.cols; j++)
         {
             os << matrix.data[i * matrix.cols + j];
-            if(j != matrix.cols - 1)
+            if (j != matrix.cols - 1)
             {
                 os << " ";
             }
@@ -228,10 +228,10 @@ std::ostream& operator<<(std::ostream& os, const Matrix& matrix)
 
 void Matrix::PrintSize() const
 {
-    std::cout << "(" << this->rows << "," << this->cols << "," << this->dim  << ")" << std::endl;
+    std::cout << "(" << this->rows << "," << this->cols << "," << this->dim << ")" << std::endl;
 }
 
-double& Matrix::operator[](int index) 
+double& Matrix::operator[](int index)
 {
 #if SAFE
     if (index >= this->rows * this->cols * this->dim)
@@ -242,12 +242,12 @@ double& Matrix::operator[](int index)
 
 
     return this->data[index];
-    
+
 }
 
 const double& Matrix::operator[](int index) const
 {
-    
+
 #if SAFE
     if (index >= this->rows * this->cols * this->dim)
     {
@@ -262,7 +262,7 @@ const double& Matrix::operator[](int index) const
 const double& Matrix::operator()(int _rows, int _cols) const
 {
 #if SAFE
-    if(_rows >= rows || _cols >= cols)
+    if (_rows >= rows || _cols >= cols)
     {
         throw std::out_of_range("Matrix : Index out of bounds");
     }
@@ -274,7 +274,7 @@ const double& Matrix::operator()(int _rows, int _cols) const
 const double& Matrix::operator()(int _rows, int _cols, int _dims) const
 {
 #if SAFE
-    if(_rows >= rows || _cols >= cols || _dims >= dim)
+    if (_rows >= rows || _cols >= cols || _dims >= dim)
     {
         throw std::out_of_range("Matrix : Index out of bounds");
     }
@@ -285,13 +285,13 @@ const double& Matrix::operator()(int _rows, int _cols, int _dims) const
 Matrix* Matrix::operator*=(const Matrix* other)
 {
 #if SAFE
-    if(this->cols != other->cols && this->rows != other->rows)
+    if (this->cols != other->cols && this->rows != other->rows)
     {
         throw std::runtime_error("Error: Matrix dimensions must agree.");
     }
 #endif
 
-    for (int i = 0; i < cols*rows; i++)
+    for (int i = 0; i < cols * rows; i++)
     {
         this->data[i] *= other->data[i];
     }
@@ -300,7 +300,7 @@ Matrix* Matrix::operator*=(const Matrix* other)
 
 Matrix* Matrix::operator*=(const double other)
 {
-    for (int i = 0; i < cols*rows; i++)
+    for (int i = 0; i < cols * rows; i++)
     {
         this->data[i] = data[i] * other;
     }
@@ -308,9 +308,7 @@ Matrix* Matrix::operator*=(const double other)
 }
 
 
-
-
-Matrix* Matrix::operator+(const Matrix& other)
+Matrix* Matrix::operator+(const Matrix& other) const
 {
 #if SAFE
     if (this->rows != other.rows || this->cols != other.cols)
@@ -320,15 +318,16 @@ Matrix* Matrix::operator+(const Matrix& other)
     }
 #endif
 
-    Matrix* result = new Matrix(this->rows, this->cols);
+    auto* result = new Matrix(this->rows, this->cols);
     for (int i = 0; i < this->cols * this->rows; i++)
     {
-        
+
         result->operator[](i) += other.data[i];
-        
+
     }
     return result;
 }
+
 Matrix* Matrix::operator+=(const Matrix& other)
 {
 #if SAFE
@@ -338,12 +337,12 @@ Matrix* Matrix::operator+=(const Matrix& other)
         return nullptr;
     }
 #endif
-    
+
     for (int i = 0; i < this->cols * this->rows; i++)
     {
-        
+
         this->data[i] += other.data[i];
-        
+
     }
     return this;
 }
@@ -353,9 +352,9 @@ Matrix* Matrix::operator*(const double& other)
 {
     for (int i = 0; i < this->cols * this->rows; i++)
     {
-        
+
         this->data[i] *= other;
-        
+
     }
     return this;
 }
@@ -363,35 +362,33 @@ Matrix* Matrix::operator*(const double& other)
 Matrix* Matrix::operator-=(const Matrix& other)
 {
 #if SAFE
-    if(this->rows != other.rows || this->cols != other.cols)
+    if (this->rows != other.rows || this->cols != other.cols)
     {
         std::cout << "Matrices are not of the same size\n";
         return nullptr;
     }
 #endif
-    
+
     for (int i = 0; i < this->rows * this->cols; i++)
     {
-        
+
         this->data[i] -= other.data[i];
-        
+
     }
     return this;
 }
 
-const void Matrix::CrossProduct(const Matrix* other, Matrix* output) const
+void Matrix::CrossProduct(const Matrix* other, Matrix* output) const
 {
 #if SAFE
-    
-    if(other->rows != this->cols)
+
+    if (other->rows != this->cols)
     {
         throw std::runtime_error("Matrice have not the shape to be cross producted !");
-        return;
     }
-    if(output->rows != this->rows || output->cols != other->cols)
+    if (output->rows != this->rows || output->cols != other->cols)
     {
         throw std::runtime_error("Output matrix has not the right shape !");
-        return;
     }
 
 #endif
@@ -413,33 +410,33 @@ const void Matrix::CrossProduct(const Matrix* other, Matrix* output) const
 
 Matrix* Matrix::Read(std::ifstream& reader)
 {
-    int row,col,dim;
-    reader.read(reinterpret_cast<char*>(&row),sizeof(int));
-    reader.read(reinterpret_cast<char*>(&col),sizeof(int));
-    reader.read(reinterpret_cast<char*>(&dim),sizeof(int));
-    Matrix* matrix = new Matrix(row,col,dim);
+    int row, col, dim;
+    reader.read(reinterpret_cast<char*>(&row), sizeof(int));
+    reader.read(reinterpret_cast<char*>(&col), sizeof(int));
+    reader.read(reinterpret_cast<char*>(&dim), sizeof(int));
+    auto* matrix = new Matrix(row, col, dim);
     for (int i = 0; i < row * col * dim; i++)
     {
-        reader.read(reinterpret_cast<char*>(matrix->data + i),sizeof(double));
+        reader.read(reinterpret_cast<char*>(matrix->data + i), sizeof(double));
     }
     return matrix;
 }
 
 void Matrix::Save(std::ofstream& writer)
 {
-    writer.write(reinterpret_cast<char*>(&rows),sizeof(int));
-    writer.write(reinterpret_cast<char*>(&cols),sizeof(int));
-    writer.write(reinterpret_cast<char*>(&dim),sizeof(int));
+    writer.write(reinterpret_cast<char*>(&rows), sizeof(int));
+    writer.write(reinterpret_cast<char*>(&cols), sizeof(int));
+    writer.write(reinterpret_cast<char*>(&dim), sizeof(int));
     for (int i = 0; i < rows * cols * dim; i++)
     {
-        writer.write(reinterpret_cast<char*>(data + i),sizeof(double));
+        writer.write(reinterpret_cast<char*>(data + i), sizeof(double));
     }
 }
 
 float Matrix::Distance(Matrix* a, Matrix* b)
 {
 #if SAFE
-    if(a->cols != b->cols || a->rows != b->rows)
+    if (a->cols != b->cols || a->rows != b->rows)
     {
         throw std::invalid_argument("Matrices need to have same size to calculate distance !");
     }
@@ -449,24 +446,24 @@ float Matrix::Distance(Matrix* a, Matrix* b)
     {
         res += (a[0][i] - b[0][i]) * (a[0][i] - b[0][i]);
     }
-    res = sqrt(res);
+    res = std::sqrt(res);
     return res;
 }
 
 Matrix* Matrix::Copy()
 {
-    double* resArray = new double[cols*rows*dim];
-    for (int i = 0; i < cols*rows*dim; i++)
+    auto* resArray = new double[cols * rows * dim];
+    for (int i = 0; i < cols * rows * dim; i++)
     {
         resArray[i] = data[i];
     }
-    return new Matrix(rows,cols,dim,resArray);
+    return new Matrix(rows, cols, dim, resArray);
 }
 
 
 Matrix* Matrix::CopyWithSameData()
 {
-    return new Matrix(rows,cols,dim,data);
+    return new Matrix(rows, cols, dim, data);
 }
 
 void Matrix::Flip180(const Matrix* input, Matrix* output)
@@ -476,13 +473,13 @@ void Matrix::Flip180(const Matrix* input, Matrix* output)
         for (int j = 0; j < input->rows / 2; ++j)
         {
             //UGLY
-            (*output)(i,j) = (*input)(input->rows - 1 - j,input->cols - 1 - i);
+            (*output)(i, j) = (*input)(input->rows - 1 - j, input->cols - 1 - i);
         }
     }
 }
 
 
-const void Matrix::GoToNextMatrix() const
+void Matrix::GoToNextMatrix() const
 {
     data += matrixSize;
     offset += matrixSize;
@@ -494,10 +491,10 @@ void Matrix::ResetOffset() const
     offset = 0;
 }
 
-void Matrix::SetOffset(int offset) const
+void Matrix::SetOffset(const int offset_) const
 {
-    data += offset;
-    this->offset += offset;
+    data += offset_;
+    this->offset += offset_;
 }
 
 int Matrix::GetOffset() const
@@ -512,7 +509,7 @@ void Matrix::FullConvolution(const Matrix* m, const Matrix* filter, Matrix* outp
     const int outputRows = m->getRows() + filter->getRows() - 1;
 
 #if SAFE
-    if(output->cols != outputCols || outputRows != output->rows)
+    if (output->cols != outputCols || outputRows != output->rows)
     {
         std::cout << "right shape is : " << "(" << outputRows << "," << outputCols << ")\n";
         throw std::invalid_argument("FullConvolution : Output Matrix has not the right shape ! ");
@@ -597,7 +594,7 @@ void Matrix::Convolution(const Matrix* input, const Matrix* filter, Matrix* outp
     int inputRows = input->getRows();
     int outputCols = (inputCols - filterSize) / stride + 1;
     int outputRows = (inputRows - filterSize) / stride + 1;
-    if(outputCols != output->cols || output->rows != outputRows)
+    if (outputCols != output->cols || output->rows != outputRows)
     {
         std::cout << outputRows << "\n";
         throw std::invalid_argument("Convolution : output matrix has not the right shape !");
@@ -624,7 +621,7 @@ void Matrix::Convolution(const Matrix* input, const Matrix* filter, Matrix* outp
 double Matrix::Sum()
 {
     double res = 0;
-    for (int i = 0; i < cols*rows; i++)
+    for (int i = 0; i < cols * rows; i++)
     {
         res += data[i];
     }
@@ -633,7 +630,7 @@ double Matrix::Sum()
 
 double& Matrix::operator()(int _rows, int _cols)
 {
-    if(_rows >= rows || _cols >= cols)
+    if (_rows >= rows || _cols >= cols)
     {
         throw std::out_of_range("Matrix : Index out of bounds");
     }
@@ -648,22 +645,22 @@ void Matrix::Flatten() const
     matrixSize = rows * cols;
 }
 
-void Matrix::Reshape(int rows, int cols, int dims) const
+void Matrix::Reshape(const int rows_, const int cols_, const int dims) const
 {
 #if SAFE
-    if(rows * cols * dims != this->cols * this->rows * this->dim)
+    if (rows_ * cols_ * dims != this->cols * this->rows * this->dim)
     {
         throw std::invalid_argument("Reshape : Incorrect Reshape !");
     }
 #endif
 
-    this->rows = rows;
-    this->cols = cols;
+    this->rows = rows_;
+    this->cols = cols_;
     this->dim = dims;
-    matrixSize = rows * cols;
+    matrixSize = rows_ * cols_;
 }
 
-const int Matrix::size() const
+int Matrix::size() const
 {
     return matrixSize * dim;
 }
@@ -671,7 +668,7 @@ const int Matrix::size() const
 
 Matrix* Matrix::Copy(const Matrix* a)
 {
-    Matrix* res = new Matrix(a->rows,a->cols,a->dim);
+    auto* res = new Matrix(a->rows, a->cols, a->dim);
     for (int i = 0; i < a->cols * a->rows * a->dim; i++)
     {
         res[0][i] = a[0][i];
@@ -715,7 +712,7 @@ void Matrix::MaxPool(const Matrix* a, Matrix* output, const int filterSize, cons
 }
 
 
-Matrix Matrix::Random(int rows, int cols)
+Matrix Matrix::Random(const int rows, const int cols)
 {
     Matrix res(rows, cols);
     for (int i = 0; i < rows * cols; i++)
@@ -729,6 +726,15 @@ double* Matrix::GetData()
     return data;
 }
 
+Matrix* Matrix::operator/=(const double other)
+{
+    for (int i = 0; i < rows * cols * dim; i++)
+    {
+        data[i] /= other;
+    }
+    return this;
+}
+
 
 //MATRIX CARRE
 
@@ -739,7 +745,7 @@ MatrixCarre::MatrixCarre(int size) : Matrix(size, size)
 
 MatrixCarre::MatrixCarre(int size, double value) : Matrix(size, size)
 {
-    for (int i = 0; i < size*size; i++)
+    for (int i = 0; i < size * size; i++)
     {
         this->operator[](i) = value;
     }
@@ -751,13 +757,13 @@ MatrixDiagonale::MatrixDiagonale(int size, double value) : Matrix(size, size)
 {
     for (int i = 0; i < size; i++)
     {
-        this->operator[](i * size + i) = value; 
+        this->operator[](i * size + i) = value;
     }
 }
 
 MatrixDiagonale::~MatrixDiagonale()
 {
-    
+
 }
 
 
