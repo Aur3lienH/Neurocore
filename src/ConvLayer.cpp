@@ -41,14 +41,14 @@ void ConvLayer::Compile(LayerShape* previousLayer)
     int outputCol = previousLayer->dimensions[1] - filterShape->dimensions[1] + 1;
 
 
-    int size = previousLayer->dimensions[2] * filterShape->dimensions[2];
+    std::cout << previousLayer->dimensions[2] << " wow this is size !\n";
 
     filterCount = filterShape->dimensions[2];
     preivousDimCount = previousLayer->dimensions[2];
 
     if(filters == nullptr)
     {
-        filters = new Matrix(filterShape->dimensions[0],filterShape->dimensions[1],size);
+        filters = new Matrix(filterShape->dimensions[0],filterShape->dimensions[1],filterShape->dimensions[2]);
         HeInit(1,filters);
     }
 
@@ -59,7 +59,7 @@ void ConvLayer::Compile(LayerShape* previousLayer)
     preDelta = filters->Copy();
 
 
-    layerShape = new LayerShape(previousLayer->dimensions[0] - filters->getRows() + 1,previousLayer->dimensions[1] - filters->getCols() + 1, size);
+    layerShape = new LayerShape(previousLayer->dimensions[0] - filters->getRows() + 1,previousLayer->dimensions[1] - filters->getCols() + 1, filterShape->dimensions[2]);
 
     result = new Matrix(layerShape->dimensions[0],layerShape->dimensions[1],layerShape->dimensions[2]);
 
