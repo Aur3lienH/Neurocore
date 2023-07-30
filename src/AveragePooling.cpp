@@ -25,7 +25,7 @@ Matrix* AveragePoolLayer::BackPropagate(const Matrix* delta, const Matrix* previ
                 {
                     for (int l = 0; l < filterSize; ++l)
                     {
-                        (*newDelta)(i * stride + k,j * stride + l) = (*delta)(i,j) / fs_2;
+                        (*newDelta)(i * stride + k, j * stride + l) = (*delta)(i, j) / fs_2;
                     }
                 }
             }
@@ -59,7 +59,8 @@ Layer* AveragePoolLayer::Clone()
     return new AveragePoolLayer(filterSize, stride);
 }
 
-AveragePoolLayer::AveragePoolLayer(const int filterSize, const int stride) : PoolingLayer(filterSize, stride), fs_2(filterSize * filterSize)
+AveragePoolLayer::AveragePoolLayer(const int filterSize, const int stride) : PoolingLayer(filterSize, stride),
+                                                                             fs_2(filterSize * filterSize)
 {
 
 }
@@ -69,8 +70,8 @@ Layer* AveragePoolLayer::Load(std::ifstream& reader)
 {
     int _filterSize;
     int _tempStride;
-    reader.read(reinterpret_cast<char*>(&_filterSize),sizeof(int));
-    reader.read(reinterpret_cast<char*>(_tempStride),sizeof(int));
+    reader.read(reinterpret_cast<char*>(&_filterSize), sizeof(int));
+    reader.read(reinterpret_cast<char*>(_tempStride), sizeof(int));
     return new AveragePoolLayer(_filterSize, _tempStride);
 }
 
@@ -78,6 +79,6 @@ void AveragePoolLayer::SpecificSave(std::ofstream& writer)
 {
     int tempFilterSize = filterSize;
     int tempStride = stride;
-    writer.write(reinterpret_cast<char*>(&tempFilterSize),sizeof(int));
-    writer.write(reinterpret_cast<char*>(&tempStride),sizeof(int));
+    writer.write(reinterpret_cast<char*>(&tempFilterSize), sizeof(int));
+    writer.write(reinterpret_cast<char*>(&tempStride), sizeof(int));
 }

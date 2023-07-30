@@ -12,11 +12,11 @@
 #include "./Examples/Quickdraw.h"
 
 
-
 int main()
 {
+    Mnist2();
     //QuickDraw2(10000);
-    //return 0;
+    return 0;
     FashionMnist2();
     //LoadAndTest("./Models/MNIST_11.net",true);
 }

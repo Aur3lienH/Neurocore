@@ -1,4 +1,5 @@
 #pragma once
+
 #include <iostream>
 
 namespace Tools
@@ -6,10 +7,14 @@ namespace Tools
     class Unit
     {
     public:
-        Unit(std::string unitName);
-        Unit(std::string unitName, double value);
+        explicit Unit(const std::string& _unitName);
+
+        Unit(const std::string& _unitName, double _value);
+
         friend std::ostream& operator<<(std::ostream& os, const Unit& unit);
+
         ~Unit();
+
     private:
         std::string unitName;
         double value;

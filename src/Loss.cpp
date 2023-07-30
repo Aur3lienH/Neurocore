@@ -1,5 +1,5 @@
 #include "Loss.h"
-#include "math.h"
+#include <cmath>
 #include "Matrix.h"
 
 
@@ -9,18 +9,18 @@ Loss::Loss()
 
 void Loss::Save(std::ofstream& writer)
 {
-    writer.write(reinterpret_cast<char*>(&ID),sizeof(int));
+    writer.write(reinterpret_cast<char*>(&ID), sizeof(int));
 }
 
 Loss* Loss::Read(std::ifstream& reader)
 {
     int id;
-    reader.read(reinterpret_cast<char*>(&id),sizeof(int));
-    if(id == 0)
+    reader.read(reinterpret_cast<char*>(&id), sizeof(int));
+    if (id == 0)
     {
         return new MSE();
     }
-    else if(id == 1)
+    else if (id == 1)
     {
         return new CrossEntropy();
     }
@@ -74,13 +74,13 @@ void CrossEntropy::CostDerivative(const Matrix* output, const Matrix* target, Ma
 {
     for (int i = 0; i < output->getRows() * output->getCols(); i++)
     {
-        if(target[0][i] == 1)
+        if (target[0][i] == 1)
         {
-            result[0][i] = -1 + output[0][i]; 
+            result[0][i] = -1 + output[0][i];
         }
         else
         {
-            result[0][i] = output[0][i]; 
+            result[0][i] = output[0][i];
         }
     }
 }

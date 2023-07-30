@@ -3,51 +3,52 @@
 
 namespace Tools
 {
-    Unit::Unit(std::string _unitName)
+    Unit::Unit(const std::string& _unitName)
     {
         unitName = _unitName;
         value = 0;
     }
-    Unit::Unit(std::string _unitName, double _value)
+
+    Unit::Unit(const std::string& _unitName, double _value)
     {
         unitName = _unitName;
         value = _value;
     }
-    Unit::~Unit()
-    {
 
-    }
+    Unit::~Unit()
+    = default;
+
     std::ostream& operator<<(std::ostream& os, const Unit& unit)
     {
-        float outputValue = unit.value;
+        double outputValue = unit.value;
         std::string unitExtension;
-        
-        if(outputValue > 1000000000000000)
+
+        if (outputValue > 1000000000000000)
         {
             outputValue /= 1000000000000000;
             unitExtension = "P";
         }
-        else if(outputValue > 1000000000000)
+        else if (outputValue > 1000000000000)
         {
             outputValue /= 1000000000000;
             unitExtension = "T";
         }
-        else if(outputValue > 1000000000)
+        else if (outputValue > 1000000000)
         {
             outputValue /= 1000000000;
             unitExtension = "G";
         }
-        else if(outputValue > 1000000)
+        else if (outputValue > 1000000)
         {
             outputValue /= 1000000;
             unitExtension = "M";
         }
-        else if(outputValue > 1000)
+        else if (outputValue > 1000)
         {
             outputValue /= 1000;
             unitExtension = "K";
         }
-        else if(outputValue > 1)
+        else if (outputValue > 1)
         {
             unitExtension = "";
         }
@@ -61,7 +62,7 @@ namespace Tools
             outputValue *= 1e+6;
             unitExtension = "μ";
         }
-        else if(outputValue > 1e-9)
+        else if (outputValue > 1e-9)
         {
             outputValue *= 1e+9;
             unitExtension = "n";

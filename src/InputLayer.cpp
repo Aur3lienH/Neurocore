@@ -1,16 +1,16 @@
 #include "LayerShape.h"
 #include "InputLayer.h"
 
-InputLayer::InputLayer(int inputSize)
+InputLayer::InputLayer(const int inputSize)
 {
     LayerID = 1;
     layerShape = new LayerShape(inputSize);
 }
 
-InputLayer::InputLayer(int rows, int cols, int size)
+InputLayer::InputLayer(const int rows, const int cols, const int size)
 {
     LayerID = 1;
-    layerShape = new LayerShape(rows,cols,size);
+    layerShape = new LayerShape(rows, cols, size);
 }
 
 InputLayer::InputLayer(LayerShape* LayerShape)
@@ -20,8 +20,7 @@ InputLayer::InputLayer(LayerShape* LayerShape)
 }
 
 
-
-const Matrix* InputLayer::FeedForward(const Matrix* _input) 
+const Matrix* InputLayer::FeedForward(const Matrix* _input)
 {
     input = _input;
     return _input;
@@ -30,17 +29,17 @@ const Matrix* InputLayer::FeedForward(const Matrix* _input)
 
 void InputLayer::ClearDelta()
 {
-    
+
 }
 
-const Matrix* InputLayer::BackPropagate(const Matrix* delta, const Matrix* lastWeigths)
+const Matrix* InputLayer::BackPropagate(const Matrix* delta, const Matrix* lastWeights)
 {
     return nullptr;
 }
 
 void InputLayer::Compile(LayerShape* layerShape)
 {
-    
+
 }
 
 const Matrix* InputLayer::getResult() const
@@ -48,9 +47,9 @@ const Matrix* InputLayer::getResult() const
     return input;
 }
 
-void InputLayer::UpdateWeights(double learningRate, int batchSize)
+void InputLayer::UpdateWeights(const double learningRate, const int batchSize)
 {
-    
+
 }
 
 void InputLayer::AddDeltaFrom(Layer* otherLayer)
@@ -60,7 +59,7 @@ void InputLayer::AddDeltaFrom(Layer* otherLayer)
 
 std::string InputLayer::getLayerTitle()
 {
-    std::string buf = "";
+    std::string buf;
     buf += "InputLayer" + '\n';
     buf += layerShape->GetDimensions() + "\n";
     return buf;
@@ -68,11 +67,12 @@ std::string InputLayer::getLayerTitle()
 
 Layer* InputLayer::Clone()
 {
-    if(layerShape->size == 1)
+    if (layerShape->size == 1)
     {
         return new InputLayer(layerShape->dimensions[0]);
     }
-    return new InputLayer(new LayerShape(layerShape->dimensions[0],layerShape->dimensions[1],layerShape->dimensions[2]));
+    return new InputLayer(
+            new LayerShape(layerShape->dimensions[0], layerShape->dimensions[1], layerShape->dimensions[2]));
 }
 
 
@@ -82,7 +82,7 @@ InputLayer* InputLayer::Load(std::ifstream& reader)
     return new InputLayer(layerShape);
 }
 
-void InputLayer::SpecificSave(std::ofstream& writer) 
+void InputLayer::SpecificSave(std::ofstream& writer)
 {
     layerShape->Save(writer);
 }

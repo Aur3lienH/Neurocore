@@ -24,11 +24,10 @@ const Matrix* Flatten::FeedForward(const Matrix* input)
 
 const Matrix* Flatten::BackPropagate(const Matrix* delta, const Matrix* pastActivation)
 {
-    input->Reshape(rows, cols,dims);
-    delta->Reshape(rows,cols,dims);
+    input->Reshape(rows, cols, dims);
+    delta->Reshape(rows, cols, dims);
     return delta;
 }
-
 
 
 void Flatten::ClearDelta()
@@ -36,7 +35,7 @@ void Flatten::ClearDelta()
 
 }
 
-void Flatten::UpdateWeights(double learningRate, int batchSize)
+void Flatten::UpdateWeights(const double learningRate, const int batchSize)
 {
 
 }
@@ -49,12 +48,11 @@ void Flatten::AddDeltaFrom(Layer* layer)
 
 std::string Flatten::getLayerTitle()
 {
-    std::string buffer = "";
+    std::string buffer;
     buffer += "Flatten\n";
     buffer += "Output Size : " + std::to_string(layerShape->dimensions[0]) + "\n";
     return buffer;
 }
-
 
 
 Layer* Flatten::Load(std::ifstream& reader)
@@ -79,7 +77,7 @@ const Matrix* Flatten::getResult() const
     return input;
 }
 
-void Flatten::AverageGradients(int batchSize)
+void Flatten::AverageGradients(const int batchSize)
 {
-    
+
 }
