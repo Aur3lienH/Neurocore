@@ -1,15 +1,12 @@
 #include "Activation.h"
 #include "InitFunc.h"
 #include <fstream>
-#include <math.h>
-#include "Tools/ManagerIO.h"
-
-
+#include <cmath>
 
 
 Activation::Activation()
 {
-    
+    ID = -1;
 }
 
 std::string Activation::getName() const
@@ -17,19 +14,21 @@ std::string Activation::getName() const
     return name;
 }
 
-Matrix* Activation::InitBiases(int outputSize)
+Matrix* Activation::InitBiases(const int outputSize)
 {
-    Matrix* Biases = new Matrix(outputSize, 1);
+    auto* Biases = new Matrix(outputSize, 1);
     for (int i = 0; i < outputSize; i++)
     {
         Biases[0][i] = 0;
     }
+
     return Biases;
 }
 
 void Activation::FeedForward(const Matrix* input, Matrix* output)
 {
-    if(input->getCols() != output->getCols() || input->getRows() != output->getRows() || input->getDim() != output->getDim())
+    if (input->getCols() != output->getCols() || input->getRows() != output->getRows() ||
+        input->getDim() != output->getDim())
     {
         throw std::invalid_argument("Activation::FeedForward : Both matrix must have the same shape !");
     }
@@ -40,29 +39,30 @@ void Activation::FeedForward(const Matrix* input, Matrix* output)
     }
 }
 
-void Activation::Derivative(const Matrix * input, Matrix* output)
+void Activation::Derivative(const Matrix* input, Matrix* output)
 {
-    if(input->getCols() != output->getCols() || input->getRows() != output->getRows() || input->getDim() != output->getDim())
+    if (input->getCols() != output->getCols() || input->getRows() != output->getRows() ||
+        input->getDim() != output->getDim())
     {
         throw std::invalid_argument("Activation::Derivative() : Both matrix must have the same shape !");
     }
 
     for (int i = 0; i < input->size(); i++)
     {
-        output[0][i] = Derivate(input[0][i]);
+        output[0][i] = Derive(input[0][i]);
     }
 }
 
 void Activation::Save(std::ofstream& writer)
 {
-    writer.write(reinterpret_cast<char*>(&ID),sizeof(int));
+    writer.write(reinterpret_cast<char*>(&ID), sizeof(int));
 }
 
 Activation* Activation::Read(std::ifstream& reader)
 {
     int ID;
-    reader.read(reinterpret_cast<char*>(&ID),sizeof(int));
-    if(ID == 0)
+    reader.read(reinterpret_cast<char*>(&ID), sizeof(int));
+    if (ID == 0)
     {
         return new Sigmoid();
     }
@@ -77,7 +77,7 @@ Activation* Activation::Read(std::ifstream& reader)
     else if (ID == 3)
     {
         float f;
-        reader.read(reinterpret_cast<char*>(&f),sizeof(float));
+        reader.read(reinterpret_cast<char*>(&f), sizeof(float));
         return new LeakyReLU(f);
     }
     else if (ID == 4)
@@ -90,8 +90,7 @@ Activation* Activation::Read(std::ifstream& reader)
     }
     else
     {
-        throw std::invalid_argument("Invalid ID for loading activation funciton");
-        return nullptr;
+        throw std::invalid_argument("Invalid ID for loading activation function");
     }
 }
 
@@ -101,19 +100,19 @@ Sigmoid::Sigmoid()
     ID = 0;
 }
 
-double Sigmoid::Function(double input)
+double Sigmoid::Function(const double input)
 {
     return 1 / (1 + exp(-input));
 }
 
-double Sigmoid::Derivate(double input)
+double Sigmoid::Derive(const double input)
 {
     return exp(-input) / pow(1 + exp(-input), 2);
 }
 
-Matrix* Sigmoid::InitWeights(int previousNeuronsCount, int NeuronsCount)
+Matrix* Sigmoid::InitWeights(const int previousNeuronsCount, const int NeuronsCount)
 {
-    Matrix* weights = new Matrix(NeuronsCount, previousNeuronsCount);
+    auto* weights = new Matrix(NeuronsCount, previousNeuronsCount);
     XavierInit(previousNeuronsCount, weights);
     return weights;
 }
@@ -124,19 +123,19 @@ SigmoidPrime::SigmoidPrime()
     ID = 1;
 }
 
-double SigmoidPrime::Function(double input)
+double SigmoidPrime::Function(const double input)
 {
     return 0.5 + 0.5 * tanh(0.5 * input);
 }
 
-double SigmoidPrime::Derivate(double input)
+double SigmoidPrime::Derive(const double input)
 {
     return 0.5 * (1 + tanh(0.5 * input)) * (1 - tanh(0.5 * input));
 }
 
-Matrix* SigmoidPrime::InitWeights(int previousNeuronsCount, int NeuronsCount)
+Matrix* SigmoidPrime::InitWeights(const int previousNeuronsCount, const int NeuronsCount)
 {
-    Matrix* weights = new Matrix(NeuronsCount, previousNeuronsCount);
+    auto* weights = new Matrix(NeuronsCount, previousNeuronsCount);
     XavierInit(previousNeuronsCount, weights);
     return weights;
 }
@@ -147,9 +146,9 @@ ReLU::ReLU()
     ID = 2;
 }
 
-double ReLU::Function(double input)
+double ReLU::Function(const double input)
 {
-    if(input > 0)
+    if (input > 0)
     {
         return input;
     }
@@ -159,9 +158,9 @@ double ReLU::Function(double input)
     }
 }
 
-double ReLU::Derivate(double input)
+double ReLU::Derive(const double input)
 {
-    if(input > 0)
+    if (input > 0)
     {
         return 1;
     }
@@ -171,38 +170,38 @@ double ReLU::Derivate(double input)
     }
 }
 
-Matrix* ReLU::InitWeights(int previousNeuronsCount, int NeuronsCount)
+Matrix* ReLU::InitWeights(const int previousNeuronsCount, const int NeuronsCount)
 {
-    Matrix* weights = new Matrix(NeuronsCount, previousNeuronsCount);
+    auto* weights = new Matrix(NeuronsCount, previousNeuronsCount);
     HeInit(previousNeuronsCount, weights);
     return weights;
 }
 
-LeakyReLU::LeakyReLU(double _alpha)
+LeakyReLU::LeakyReLU(const double _alpha)
 {
     alpha = _alpha;
     ID = 3;
 }
 
-double LeakyReLU::Function(double input)
+double LeakyReLU::Function(const double input)
 {
     return input > 0 ? input : 0.01 * input;
 }
 
-double LeakyReLU::Derivate(double input)
+double LeakyReLU::Derive(const double input)
 {
     return input > 0 ? 1 : 0.01;
 }
 
 void LeakyReLU::Save(std::ofstream& writer)
 {
-    writer.write(reinterpret_cast<char*>(&ID),sizeof(int));
-    writer.write(reinterpret_cast<char*>(&alpha),sizeof(float));
+    writer.write(reinterpret_cast<char*>(&ID), sizeof(int));
+    writer.write(reinterpret_cast<char*>(&alpha), sizeof(float));
 }
 
-Matrix* LeakyReLU::InitWeights(int previousNeuronsCount, int NeuronsCount)
+Matrix* LeakyReLU::InitWeights(const int previousNeuronsCount, const int NeuronsCount)
 {
-    Matrix* weights = new Matrix(NeuronsCount, previousNeuronsCount);
+    auto* weights = new Matrix(NeuronsCount, previousNeuronsCount);
     HeInit(previousNeuronsCount, weights);
     return weights;
 }
@@ -219,12 +218,12 @@ void Softmax::FeedForward(const Matrix* input, Matrix* output)
     double max = input[0][0];
     for (int i = 0; i < input->size(); i++)
     {
-        if(input[0][i] > max)
+        if (input[0][i] > max)
         {
             max = input[0][i];
         }
     }
-    
+
     for (int i = 0; i < input->size(); i++)
     {
         sum += exp(input[0][i] - max);
@@ -243,19 +242,19 @@ void Softmax::Derivative(const Matrix* input, Matrix* output)
     }
 }
 
-Matrix* Softmax::InitWeights(int previousNeuronsCount, int NeuronsCount)
+Matrix* Softmax::InitWeights(const int previousNeuronsCount, const int NeuronsCount)
 {
-    Matrix* weights = new Matrix(NeuronsCount, previousNeuronsCount);
+    auto* weights = new Matrix(NeuronsCount, previousNeuronsCount);
     XavierInit(previousNeuronsCount, weights);
     return weights;
 }
 
-double Softmax::Function(double input)
+double Softmax::Function(const double input)
 {
     return 0;
 }
 
-double Softmax::Derivate(double input)
+double Softmax::Derive(const double input)
 {
     return 0;
 }
@@ -266,30 +265,30 @@ Tanh::Tanh()
     ID = 5;
 }
 
-double Tanh::Function(double input)
+double Tanh::Function(const double input)
 {
     return tanh(input);
 }
 
-double Tanh::Derivate(double input)
+double Tanh::Derive(const double input)
 {
     return 1 - tanh(input) * tanh(input);
 }
 
-Matrix* Tanh::InitWeights(int previousNeuronsCount, int NeuronsCount)
+Matrix* Tanh::InitWeights(const int previousNeuronsCount, const int NeuronsCount)
 {
-    Matrix* weights = new Matrix(NeuronsCount, previousNeuronsCount);
+    auto* weights = new Matrix(NeuronsCount, previousNeuronsCount);
     XavierInit(previousNeuronsCount, weights);
     return weights;
 }
 
 
-None::None()
+None::None() : Activation()
 {
 
 }
 
-double None::Function(double input)
+double None::Function(const double input)
 {
     return 0;
 }

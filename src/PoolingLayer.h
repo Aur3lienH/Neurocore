@@ -1,4 +1,5 @@
 #pragma once
+
 #include "Layer.h"
 
 class PoolingLayer : public Layer
@@ -14,7 +15,7 @@ public:
 
     void Compile(LayerShape* previousActivation) override;
 
-    const Matrix* getResult() const override;
+    [[nodiscard]] const Matrix* getResult() const override;
 
     void SpecificSave(std::ofstream& writer) override;
 

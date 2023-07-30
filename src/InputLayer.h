@@ -1,4 +1,5 @@
 #pragma once
+
 #include "Matrix.h"
 #include "Layer.h"
 #include "LayerShape.h"
@@ -6,26 +7,39 @@
 class InputLayer : public Layer
 {
 public:
-    InputLayer(int inputSize);
+    explicit InputLayer(int inputSize);
+
     InputLayer(int rows, int cols, int size);
-    InputLayer(LayerShape* layerShape);
+
+    explicit InputLayer(LayerShape* layerShape);
 
 
-    const Matrix* FeedForward(const Matrix* input);
-    const Matrix* BackPropagate(const Matrix* delta, const Matrix* lastWeigths);
+    const Matrix* FeedForward(const Matrix* input) override;
 
-    void AverageGradients(int batchSize);
-    void ClearDelta();
-    void UpdateWeights(double learningRate, int batchSize);
-    void AddDeltaFrom(Layer* otherLayer);
-    void Compile(LayerShape* layerShape);
-    const Matrix* getResult() const;
-    std::string getLayerTitle();
+    const Matrix* BackPropagate(const Matrix* delta, const Matrix* lastWeights) override;
 
-    Layer* Clone();
+    void AverageGradients(int batchSize) override;
+
+    void ClearDelta() override;
+
+    void UpdateWeights(double learningRate, int batchSize) override;
+
+    void AddDeltaFrom(Layer* otherLayer) override;
+
+    void Compile(LayerShape* layerShape) override;
+
+    [[nodiscard]] const Matrix* getResult() const override;
+
+    std::string getLayerTitle() override;
+
+    Layer* Clone() override;
+
     static InputLayer* Load(std::ifstream& reader);
-    void SpecificSave(std::ofstream& writer);
+
+    void SpecificSave(std::ofstream& writer) override;
+
 private:
     const Matrix* input = nullptr;
-    void (*FeedFunc)(const Matrix*,Matrix*,int);
+
+    void (* FeedFunc)(const Matrix*, Matrix*, int);
 };

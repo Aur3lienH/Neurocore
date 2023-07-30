@@ -3,40 +3,41 @@
 #include <vector>
 #include <filesystem>
 #include "ManagerIO.h"
+
 namespace Tools
 {
-    int WriteUnsignedChar(std::string filename,unsigned char * bytes,int size)
+    int WriteUnsignedChar(const std::string& filename, unsigned char* bytes, const int size)
     {
         std::ofstream out;
         out.open(filename, std::ios::binary);
-        if(!out)
+        if (!out)
         {
             std::cout << "Cannot open File ! \n";
             return -1;
         }
         out.flush();
-        out.write((char*)bytes,size);
-        
+        out.write((char*) bytes, size);
+
         out.close();
         return 1;
     }
 
-    Bytes ReadUnsignedChar(std::string filename)
+    Bytes ReadUnsignedChar(const std::string& filename)
     {
         std::ifstream in;
         in.open(filename, std::ios::binary);
-        in.seekg(0,std::ios::end);
-        int length = in.tellg();
-        in.seekg(0,std::ios::beg);
-        unsigned char* buffer = new unsigned char[length];
-        in.read((char*)buffer,length);
-        
+        in.seekg(0, std::ios::end);
+        long length = in.tellg();
+        in.seekg(0, std::ios::beg);
+        auto* buffer = new unsigned char[length];
+        in.read((char*) buffer, length);
+
         in.close();
-        return Bytes(buffer,length);
+        return Bytes(buffer, length);
     }
 
 
-    int WriteText(std::string filename, std::string text)
+    int WriteText(const std::string& filename, const std::string& text)
     {
         std::ofstream out;
         out.open(filename);
@@ -45,7 +46,7 @@ namespace Tools
         return 1;
     }
 
-    std::string ReadText(std::string filename)
+    std::string ReadText(const std::string& filename)
     {
         std::ifstream in;
         in.open(filename);
@@ -54,7 +55,8 @@ namespace Tools
         in.close();
         return output;
     }
-    int ContinueWritingText(std::string filename, std::string text)
+
+    int ContinueWritingText(const std::string& filename, const std::string& text)
     {
         std::ofstream out;
         out.open(filename, std::ios::app);
@@ -62,24 +64,25 @@ namespace Tools
         out.close();
         return 1;
     }
-    int CreatePathDirectory(std::string path)
+
+    int CreatePathDirectory(const std::string& path)
     {
         std::vector<std::filesystem::path> pathVector;
         std::filesystem::path p(path);
         std::filesystem::path tempPath = p;
-        while(tempPath.string().size() > 0)
+        while (!tempPath.string().empty())
         {
 
             pathVector.push_back(tempPath);
             tempPath = tempPath.parent_path();
-            
+
         }
         for (int i = pathVector.size() - 1; i >= 0; i--)
         {
-            if(!std::filesystem::is_directory(pathVector[i]))
+            if (!std::filesystem::is_directory(pathVector[i]))
             {
-                std::cout << pathVector[i]<< "\n";
-                if(std::filesystem::create_directory(pathVector[i]) != 1)
+                std::cout << pathVector[i] << "\n";
+                if (std::filesystem::create_directory(pathVector[i]) != 1)
                 {
                     std::cout << "Cannot create directory ! \n";
                     return -1;
@@ -89,25 +92,25 @@ namespace Tools
         return 1;
     }
 
-    int CreatePathFile(std::string filePath)
+    int CreatePathFile(const std::string& filePath)
     {
         std::vector<std::filesystem::path> pathVector;
         std::filesystem::path p(filePath);
         std::filesystem::path tempPath = p;
         tempPath = tempPath.parent_path();
-        while(tempPath.string().size() > 0)
+        while (!tempPath.string().empty())
         {
 
             pathVector.push_back(tempPath);
             tempPath = tempPath.parent_path();
-            
+
         }
         for (int i = pathVector.size() - 1; i >= 0; i--)
         {
-            if(!std::filesystem::is_directory(pathVector[i]))
+            if (!std::filesystem::is_directory(pathVector[i]))
             {
-                std::cout << pathVector[i]<< "\n";
-                if(std::filesystem::create_directory(pathVector[i]) != 1)
+                std::cout << pathVector[i] << "\n";
+                if (std::filesystem::create_directory(pathVector[i]) != 1)
                 {
                     std::cout << "Cannot create directory ! \n";
                     return -1;
@@ -119,16 +122,16 @@ namespace Tools
 
     int StringToBytes(std::string str, unsigned char* buf)
     {
-        int length = str.size() * sizeof(char) + sizeof (int);
+        int length = str.size() * sizeof(char) + sizeof(int);
         IntToBytes(str.size(), buf);
         for (int i = 0; i < str.size(); i++)
         {
-            buf[i + sizeof(int)] = (unsigned char)str[i];
+            buf[i + sizeof(int)] = (unsigned char) str[i];
         }
         return length;
     }
 
-    std::string BytesToString(unsigned char* bytes,int* length)
+    std::string BytesToString(unsigned char* bytes, int* length)
     {
         int size = BytesToInt(bytes);
         std::string str;
@@ -149,7 +152,7 @@ namespace Tools
         return 4;
     }
 
-    int BytesToInt(unsigned char* bytes)
+    int BytesToInt(const unsigned char* bytes)
     {
         int value = 0;
         value = (bytes[0] << 24) | (bytes[1] << 16) | (bytes[2] << 8) | bytes[3];

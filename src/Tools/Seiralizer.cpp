@@ -17,7 +17,7 @@ namespace Tools
     Serializer::Serializer(std::size_t count, ...)
     {
         va_list valist;
-        va_start(valist, count); 
+        va_start(valist, count);
         for (int i = 0; i < count; i++)
         {
             Data* buf = va_arg(valist, Data*);
@@ -27,35 +27,34 @@ namespace Tools
     }
 
 
-
     void Serializer::Save(std::ofstream& writer)
     {
-        for (int i = 0; i < datas.size(); i++)
+        for (auto& data : datas)
         {
-            if(datas[i]->size == 0)
+            if (data->size == 0)
             {
-                Serializer* se = (Serializer*)datas[i]->pointer;
+                auto* se = (Serializer*) data->pointer;
                 se->Save(writer);
             }
             else
             {
-                writer.write(reinterpret_cast<char*>(datas[i]->pointer),datas[i]->size);
+                writer.write(reinterpret_cast<char*>(data->pointer), data->size);
             }
         }
     }
 
     void Serializer::Load(std::ifstream& reader)
     {
-        for (int i = 0; i < datas.size(); i++)
+        for (auto& data : datas)
         {
-            if(datas[i]->size == 0)
+            if (data->size == 0)
             {
-                Serializer* se = (Serializer*)datas[i]->pointer;
+                auto* se = (Serializer*) data->pointer;
                 se->Load(reader);
             }
             else
             {
-                reader.read(reinterpret_cast<char*>(datas[i]->pointer),datas[i]->size);
+                reader.read(reinterpret_cast<char*>(data->pointer), data->size);
             }
         }
     }
