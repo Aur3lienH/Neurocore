@@ -114,7 +114,6 @@ void Network::Compile(Opti _opti, Loss* _loss)
     //Compile each layer
     for (int i = 0; i < layersCount; i++)
     {
-        std::cout << i << "\n";
         if (i == 0)
             Layers[i]->Compile(nullptr, opti);
         else
@@ -275,9 +274,8 @@ void Network::Learn(const int epochs, const double learningRate, DataLoader* dat
             }
 
             //Update the progress bar
-            std::cout << "\repochs : " << e << " loss: " << globalLoss / ((k + 1) * batchSize)
-                      << std::flush;
-            //Bar.ChangeProgress(e, globalLoss / ((k + 1) * batchSize));
+            //std::cout << "\repochs : " << e << " loss: " << globalLoss / ((k + 1) * batchSize) << sltd::flush;
+            Bar.ChangeProgress(e, globalLoss / ((k + 1) * numberPerThread));
         }
 
         dataLoader->Shuffle();

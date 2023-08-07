@@ -2,10 +2,11 @@
 #include <iostream>
 #include <fstream>
 #include <cfloat>
+#include <emmintrin.h>
 #include "Matrix.h"
 
 
-#define SAFE true
+#define SAFE false
 
 //MATRIX
 
@@ -21,7 +22,7 @@ Matrix::Matrix(const int rows, const int cols)
     this->cols = cols;
     this->dim = 1;
     matrixSize = rows * cols;
-    this->data = new double[rows * cols * dim];
+    this->data = new float[rows * cols * dim];
 
     for (int i = 0; i < rows * cols; i++)
     {
@@ -35,24 +36,34 @@ Matrix::Matrix(const int rows, int cols, int dim)
     this->cols = cols;
     this->dim = dim;
     matrixSize = rows * cols;
-    this->data = new double[rows * cols * dim];
+    this->data = new float[rows * cols * dim];
+    
+    for (int i = 0; i < rows * cols * dim; i++)
+    {
+        data[i] = 0;
+    }
+
+
+
+    
+    
 }
 
 
-Matrix::Matrix(const int rows, const int cols, double value)
+Matrix::Matrix(const int rows, const int cols, float value)
 {
     this->rows = rows;
     this->cols = cols;
     this->dim = 1;
     matrixSize = rows * cols;
-    this->data = new double[rows * cols * dim];
+    this->data = new float[rows * cols * dim];
     for (int i = 0; i < rows * cols; i++)
     {
         this->data[i] = value;
     }
 }
 
-Matrix::Matrix(const int rows, const int cols, double* newArray)
+Matrix::Matrix(const int rows, const int cols, float* newArray)
 {
     this->rows = rows;
     this->cols = cols;
@@ -61,7 +72,7 @@ Matrix::Matrix(const int rows, const int cols, double* newArray)
     matrixSize = rows * cols;
 }
 
-Matrix::Matrix(const int rows, const int cols, const int dims, double* data)
+Matrix::Matrix(const int rows, const int cols, const int dims, float* data)
 {
     this->rows = rows;
     this->cols = cols;
@@ -177,7 +188,7 @@ void Matrix::MultiplyAllDims(const Matrix* other, Matrix* result) const
     }
 }
 
-void Matrix::MultiplyAllDims(double value)
+void Matrix::MultiplyAllDims(float value)
 {
     int size = this->rows * this->cols * this->dim;
 
@@ -188,7 +199,7 @@ void Matrix::MultiplyAllDims(double value)
 }
 
 
-void Matrix::DivideAllDims(double value)
+void Matrix::DivideAllDims(float value)
 {
     int size = this->rows * this->cols * this->dim;
 
@@ -231,7 +242,7 @@ void Matrix::PrintSize() const
     std::cout << "(" << this->rows << "," << this->cols << "," << this->dim << ")" << std::endl;
 }
 
-double& Matrix::operator[](int index)
+float& Matrix::operator[](int index)
 {
 #if SAFE
     if (index >= this->rows * this->cols * this->dim)
@@ -245,7 +256,7 @@ double& Matrix::operator[](int index)
 
 }
 
-const double& Matrix::operator[](int index) const
+const float& Matrix::operator[](int index) const
 {
 
 #if SAFE
@@ -259,7 +270,7 @@ const double& Matrix::operator[](int index) const
     return this->data[index];
 }
 
-const double& Matrix::operator()(int _rows, int _cols) const
+const float& Matrix::operator()(int _rows, int _cols) const
 {
 #if SAFE
     if (_rows >= rows || _cols >= cols)
@@ -271,7 +282,7 @@ const double& Matrix::operator()(int _rows, int _cols) const
     return data[_rows * this->cols + _cols];
 }
 
-const double& Matrix::operator()(int _rows, int _cols, int _dims) const
+const float& Matrix::operator()(int _rows, int _cols, int _dims) const
 {
 #if SAFE
     if (_rows >= rows || _cols >= cols || _dims >= dim)
@@ -298,7 +309,7 @@ Matrix* Matrix::operator*=(const Matrix* other)
     return this;
 }
 
-Matrix* Matrix::operator*=(const double other)
+Matrix* Matrix::operator*=(const float other)
 {
     for (int i = 0; i < cols * rows; i++)
     {
@@ -348,7 +359,7 @@ Matrix* Matrix::operator+=(const Matrix& other)
 }
 
 
-Matrix* Matrix::operator*(const double& other)
+Matrix* Matrix::operator*(const float& other)
 {
     for (int i = 0; i < this->cols * this->rows; i++)
     {
@@ -392,6 +403,8 @@ void Matrix::CrossProduct(const Matrix* other, Matrix* output) const
     }
 
 #endif
+
+/*
     for (int i = 0; i < this->rows; i++)
     {
         for (int j = 0; j < other->cols; j++)
@@ -403,6 +416,35 @@ void Matrix::CrossProduct(const Matrix* other, Matrix* output) const
             }
         }
     }
+
+*/
+    for (int i = 0; i < this->rows; i++)
+    {
+        for (int j = 0; j < other->cols; j++)
+        {
+            __m128 sum = _mm_setzero_ps();
+            int k;
+            for (k = 0; k <= this->cols - 4; k += 4)
+            {
+                __m128 a = _mm_loadu_ps(&this->data[i * this->cols + k]);
+                __m128 b = _mm_loadu_ps(&other->data[k * other->cols + j]);
+                sum = _mm_add_ps(sum, _mm_mul_ps(a, b));
+            }
+            
+            float temp[4];
+            _mm_storeu_ps(temp, sum);
+            output->data[i * output->cols + j] = temp[0] + temp[1] + temp[2] + temp[3];
+
+            // Handle the remaining elements if cols is not a multiple of 4
+            for (; k < this->cols; ++k)
+            {
+                output->data[i * output->cols + j] += this->data[i * this->cols + k] * other->data[k * other->cols + j];
+            }
+        }
+    }
+
+
+
 }
 
 
@@ -417,7 +459,7 @@ Matrix* Matrix::Read(std::ifstream& reader)
     auto* matrix = new Matrix(row, col, dim);
     for (int i = 0; i < row * col * dim; i++)
     {
-        reader.read(reinterpret_cast<char*>(matrix->data + i), sizeof(double));
+        reader.read(reinterpret_cast<char*>(matrix->data + i), sizeof(float));
     }
     return matrix;
 }
@@ -429,7 +471,7 @@ void Matrix::Save(std::ofstream& writer)
     writer.write(reinterpret_cast<char*>(&dim), sizeof(int));
     for (int i = 0; i < rows * cols * dim; i++)
     {
-        writer.write(reinterpret_cast<char*>(data + i), sizeof(double));
+        writer.write(reinterpret_cast<char*>(data + i), sizeof(float));
     }
 }
 
@@ -452,7 +494,7 @@ float Matrix::Distance(Matrix* a, Matrix* b)
 
 Matrix* Matrix::Copy()
 {
-    auto* resArray = new double[cols * rows * dim];
+    auto* resArray = new float[cols * rows * dim];
     for (int i = 0; i < cols * rows * dim; i++)
     {
         resArray[i] = data[i];
@@ -527,7 +569,7 @@ void Matrix::FullConvolution(const Matrix* m, const Matrix* filter, Matrix* outp
     {
         for (int j = 0; j < outputCols; j++)
         {
-            double sum = 0;
+            float sum = 0;
             for (int k = 0; k < filterRows; k++)
             {
                 for (int l = 0; l < filterCols; l++)
@@ -560,7 +602,7 @@ void Matrix::AveragePool(const Matrix* a, Matrix* output, int filterSize, int st
         {
             for (int j = 0; j < outputCols; j++)
             {
-                double sum = 0;
+                float sum = 0;
                 for (int k = 0; k < filterSize; k++)
                 {
                     for (int l = 0; l < filterSize; l++)
@@ -605,7 +647,7 @@ void Matrix::Convolution(const Matrix* input, const Matrix* filter, Matrix* outp
     {
         for (int j = 0; j < output->cols; j++)
         {
-            double sum = 0;
+            float sum = 0;
             for (int k = 0; k < filter->getRows(); k++)
             {
                 for (int l = 0; l < filter->getRows(); l++)
@@ -618,9 +660,9 @@ void Matrix::Convolution(const Matrix* input, const Matrix* filter, Matrix* outp
     }
 }
 
-double Matrix::Sum()
+float Matrix::Sum()
 {
-    double res = 0;
+    float res = 0;
     for (int i = 0; i < cols * rows; i++)
     {
         res += data[i];
@@ -628,7 +670,7 @@ double Matrix::Sum()
     return res;
 }
 
-double& Matrix::operator()(int _rows, int _cols)
+float& Matrix::operator()(int _rows, int _cols)
 {
     if (_rows >= rows || _cols >= cols)
     {
@@ -689,7 +731,7 @@ void Matrix::MaxPool(const Matrix* a, Matrix* output, const int filterSize, cons
         {
             for (int j = 0; j < outputCols; j++)
             {
-                double max = -DBL_MAX;
+                float max = -DBL_MAX;
                 for (int k = 0; k < filterSize; k++)
                 {
                     for (int l = 0; l < filterSize; l++)
@@ -716,17 +758,17 @@ Matrix Matrix::Random(const int rows, const int cols)
 {
     Matrix res(rows, cols);
     for (int i = 0; i < rows * cols; i++)
-        res[i] = (double) rand() / RAND_MAX * 2 - 1;
+        res[i] = (float) rand() / RAND_MAX * 2 - 1;
 
     return res;
 }
 
-double* Matrix::GetData()
+float* Matrix::GetData()
 {
     return data;
 }
 
-Matrix* Matrix::operator/=(const double other)
+Matrix* Matrix::operator/=(const float other)
 {
     for (int i = 0; i < rows * cols * dim; i++)
     {
@@ -743,7 +785,7 @@ MatrixCarre::MatrixCarre(int size) : Matrix(size, size)
     this->operator[](0) = 1;
 }
 
-MatrixCarre::MatrixCarre(int size, double value) : Matrix(size, size)
+MatrixCarre::MatrixCarre(int size, float value) : Matrix(size, size)
 {
     for (int i = 0; i < size * size; i++)
     {
@@ -753,7 +795,7 @@ MatrixCarre::MatrixCarre(int size, double value) : Matrix(size, size)
 
 //MATRIX DIAGONALE
 
-MatrixDiagonale::MatrixDiagonale(int size, double value) : Matrix(size, size)
+MatrixDiagonale::MatrixDiagonale(int size, float value) : Matrix(size, size)
 {
     for (int i = 0; i < size; i++)
     {

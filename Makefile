@@ -4,7 +4,7 @@ TARGET_EXEC ?= final_program
 BUILD_DIR ?= ./build
 SRC_DIR ?= ./src
 
-FLAGS ?= -O3
+FLAGS ?= -O3 -pg
 
 SRCS := $(shell find $(SRC_DIR) -name *.cpp)
 OBJS := $(SRCS:%=$(BUILD_DIR)/%.o)
@@ -13,11 +13,11 @@ DEPS := $(OBJS:.o=.d)
 all : $(BUILD_DIR)/$(TARGET_EXEC)
 
 $(BUILD_DIR)/$(TARGET_EXEC) : $(OBJS)
-	$(CC) $(OBJS) -o $@ $(FLAGS)
+	$(CC) $(FLAGS) $(OBJS) -o $@
 
 $(BUILD_DIR)/%.cpp.o : %.cpp
 	@mkdir -p $(@D)
-	$(CC) -c $< -o $@ $(FLAGS)
+	$(CC) $(FLAGS) -c $< -o $@
 
 
 .PHONY: clean

@@ -60,13 +60,16 @@ private:
     Matrix* activationDelta;
     Matrix* z;
     Matrix* previousDeltaMultiplied;
-
+    Matrix* bias;
+    Matrix* deltaBias;
 
     Matrix* nextLayerDelta = nullptr;
+    Matrix* nextLayerDeltaTemp = nullptr;
 
     //Result from the previous layer (don't initialize when compiling the layer)
     uint filterCount = 0;
     uint preivousDimCount = 0;
+    uint dimCount = 0;
 
 
     LayerShape* filterShape = nullptr;

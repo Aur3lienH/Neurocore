@@ -39,36 +39,30 @@ void ConvLayer::Compile(LayerShape* previousLayer)
     int outputCol = previousLayer->dimensions[1] - filterShape->dimensions[1] + 1;
 
 
-    std::cout << previousLayer->dimensions[2] << " wow this is size !\n";
 
     filterCount = filterShape->dimensions[2];
     preivousDimCount = previousLayer->dimensions[2];
+    dimCount = filterCount * preivousDimCount;
+    
 
     if (filters == nullptr)
     {
-<<<<<<< HEAD
-        filters = new Matrix(filterShape->dimensions[0],filterShape->dimensions[1],filterShape->dimensions[2]);
+        filters = new Matrix(filterShape->dimensions[0],filterShape->dimensions[1],(int)dimCount);
         HeInit(1,filters);
-=======
-        filters = new Matrix(filterShape->dimensions[0], filterShape->dimensions[1], size);
-        HeInit(1, filters);
->>>>>>> 1e3c2f41d7880c92061d2c355d78715ae9f80f34
     }
 
     rotatedFilter = filters->Copy();
 
-    nextLayerDelta = new Matrix(previousLayer->dimensions[0], previousLayer->dimensions[1],
-                                previousLayer->dimensions[2]);
+    nextLayerDelta = new Matrix(previousLayer->dimensions[0], previousLayer->dimensions[1],previousLayer->dimensions[2]);
+
+    nextLayerDeltaTemp = new Matrix(previousLayer->dimensions[0],previousLayer->dimensions[1]);
+
+
     delta = filters->Copy();
-    preDelta = filters->Copy();
+    preDelta = new Matrix(filters->getRows(),filters->getCols());
 
 
-<<<<<<< HEAD
-    layerShape = new LayerShape(previousLayer->dimensions[0] - filters->getRows() + 1,previousLayer->dimensions[1] - filters->getCols() + 1, filterShape->dimensions[2]);
-=======
-    layerShape = new LayerShape(previousLayer->dimensions[0] - filters->getRows() + 1,
-                                previousLayer->dimensions[1] - filters->getCols() + 1, size);
->>>>>>> 1e3c2f41d7880c92061d2c355d78715ae9f80f34
+    layerShape = new LayerShape(previousLayer->dimensions[0] - filters->getRows() + 1,previousLayer->dimensions[1] - filters->getCols() + 1, dimCount);
 
     result = new Matrix(layerShape->dimensions[0], layerShape->dimensions[1], layerShape->dimensions[2]);
 
@@ -77,7 +71,10 @@ void ConvLayer::Compile(LayerShape* previousLayer)
     previousDeltaMultiplied = result->Copy();
     activationDelta = result->Copy();
 
-    optimizer->Compile(filters->size());
+    bias = new Matrix(layerShape->dimensions[0],layerShape->dimensions[1],layerShape->dimensions[2]);
+    deltaBias = new Matrix(layerShape->dimensions[0],layerShape->dimensions[1],layerShape->dimensions[2]);
+
+    optimizer->Compile(filters->size() + bias->size());
 
 
 }
@@ -92,13 +89,12 @@ Matrix* ConvLayer::FeedForward(const Matrix* input)
         {
             Matrix::Convolution(input, filters, z);
             filters->GoToNextMatrix();
-            z->GoToNextMatrix();
         }
         input->GoToNextMatrix();
     }
+    z->AddAllDims(bias,z);
     filters->ResetOffset();
     input->ResetOffset();
-    z->ResetOffset();
     activation->FeedForward(z, result);
     return result;
 }
@@ -111,40 +107,48 @@ Matrix* ConvLayer::BackPropagate(const Matrix* lastDelta, const Matrix* lastWeig
     activation->Derivative(z, activationDelta);
     lastDelta->MultiplyAllDims(activationDelta, previousDeltaMultiplied);
 
+    deltaBias->AddAllDims(previousDeltaMultiplied,deltaBias);
+
+    nextLayerDelta->Zero();
+
     for (uint i = 0; i < preivousDimCount; i++)
     {
         for (uint j = 0; j < filterCount; j++)
         {
             Matrix::Flip180(filters, rotatedFilter);
-            Matrix::FullConvolution(rotatedFilter, previousDeltaMultiplied, nextLayerDelta);
+            Matrix::FullConvolution(rotatedFilter, previousDeltaMultiplied, nextLayerDeltaTemp);
+            nextLayerDelta->Add(nextLayerDeltaTemp,nextLayerDelta);
             Matrix::Convolution(lastWeights, previousDeltaMultiplied, preDelta);
-            delta->AddAllDims(preDelta, delta);
+            delta->Add(preDelta,delta);
             filters->GoToNextMatrix();
             rotatedFilter->GoToNextMatrix();
             previousDeltaMultiplied->GoToNextMatrix();
         }
         lastWeights->GoToNextMatrix();
+        nextLayerDelta->GoToNextMatrix();
     }
-
 
     filters->ResetOffset();
     rotatedFilter->ResetOffset();
     previousDeltaMultiplied->ResetOffset();
     lastWeights->ResetOffset();
+    nextLayerDelta->ResetOffset();
 
     return nextLayerDelta;
 }
 
-
+ 
 void ConvLayer::UpdateWeights(const double learningRate, const int batchSize)
 {
     optimizer->Compute(delta, filters);
+    optimizer->Compute(deltaBias,bias,filters->size());
 }
 
 
 void ConvLayer::ClearDelta()
 {
     delta->Zero();
+    deltaBias->Zero();
 }
 
 std::string ConvLayer::getLayerTitle()
@@ -190,8 +194,8 @@ Layer* ConvLayer::Load(std::ifstream& reader)
 Layer* ConvLayer::Clone()
 {
     auto* filterCopy = filters->CopyWithSameData();
-    return new ConvLayer(filterCopy, new LayerShape(layerShape->dimensions[0], layerShape->dimensions[1],
-                                                    layerShape->dimensions[2]), activation);
+    return new ConvLayer(filterCopy, new LayerShape(filterShape->dimensions[0], filterShape->dimensions[1],
+                                                    filterShape->dimensions[2]), activation);
 }
 
 void ConvLayer::AverageGradients(int batchSize)
