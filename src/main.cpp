@@ -14,9 +14,8 @@
 
 int main()
 {
-    Mnist2();
+    Mnist1();
     //QuickDraw2(10000);
     return 0;
-    FashionMnist2();
     //LoadAndTest("./Models/MNIST_11.net",true);
 }

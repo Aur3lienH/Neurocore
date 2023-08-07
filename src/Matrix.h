@@ -13,11 +13,11 @@ public:
 
     Matrix(int rows, int cols, int size);
 
-    Matrix(int rows, int cols, double value);
+    Matrix(int rows, int cols, float value);
 
-    Matrix(int rows, int cols, double* data);
+    Matrix(int rows, int cols, float* data);
 
-    Matrix(int rows, int cols, int dims, double* data);
+    Matrix(int rows, int cols, int dims, float* data);
 
     virtual ~Matrix();
 
@@ -43,7 +43,7 @@ public:
 
     int GetOffset() const;
 
-    double* GetData();
+    float* GetData();
 
 
     void Flatten() const;
@@ -60,13 +60,13 @@ public:
 
     void MultiplyAllDims(const Matrix* other, Matrix* result) const;
 
-    void MultiplyAllDims(double value);
+    void MultiplyAllDims(float value);
 
-    void DivideAllDims(double value);
+    void DivideAllDims(float value);
 
     void Zero();
 
-    double Sum();
+    float Sum();
 
     int getRows() const;
 
@@ -84,25 +84,25 @@ public:
 
     Matrix* operator*=(const Matrix* other);
 
-    Matrix* operator*=(double other);
+    Matrix* operator*=(float other);
 
-    Matrix* operator/=(double other);
+    Matrix* operator/=(float other);
 
-    Matrix* operator*(const double& other);
+    Matrix* operator*(const float& other);
 
     static Matrix* Read(std::ifstream& reader);
 
     void Save(std::ofstream& writer);
 
-    double& operator[](int index);
+    float& operator[](int index);
 
-    double& operator()(int rows, int cols);
+    float& operator()(int rows, int cols);
 
-    const double& operator[](int index) const;
+    const float& operator[](int index) const;
 
-    const double& operator()(int rows, int cols) const;
+    const float& operator()(int rows, int cols) const;
 
-    const double& operator()(int rows, int cols, int dim) const;
+    const float& operator()(int rows, int cols, int dim) const;
 
     void CrossProduct(const Matrix* other, Matrix* output) const;
 
@@ -120,7 +120,7 @@ public:
     static Matrix* Copy(const Matrix* a);
 
 protected:
-    mutable double* data;
+    mutable float* data;
     mutable int rows;
     mutable int cols;
     mutable int dim;
@@ -134,7 +134,7 @@ class MatrixCarre : public Matrix
 public:
     explicit MatrixCarre(int size);
 
-    MatrixCarre(int size, double value);
+    MatrixCarre(int size, float value);
 
 private:
 };
@@ -143,7 +143,7 @@ private:
 class MatrixDiagonale : public Matrix
 {
 public:
-    MatrixDiagonale(int size, double value);
+    MatrixDiagonale(int size, float value);
 
     ~MatrixDiagonale();
 };
@@ -164,12 +164,12 @@ public:
     CloneMatrix(int rows, int cols, int size) : Matrix(rows, cols, size)
     {};
 
-    CloneMatrix(int rows, int cols, double value) : Matrix(rows, cols, value)
+    CloneMatrix(int rows, int cols, float value) : Matrix(rows, cols, value)
     {};
 
-    CloneMatrix(int rows, int cols, double* data) : Matrix(rows, cols, data)
+    CloneMatrix(int rows, int cols, float* data) : Matrix(rows, cols, data)
     {};
 
-    CloneMatrix(int rows, int cols, int dims, double* data) : Matrix(rows, cols, dims, data)
+    CloneMatrix(int rows, int cols, int dims, float* data) : Matrix(rows, cols, dims, data)
     {};
 };
