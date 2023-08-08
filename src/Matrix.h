@@ -11,7 +11,7 @@ public:
 
     Matrix(int rows, int cols);
 
-    Matrix(int rows, int cols, int size);
+    Matrix(int rows, int cols, int size, bool aligned = false);
 
     Matrix(int rows, int cols, float value);
 

@@ -14,6 +14,9 @@
 
 int main()
 {
+   
+
+
     Mnist1();
     //QuickDraw2(10000);
     return 0;

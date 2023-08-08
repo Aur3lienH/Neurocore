@@ -84,6 +84,8 @@ private:
     //Neurons in the previous layer
     int previousNeuronsCount;
 
+    float* buffer;
+
 
 };
 

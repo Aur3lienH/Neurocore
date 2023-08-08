@@ -1,6 +1,7 @@
 #include "FCL.h"
 #include <iostream>
 #include <cmath>
+#include <emmintrin.h>
 #include <fstream>
 #include "Matrix.h"
 #include "LayerShape.h"
@@ -40,6 +41,7 @@ Matrix* FCL::FeedForward(const Matrix* input)
 
 void FCL::Compile(LayerShape* previousLayer)
 {
+    buffer = new float[4];
     if (previousLayer->size != 1)
     {
         throw std::invalid_argument("Previous Layer must have one dimension ! ");
@@ -52,7 +54,7 @@ void FCL::Compile(LayerShape* previousLayer)
     if (Delta == nullptr)
         Delta = new Matrix(previousNeuronsCount, NeuronsCount);
     if (deltaActivation == nullptr)
-        deltaActivation = new Matrix(NeuronsCount, 1);
+        deltaActivation = new Matrix(NeuronsCount, 1,1,true);
     if (DeltaBiases == nullptr)
         DeltaBiases = new Matrix(NeuronsCount, 1);
     if (Biases == nullptr)
@@ -73,18 +75,50 @@ const Matrix* FCL::BackPropagate(const Matrix* lastDelta, const Matrix* PastActi
     deltaActivation->operator*=(lastDelta);
 
     DeltaBiases->Add(deltaActivation, DeltaBiases);
-
+    float* weigthsData = Weights->GetData();
+    float* DeltaData = Delta->GetData();
+    
     for (int i = 0; i < previousNeuronsCount; i++)
     {
-        newDelta[0][i] = 0;
-        for (int j = 0; j < NeuronsCount; j++)
+        (*newDelta)[i] = 0;
+        __m128 m_newDelta = _mm_setzero_ps();
+        __m128 m_PastActivation = _mm_set1_ps((*PastActivation)[i]);
+        int columnSize = i * NeuronsCount;
+        int j;
+        for (j = 0; j + 4 < NeuronsCount; j+=4)
+        {
+            //
+            __m128 m_deltaActivation = _mm_load_ps(&((*deltaActivation)[j]));
+            __m128 m_Weigths = _mm_loadu_ps(weigthsData + columnSize);
+
+
+            m_newDelta = _mm_add_ps(m_newDelta,_mm_mul_ps(m_deltaActivation,m_Weigths));
+            
+            __m128 m_delta = _mm_set_ps(DeltaData[i + (j+3) * previousNeuronsCount],DeltaData[i + (j+2)*previousNeuronsCount],DeltaData[i + (j+1)*previousNeuronsCount],DeltaData[i + j*previousNeuronsCount]);
+
+            m_delta = _mm_add_ps(m_delta,_mm_mul_ps(m_PastActivation,m_deltaActivation));
+
+            _mm_storeu_ps(buffer,m_delta);
+            for (int k = 0; k < 4; k++)
+            {
+                Delta[0][i + (j + k) * previousNeuronsCount] = buffer[k];
+            }
+            
+        }
+        _mm_store_ps(buffer,m_newDelta);
+        newDelta[0][i] = buffer[0] + buffer[1] + buffer[2] + buffer[3] + newDelta[0][i];
+        for (; j < NeuronsCount; j++)
         {
             newDelta[0][i] += deltaActivation[0][j] * Weights[0][j + i * NeuronsCount];
             Delta[0][i + j * previousNeuronsCount] += PastActivation[0][i] * deltaActivation[0][j];
         }
+
     }
 
+    
     return newDelta;
+
+    
 }
 
 void FCL::UpdateWeights(double learningRate, int batchSize)
