@@ -3,6 +3,7 @@
 #include <fstream>
 #include <cfloat>
 #include <emmintrin.h>
+#include <stdlib.h>
 #include "Matrix.h"
 
 
@@ -30,18 +31,30 @@ Matrix::Matrix(const int rows, const int cols)
     }
 }
 
-Matrix::Matrix(const int rows, int cols, int dim)
+Matrix::Matrix(const int rows, int cols, int dim, bool aligned)
 {
     this->rows = rows;
     this->cols = cols;
     this->dim = dim;
     matrixSize = rows * cols;
-    this->data = new float[rows * cols * dim];
+    if(aligned)
+    {
+        if(posix_memalign((void**)&data,16,sizeof(float) * rows * cols * dim))
+        {
+            throw std::invalid_argument("Cannot create an aligned array ! ");
+        }
+    }
+    else
+    {
+        this->data = new float[rows * cols * dim];
+    }
     
     for (int i = 0; i < rows * cols * dim; i++)
     {
         data[i] = 0;
     }
+
+
 
 
 
@@ -113,11 +126,40 @@ void Matrix::Add(Matrix* other, Matrix* result)
         return;
     }
 #endif
-
+/*
     for (int i = 0; i < this->rows * this->cols; i++)
     {
         result->data[i] = this->data[i] + other->data[i];
     }
+*/
+
+    float* temp = new float[4];
+
+    int size = this->rows * this->cols;
+    int i;
+    for (i = 0; i + 4 <= size; i+=4)
+    {
+        __m128 sum = _mm_setzero_ps();
+        __m128 a = _mm_loadu_ps(data + i);
+        __m128 b = _mm_loadu_ps(other->data + i);
+
+        sum = _mm_add_ps(a,b);
+
+        _mm_storeu_ps(temp,sum);
+
+        for (int j = 0; j < 4; j++)
+        {
+            (*result)[i + j] = temp[j];
+        }
+    }
+    for (; i < size; i++)
+    {
+        (*result)[i] = (*this)[i] + (*other)[i];
+    }
+
+
+    delete[] temp;
+    
 }
 
 void Matrix::AddAllDims(Matrix* other, Matrix* result)
@@ -251,8 +293,8 @@ float& Matrix::operator[](int index)
     }
 #endif
 
-
-    return this->data[index];
+        
+    return data[index];
 
 }
 
@@ -302,11 +344,44 @@ Matrix* Matrix::operator*=(const Matrix* other)
     }
 #endif
 
+    float* temp = new float[4];
+
+    int size = this->rows * this->cols;
+    int i;
+    for (i = 0; i + 4 <= size; i+=4)
+    {
+        __m128 sum = _mm_setzero_ps();
+        __m128 a = _mm_loadu_ps(data + i);
+        __m128 b = _mm_loadu_ps(other->data + i);
+
+        sum = _mm_mul_ps(a,b);
+
+
+        _mm_storeu_ps(temp,sum);
+
+        for (int j = 0; j < 4; j++)
+        {
+            (*this)[i + j] = temp[j];
+        }
+    }
+    for (; i < size; i++)
+    {
+        (*this)[i] *= (*other)[i];
+    }
+
+
+    delete[] temp;
+
+    return this;
+
+/*
     for (int i = 0; i < cols * rows; i++)
     {
         this->data[i] *= other->data[i];
     }
     return this;
+
+*/
 }
 
 Matrix* Matrix::operator*=(const float other)

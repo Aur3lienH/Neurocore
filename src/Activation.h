@@ -65,6 +65,10 @@ class ReLU : public Activation
 public:
     ReLU();
 
+    void FeedForward(const Matrix* input, Matrix* output) override;
+
+    void Derivative(const Matrix* input, Matrix* output) override;
+
     double Function(double input) override;
 
     double Derive(double input) override;
