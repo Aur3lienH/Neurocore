@@ -4,7 +4,7 @@ TARGET_EXEC ?= final_program
 BUILD_DIR ?= ./build
 SRC_DIR ?= ./src
 
-FLAGS ?= -std=c++17 -pthread -O3 -pg
+FLAGS ?= -std=c++17 -pthread -O3 -mavx
 
 SRCS := $(shell find $(SRC_DIR) -name *.cpp)
 OBJS := $(SRCS:%=$(BUILD_DIR)/%.o)

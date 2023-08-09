@@ -37,7 +37,7 @@ private:
 class Adam : public Optimizer
 {
 public:
-    explicit Adam(double alpha = 0.001, double beta1 = 0.9, double beta2 = 0.999, double gamma = 10e-8);
+    explicit Adam(double alpha = 0.00025, double beta1 = 0.9, double beta2 = 0.999, double gamma = 10e-8);
 
     void Compile(int size) override;
 
@@ -48,8 +48,8 @@ private:
     volatile const double beta1;
     volatile const double beta2;
 
-    double adjBeta1;
-    double adjBeta2;
+    double adjBeta1 = 1.0;
+    double adjBeta2 = 1.0;
 
 
     double gamma;
