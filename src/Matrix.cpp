@@ -39,7 +39,7 @@ Matrix::Matrix(const int rows, int cols, int dim, bool aligned)
     matrixSize = rows * cols;
     if(aligned)
     {
-        if(posix_memalign((void**)&data,16,sizeof(float) * rows * cols * dim))
+        if(posix_memalign((void**)&data,32,sizeof(float) * rows * cols * dim))
         {
             throw std::invalid_argument("Cannot create an aligned array ! ");
         }

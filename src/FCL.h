@@ -75,6 +75,11 @@ protected:
 //Result before passing through the activation function
     Matrix* z = nullptr;
 private:
+
+    const Matrix* BackPropagateSSE2(const Matrix* delta, const Matrix* lastWeigths);
+
+    const Matrix* BackPropagateAX2(const Matrix* delta, const Matrix* lastWeigths);
+
     //Delta passed to the previous network in backpropagation
     Matrix* newDelta = nullptr;
 

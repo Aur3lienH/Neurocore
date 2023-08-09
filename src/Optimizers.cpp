@@ -27,8 +27,6 @@ Adam::Adam(const double alpha, const double _beta1, const double _beta2, const d
 {
     this->alpha = alpha;
     this->gamma = gamma;
-    adjBeta1 = beta1;
-    adjBeta2 = beta2;
 }
 
 void Adam::Compile(const int size)

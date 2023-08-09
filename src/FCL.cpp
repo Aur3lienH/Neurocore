@@ -2,6 +2,7 @@
 #include <iostream>
 #include <cmath>
 #include <emmintrin.h>
+#include <immintrin.h>
 #include <fstream>
 #include "Matrix.h"
 #include "LayerShape.h"
@@ -41,7 +42,7 @@ Matrix* FCL::FeedForward(const Matrix* input)
 
 void FCL::Compile(LayerShape* previousLayer)
 {
-    buffer = new float[4];
+    buffer = new float[8];
     if (previousLayer->size != 1)
     {
         throw std::invalid_argument("Previous Layer must have one dimension ! ");
@@ -70,6 +71,13 @@ void FCL::Compile(LayerShape* previousLayer)
 
 const Matrix* FCL::BackPropagate(const Matrix* lastDelta, const Matrix* PastActivation)
 {
+    return BackPropagateSSE2(lastDelta,PastActivation);
+}
+
+
+const Matrix* FCL::BackPropagateSSE2(const Matrix* lastDelta,const Matrix* PastActivation)
+{
+
     newDelta->Flatten();
     activation->Derivative(z, deltaActivation);
     deltaActivation->operator*=(lastDelta);
@@ -118,8 +126,61 @@ const Matrix* FCL::BackPropagate(const Matrix* lastDelta, const Matrix* PastActi
     
     return newDelta;
 
-    
 }
+
+const Matrix* FCL::BackPropagateAX2(const Matrix* lastDelta, const Matrix* PastActivation)
+{
+    newDelta->Flatten();
+    activation->Derivative(z, deltaActivation);
+    deltaActivation->operator*=(lastDelta);
+
+    DeltaBiases->Add(deltaActivation, DeltaBiases);
+    float* weigthsData = Weights->GetData();
+    float* DeltaData = Delta->GetData();
+    
+    for (int i = 0; i < previousNeuronsCount; i++)
+    {
+        (*newDelta)[i] = 0;
+        __m256 m_newDelta = _mm256_setzero_ps();
+        __m256 m_PastActivation = _mm256_set1_ps((*PastActivation)[i]);
+        int columnSize = i * NeuronsCount;
+        int j;
+        for (j = 0; j + 8 < NeuronsCount; j+=8)
+        {
+            //
+            __m256 m_deltaActivation = _mm256_load_ps(&((*deltaActivation)[j]));
+            __m256 m_Weigths = _mm256_loadu_ps(weigthsData + columnSize);
+
+
+            m_newDelta = _mm256_add_ps(m_newDelta,_mm256_mul_ps(m_deltaActivation,m_Weigths));
+            
+            __m256 m_delta = _mm256_set_ps(DeltaData[i + (j+7) * previousNeuronsCount],DeltaData[i + (j+6)*previousNeuronsCount],DeltaData[i + (j+5)*previousNeuronsCount],DeltaData[i + (j+4)*previousNeuronsCount],DeltaData[i+ (j+3)*previousNeuronsCount],DeltaData[i+ (j+2)*previousNeuronsCount],DeltaData[i+ (j+1)*previousNeuronsCount],DeltaData[i+ j*previousNeuronsCount]);
+
+            m_delta = _mm256_add_ps(m_delta,_mm256_mul_ps(m_PastActivation,m_deltaActivation));
+
+            _mm256_storeu_ps(buffer,m_delta);
+            for (int k = 0; k < 8; k++)
+            {
+                Delta[0][i + (j + k) * previousNeuronsCount] = buffer[k];
+            }
+            
+        }
+        _mm256_storeu_ps(buffer,m_newDelta);
+        newDelta[0][i] = buffer[0] + buffer[1] + buffer[2] + buffer[3] + buffer[4] + buffer[5] + buffer[6] + buffer[7] + newDelta[0][i];
+        for (; j < NeuronsCount; j++)
+        {
+            newDelta[0][i] += deltaActivation[0][j] * Weights[0][j + i * NeuronsCount];
+            Delta[0][i + j * previousNeuronsCount] += PastActivation[0][i] * deltaActivation[0][j];
+        }
+
+    }
+
+    
+    return newDelta;
+} 
+
+
+
 
 void FCL::UpdateWeights(double learningRate, int batchSize)
 {
