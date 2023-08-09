@@ -27,6 +27,8 @@ Adam::Adam(const double alpha, const double _beta1, const double _beta2, const d
 {
     this->alpha = alpha;
     this->gamma = gamma;
+    adjBeta1 = beta1;
+    adjBeta2 = beta2;
 }
 
 void Adam::Compile(const int size)
@@ -85,8 +87,6 @@ void Adam::Compute(Matrix* _gradient, Matrix* parameters, const int offset)
     for (int i = 0; i < _gradient->size(); i++)
     {
         double gradient = (*_gradient)[i];
-
-        
 
         _momentum1[i] = beta1 * _momentum1[i] + (1 - beta1) * gradient;
         _momentum2[i] = beta2 * _momentum2[i] + (1 - beta2) * gradient * gradient;

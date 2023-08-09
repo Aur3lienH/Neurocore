@@ -119,6 +119,8 @@ public:
 
     static Matrix* Copy(const Matrix* a);
 
+    //static void FullConvolutionAVX2(const Matrix* m, const Matrix* filter, Matrix* output);
+
 protected:
     mutable float* data;
     mutable int rows;
