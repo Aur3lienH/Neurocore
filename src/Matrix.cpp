@@ -3,6 +3,7 @@
 #include <fstream>
 #include <cfloat>
 #include <emmintrin.h>
+#include <immintrin.h>
 #include <stdlib.h>
 #include "Matrix.h"
 
@@ -661,6 +662,80 @@ void Matrix::FullConvolution(const Matrix* m, const Matrix* filter, Matrix* outp
         }
     }
 }
+
+/*
+void Matrix::FullConvolutionAVX2(const Matrix* m, const Matrix* filter, Matrix* output)
+{
+
+    const int outputCols = m->getCols() + filter->getCols() - 1;
+    const int outputRows = m->getRows() + filter->getRows() - 1;
+
+#if SAFE
+    if (output->cols != outputCols || outputRows != output->rows)
+    {
+        std::cout << "right shape is : " << "(" << outputRows << "," << outputCols << ")\n";
+        throw std::invalid_argument("FullConvolution : Output Matrix has not the right shape ! ");
+    }
+#endif
+
+    const int filterCols = filter->getCols();
+    const int filterRows = filter->getRows();
+
+    const int inputCols = m->getCols();
+    const int inputRows = m->getRows();
+
+    const int r = filterRows - 1;
+    const int c = filterCols - 1;
+    for (int i = 0; i < outputRows; i++)
+    {
+        for (int j = 0; j < outputCols; j++)
+        {
+            float sum = 0;
+            __m256 v_sum = _mm256_setzero_ps();
+            
+            for (int k = 0; k < filterRows; k++)
+            {
+                int l = 0;
+                for (; l + 7 < filterCols; l += 8) // Process in chunks of 8 where possible
+                {
+                    const int inputRow = i + k - r;
+                    const int inputCol = j + l - c;
+                    
+                    if (inputRow >= 0 && inputRow < inputRows && inputCol >= 0 && inputCol + 7 < inputCols)
+                    {
+                        __m256 v_m = _mm256_loadu_ps(&(*m)(inputRow, inputCol));
+                        __m256 v_filter = _mm256_loadu_ps(&(*filter)(k, l));
+                        __m256 v_product = _mm256_mul_ps(v_m, v_filter);
+                        
+                        v_sum = _mm256_add_ps(v_sum, v_product);
+                    }
+                }
+
+                // Cleanup loop for any remaining elements
+                for (; l < filterCols; l++)
+                {
+                    const int inputRow = i + k - r;
+                    const int inputCol = j + l - c;
+
+                    if (inputRow >= 0 && inputRow < inputRows && inputCol >= 0 && inputCol < inputCols)
+                    {
+                        sum += (*m)(inputRow, inputCol) * (*filter)(k, l);
+                    }
+                }
+            }
+
+            // Horizontally add the results in v_sum
+            float arr[8];
+            _mm256_storeu_ps(arr, v_sum);
+            for(int p = 0; p < 8; p++) sum += arr[p];
+
+            (*output)(i, j) += sum;
+        }
+    }
+
+}
+
+*/
 
 void Matrix::AveragePool(const Matrix* a, Matrix* output, int filterSize, int stride)
 {

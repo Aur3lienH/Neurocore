@@ -123,8 +123,6 @@ void Mnist1()
     Network* network = new Network();
     network->AddLayer(new InputLayer(784));
     network->AddLayer(new FCL(512, new ReLU()));
-    network->AddLayer(new FCL(512, new ReLU()));
-    network->AddLayer(new FCL(512, new ReLU()));
     network->AddLayer(new FCL(10, new Softmax()));
     std::cout << "before compiling !\n";
     network->Compile(Opti::Adam, new CrossEntropy());
