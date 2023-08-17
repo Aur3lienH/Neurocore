@@ -15,6 +15,25 @@ void Flatten::Compile(LayerShape* previous)
     LayerID = 3;
 }
 
+#if USE_GPU
+const Matrix_GPU* Flatten::FeedForward(const Matrix_GPU* input)
+{
+    this->input = input;
+    input->Flatten();
+    return input;
+}
+
+const Matrix_GPU* Flatten::BackPropagate(const Matrix_GPU* delta, const Matrix_GPU* pastActivation)
+{
+    input->Reshape(rows, cols, dims);
+    delta->Reshape(rows, cols, dims);
+    return delta;
+}
+const Matrix_GPU* Flatten::getResult() const
+{
+    return input;
+}
+#else
 const Matrix* Flatten::FeedForward(const Matrix* input)
 {
     this->input = input;
@@ -28,6 +47,11 @@ const Matrix* Flatten::BackPropagate(const Matrix* delta, const Matrix* pastActi
     delta->Reshape(rows, cols, dims);
     return delta;
 }
+const Matrix* Flatten::getResult() const
+{
+    return input;
+}
+#endif
 
 
 void Flatten::ClearDelta()
@@ -69,12 +93,6 @@ void Flatten::SpecificSave(std::ofstream& writer)
 Layer* Flatten::Clone()
 {
     return new Flatten();
-}
-
-
-const Matrix* Flatten::getResult() const
-{
-    return input;
 }
 
 void Flatten::AverageGradients(const int batchSize)

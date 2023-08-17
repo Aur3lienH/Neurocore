@@ -25,7 +25,11 @@ Network::Network(Network* network)
 }
 
 void
+#if USE_GPU
+LearnThread2(Network* network, Matrix_GPU*** data, const int batchSize, const int batchIndex, const int numDataPerThread)
+#else
 LearnThread2(Network* network, Matrix*** data, const int batchSize, const int batchIndex, const int numDataPerThread)
+#endif
 {
     //std::cout<<j<<" " << threadArg->batchSize<<std::endl;
     //std::cout<< "Aux = [" << j * threadArg->batchSize << ";" << j * threadArg->batchSize + numDataPerThread - 1 << "]" << std::endl;
@@ -60,15 +64,25 @@ void Network::AddLayer(Layer* layer)
     }
 }
 
-
+#if USE_GPU
+Matrix_GPU* Network::Process(Matrix_GPU* input)
+{
+    const Matrix_GPU* res = FeedForward(input);
+    return Matrix::Copy(res);
+}
+#else
 Matrix* Network::Process(Matrix* input)
 {
     const Matrix* res = FeedForward(input);
     return Matrix::Copy(res);
 }
+#endif
 
-
+#if USE_GPU
+const Matrix_GPU* Network::FeedForward(Matrix_GPU* input)
+#else
 const Matrix* Network::FeedForward(Matrix* input)
+#endif
 {
     output = input;
     for (int i = 0; i < layersCount; i++)
@@ -79,7 +93,11 @@ const Matrix* Network::FeedForward(Matrix* input)
     return output;
 }
 
+#if USE_GPU
+double Network::FeedForward(Matrix_GPU* input, Matrix_GPU* desiredOutput)
+#else
 double Network::FeedForward(Matrix* input, Matrix* desiredOutput)
+#endif
 {
     output = input;
     for (int i = 0; i < layersCount; i++)
@@ -132,7 +150,11 @@ void Network::Compile(Opti _opti, Loss* _loss)
 
 }
 
+#if USE_GPU
+double Network::BackPropagate(Matrix_GPU* input, Matrix_GPU* desiredOutput)
+#else
 double Network::BackPropagate(Matrix* input, Matrix* desiredOutput)
+#endif
 {
     //std::cout << "feeding forward ! \n";
     double NetworkLoss = FeedForward(input, desiredOutput);
@@ -157,7 +179,11 @@ void Network::ClearDelta()
 }
 
 void
+#if USE_GPU
+Network::Learn(const int epochs, const double learningRate, Matrix_GPU** inputs, Matrix_GPU** outputs, const int dataLength)
+#else
 Network::Learn(const int epochs, const double learningRate, Matrix** inputs, Matrix** outputs, const int dataLength)
+#endif
 {
     Tools::TrainBar Bar = Tools::TrainBar(epochs * dataLength);
     double globalLoss;

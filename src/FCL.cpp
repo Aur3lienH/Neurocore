@@ -15,7 +15,8 @@ FCL::FCL(const int NeuronsCount, Activation* activation)
     LayerID = 0;
 }
 
-FCL::FCL(int NeuronsCount, Activation* _activation, Matrix* weights, Matrix* bias, Matrix* delta, Matrix* deltaBiases)
+#if USE_GPU
+FCL::FCL(int NeuronsCount, Activation* _activation, Matrix_GPU* weights, Matrix_GPU* bias, Matrix_GPU* delta, Matrix_GPU* deltaBiases)
 {
     this->Delta = delta;
     this->DeltaBiases = deltaBiases;
@@ -25,10 +26,83 @@ FCL::FCL(int NeuronsCount, Activation* _activation, Matrix* weights, Matrix* bia
     Biases = bias;
 }
 
-void FCL::ClearDelta()
+Matrix_GPU* FCL::FeedForward(const Matrix_GPU* input)
 {
-    Delta->Zero();
-    DeltaBiases->Zero();
+    input->Flatten();
+    this->Weights->CrossProduct(input, Result);
+    Result->Add(Biases, z);
+    activation->FeedForward(z, Result);
+    return Result;
+}
+
+void FCL::Compile(LayerShape* previousLayer)
+{
+    buffer = new float[8];
+    if (previousLayer->size != 1)
+    {
+        throw std::invalid_argument("Previous Layer must have one dimension ! ");
+    }
+    previousNeuronsCount = previousLayer->dimensions[0];
+    if (Weights == nullptr)
+    {
+        Weights = activation->InitWeights(previousNeuronsCount, NeuronsCount);
+    }
+    if (Delta == nullptr)
+        Delta = new Matrix_GPU(previousNeuronsCount, NeuronsCount);
+    if (deltaActivation == nullptr)
+        deltaActivation = new Matrix_GPU(NeuronsCount, 1);
+    if (DeltaBiases == nullptr)
+        DeltaBiases = new Matrix_GPU(NeuronsCount, 1);
+    if (Biases == nullptr)
+        Biases = activation->InitBiases(NeuronsCount);
+    if (Result == nullptr)
+        Result = new Matrix_GPU(NeuronsCount, 1);
+    z = new Matrix_GPU(NeuronsCount, 1);
+    newDelta = new Matrix_GPU(previousNeuronsCount, 1);
+
+    layerShape = new LayerShape(NeuronsCount);
+    optimizer->Compile(NeuronsCount * previousNeuronsCount + NeuronsCount);
+}
+
+const Matrix* FCL::BackPropagate(const Matrix_GPU* lastDelta, const Matrix_GPU* PastActivation)
+{
+    return BackPropagateSSE2(lastDelta,PastActivation);
+}
+
+const Matrix_GPU* FCL::getResult() const
+{
+    return Result;
+}
+
+const Matrix_GPU* FCL::getDelta()
+{
+    return Delta;
+}
+
+const Matrix_GPU* FCL::getDeltaBiases()
+{
+    return DeltaBiases;
+}
+FCL* FCL::Load(std::ifstream& reader)
+{
+    int neuronsCount;
+    reader.read(reinterpret_cast<char*>(&neuronsCount), sizeof(int));
+    Matrix* weights_CPU = Matrix::Read(reader);
+    Matrix* biases_CPU = Matrix::Read(reader);
+    Matrix_GPU* weights = new Matrix_GPU(*weights_CPU);
+    Matrix_GPU* biases = new Matrix_GPU(*biases_CPU);
+    Activation* activation = Activation::Read(reader);
+    return new FCL(neuronsCount, activation, weights, biases, nullptr, nullptr);
+}
+#else
+FCL::FCL(int NeuronsCount, Activation* _activation, Matrix* weights, Matrix* bias, Matrix* delta, Matrix* deltaBiases)
+{
+    this->Delta = delta;
+    this->DeltaBiases = deltaBiases;
+    this->NeuronsCount = NeuronsCount;
+    this->activation = _activation;
+    Weights = weights;
+    Biases = bias;
 }
 
 Matrix* FCL::FeedForward(const Matrix* input)
@@ -73,7 +147,6 @@ const Matrix* FCL::BackPropagate(const Matrix* lastDelta, const Matrix* PastActi
 {
     return BackPropagateSSE2(lastDelta,PastActivation);
 }
-
 
 const Matrix* FCL::BackPropagateSSE2(const Matrix* lastDelta,const Matrix* PastActivation)
 {
@@ -177,27 +250,6 @@ const Matrix* FCL::BackPropagateAX2(const Matrix* lastDelta, const Matrix* PastA
 
     
     return newDelta;
-} 
-
-
-
-
-void FCL::UpdateWeights(double learningRate, int batchSize)
-{
-    optimizer->Compute(Delta, Weights);
-    optimizer->Compute(DeltaBiases, Biases, Weights->size());
-
-    Delta->Zero();
-    DeltaBiases->Zero();
-}
-
-
-void FCL::AddDeltaFrom(Layer* otherLayer)
-{
-
-    FCL* _FCLLayer = (FCL*) otherLayer;
-    Delta->AddAllDims(_FCLLayer->Delta, Delta);
-    DeltaBiases->AddAllDims(_FCLLayer->DeltaBiases, DeltaBiases);
 }
 
 const Matrix* FCL::getResult() const
@@ -215,6 +267,43 @@ const Matrix* FCL::getDeltaBiases()
     return DeltaBiases;
 }
 
+FCL* FCL::Load(std::ifstream& reader)
+{
+    int neuronsCount;
+    reader.read(reinterpret_cast<char*>(&neuronsCount), sizeof(int));
+    Matrix* weights = Matrix::Read(reader);
+    Matrix* biases = Matrix::Read(reader);
+    Activation* activation = Activation::Read(reader);
+    return new FCL(neuronsCount, activation, weights, biases, nullptr, nullptr);
+}
+#endif
+
+
+
+void FCL::ClearDelta()
+{
+    Delta->Zero();
+    DeltaBiases->Zero();
+}
+
+
+void FCL::UpdateWeights(double learningRate, int batchSize)
+{
+    optimizer->Compute(Delta, Weights);
+    optimizer->Compute(DeltaBiases, Biases, Weights->size());
+
+    Delta->Zero();
+    DeltaBiases->Zero();
+}
+
+void FCL::AddDeltaFrom(Layer* otherLayer)
+{
+
+    FCL* _FCLLayer = (FCL*) otherLayer;
+    Delta->AddAllDims(_FCLLayer->Delta, Delta);
+    DeltaBiases->AddAllDims(_FCLLayer->DeltaBiases, DeltaBiases);
+}
+
 std::string FCL::getLayerTitle()
 {
     std::string buf;
@@ -227,16 +316,6 @@ std::string FCL::getLayerTitle()
 Layer* FCL::Clone()
 {
     return new FCL(NeuronsCount, activation, Weights->CopyWithSameData(), Biases->CopyWithSameData(), nullptr, nullptr);
-}
-
-FCL* FCL::Load(std::ifstream& reader)
-{
-    int neuronsCount;
-    reader.read(reinterpret_cast<char*>(&neuronsCount), sizeof(int));
-    Matrix* weights = Matrix::Read(reader);
-    Matrix* biases = Matrix::Read(reader);
-    Activation* activation = Activation::Read(reader);
-    return new FCL(neuronsCount, activation, weights, biases, nullptr, nullptr);
 }
 
 void FCL::SpecificSave(std::ofstream& write)

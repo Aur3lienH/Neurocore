@@ -19,6 +19,23 @@ InputLayer::InputLayer(LayerShape* LayerShape)
     this->layerShape = LayerShape;
 }
 
+#if USE_GPU
+const Matrix_GPU* InputLayer::FeedForward(const Matrix_GPU* _input)
+{
+    input = _input;
+    return _input;
+}
+
+const Matrix_GPU* InputLayer::BackPropagate(const Matrix_GPU* delta, const Matrix_GPU* lastWeights)
+{
+    return nullptr;
+}
+
+const Matrix_GPU* InputLayer::getResult() const
+{
+    return input;
+}
+#else
 
 const Matrix* InputLayer::FeedForward(const Matrix* _input)
 {
@@ -26,25 +43,26 @@ const Matrix* InputLayer::FeedForward(const Matrix* _input)
     return _input;
 }
 
+const Matrix* InputLayer::BackPropagate(const Matrix* delta, const Matrix* lastWeights)
+{
+    return nullptr;
+}
+
+const Matrix* InputLayer::getResult() const
+{
+    return input;
+}
+
+#endif
 
 void InputLayer::ClearDelta()
 {
 
 }
 
-const Matrix* InputLayer::BackPropagate(const Matrix* delta, const Matrix* lastWeights)
-{
-    return nullptr;
-}
-
 void InputLayer::Compile(LayerShape* layerShape)
 {
 
-}
-
-const Matrix* InputLayer::getResult() const
-{
-    return input;
 }
 
 void InputLayer::UpdateWeights(const double learningRate, const int batchSize)
