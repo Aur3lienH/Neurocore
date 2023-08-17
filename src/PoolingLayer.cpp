@@ -27,7 +27,11 @@ void PoolingLayer::Compile(LayerShape* previousActivation)
                           previousActivation->dimensions[2]);
 }
 
+#if USE_GPU
+const Matrix_GPU* PoolingLayer::getResult() const
+#else
 const Matrix* PoolingLayer::getResult() const
+#endif
 {
     return result;
 }

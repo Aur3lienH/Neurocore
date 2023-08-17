@@ -1,4 +1,5 @@
 #include "ImagePreProcessing.h"
+#include "Matrix.h"
 #include <cmath>
 #include <random>
 

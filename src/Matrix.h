@@ -4,6 +4,42 @@
 #include <fstream>
 #include "Tools/Serializer.h"
 
+#define USE_GPU 0
+
+#if USE_GPU
+#define checkCUDNN(expression)                               \
+  {                                                          \
+    cudnnStatus_t status = (expression);                     \
+    if (status != CUDNN_STATUS_SUCCESS) {                    \
+      std::cerr << "Error on line " << __LINE__ << ": "      \
+                << cudnnGetErrorString(status) << std::endl; \
+      std::exit(EXIT_FAILURE);                               \
+    }                                                        \
+  }
+
+
+class Matrix_GPU{
+public:
+    int rows, cols, dims, size, matrixSize;
+    cudnnTensorDescriptor_t desc;
+
+    Matrix_GPU(int rows, int cols, int dims = 1);
+
+    Matrix_GPU(const Matrix& mat);
+
+    void Zero();
+
+    void DivideAllDims(float factor);
+
+    ~Matrix_GPU();
+
+    float* GetData_CPU();
+private:
+
+    float* data_d;
+};
+#endif
+
 class Matrix
 {
 public:
@@ -43,7 +79,7 @@ public:
 
     int GetOffset() const;
 
-    float* GetData();
+    float* GetData() const;
 
 
     void Flatten() const;

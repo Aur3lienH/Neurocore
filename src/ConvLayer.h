@@ -20,17 +20,29 @@ class ConvLayer : public Layer
 {
 
 public:
-    ConvLayer(Matrix* filters, LayerShape* layerShape, Activation* activation);
-
+    ~ConvLayer() override;
+    
     ConvLayer(LayerShape* filterShape, Activation* activation);
 
-    ~ConvLayer() override;
+#if USE_GPU
+    ConvLayer(Matrix_GPU* filters, LayerShape* layerShape, Activation* activation);    
 
-    void Compile(LayerShape* previousLayer) override;
+    Matrix_GPU* FeedForward(const Matrix_GPU* input) override;
+
+    Matrix_GPU* BackPropagate(const Matrix_GPU* delta, const Matrix_GPU* lastWeights) override;
+
+    [[nodiscard]] Matrix_GPU* getResult() const override;
+#else
+    ConvLayer(Matrix* filters, LayerShape* layerShape, Activation* activation);    
 
     Matrix* FeedForward(const Matrix* input) override;
 
     Matrix* BackPropagate(const Matrix* delta, const Matrix* lastWeights) override;
+
+    [[nodiscard]] Matrix* getResult() const override;
+#endif
+
+    void Compile(LayerShape* previousLayer) override;
 
     void AddDeltaFrom(Layer* ConvLayer) override;
 
@@ -44,13 +56,28 @@ public:
 
     static Layer* Load(std::ifstream& reader);
 
-    [[nodiscard]] Matrix* getResult() const override;
-
     std::string getLayerTitle() override;
 
     Layer* Clone() override;
 
 private:
+#if USE_GPU
+    Matrix_GPU* result = nullptr;
+    Matrix_GPU* filters = nullptr;
+    //Delta for next layer
+    Matrix_GPU* delta = nullptr;
+    Matrix_GPU* preDelta = nullptr;
+    Matrix_GPU* activationDelta;
+    Matrix_GPU* z;
+    Matrix_GPU* previousDeltaMultiplied;
+    Matrix_GPU* bias;
+    Matrix_GPU* deltaBias;
+
+    Matrix_GPU* nextLayerDelta = nullptr;
+    Matrix_GPU* nextLayerDeltaTemp = nullptr;
+
+    cudnnFilterDescriptor_t filterDesc;
+#else
     Matrix* result = nullptr;
     Matrix* rotatedFilter = nullptr;
     Matrix* filters = nullptr;
@@ -65,6 +92,7 @@ private:
 
     Matrix* nextLayerDelta = nullptr;
     Matrix* nextLayerDeltaTemp = nullptr;
+#endif
 
     //Result from the previous layer (don't initialize when compiling the layer)
     uint filterCount = 0;

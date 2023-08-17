@@ -10,6 +10,41 @@
 
 #define SAFE false
 
+#if USE_GPU
+Matrix_GPU::Matrix_GPU(const int rows, const int cols, const int dims) : rows(rows), cols(cols), dims(dims), matrixSize(rows * cols), size(rows * cols * dims)
+{
+    cudaMalloc(data_d, rows * cols * dims * sizeof(float));
+    checkCUDNN(cudnnCreateTensorDescriptor(&desc));
+    checkCUDNN(cudnnSetTensor4dDescriptor(desc, CUDNN_TENSOR_NHWC, CUDNN_DATA_FLOAT, 1, dims, rows, cols));
+}
+
+Matrix_GPU::Matrix_GPU(const Matrix& mat): Matrix_GPU(mat.getRows(), mat.getCols(), mat.getDim()) {
+    cudaMemcpy(data_d, mat.GetData(), cudaMemcpyHostToDevice);
+}
+
+Matrix_GPU::~Matrix_GPU(){
+    checkCUDNN(cudnnDestroyTensorDescriptor(cudnnTensorDescriptor_t tensorDesc));
+    cudaFree(data_d);
+}
+
+void Matrix_GPU::Zero(){
+    cudaMemset (data_d, 0, size * sizeof(float));
+}
+
+float* Matrix_GPU::GetData_CPU()
+{
+    float* data_h;
+    cudaMemcpy(data_h, data_d, cudaMemcpyDeviceToHost);
+
+    return data_h;
+}
+
+void Matrix_GPU::DivideAllDims(const float factor){
+    checkCUDNN(cudnnScaleTensor(
+                       handle, desc, data_d, 1f / factor));
+}
+#endif
+
 //MATRIX
 
 Matrix::Matrix()
@@ -54,13 +89,6 @@ Matrix::Matrix(const int rows, int cols, int dim, bool aligned)
     {
         data[i] = 0;
     }
-
-
-
-
-
-    
-    
 }
 
 
@@ -913,7 +941,7 @@ Matrix Matrix::Random(const int rows, const int cols)
     return res;
 }
 
-float* Matrix::GetData()
+float* Matrix::GetData() const
 {
     return data;
 }
