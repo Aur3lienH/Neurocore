@@ -31,7 +31,8 @@ FCL::FCL(int NeuronsCount, Activation* _activation, Matrix_GPU* weights, Matrix_
 Matrix_GPU* FCL::FeedForward(const Matrix_GPU* input)
 {
     input->Flatten();
-    this->Weights->CrossProduct(input, Result);
+    Result = *Weights * *input;
+    //this->Weights->CrossProduct(input, Result);
     Result->Add(Biases, z);
     activation->FeedForward(z, Result);
     return Result;
@@ -70,17 +71,28 @@ const Matrix* FCL::BackPropagate(const Matrix_GPU* lastDelta, const Matrix_GPU* 
 {
     //newDelta->Flatten();
     activation->Derivative(z, deltaActivation);
-    deltaActivation->operator*=(lastDelta);
+    deltaActivation->operator*=(lastDelta); // Trouver comment faire le Hadamard product sur GPU (CUBLAS et cuDNN le font pas)
 
     DeltaBiases->Add(deltaActivation, DeltaBiases);
 
-    Matrix* d2 = new Matrix(Delta->getRows(), Delta->getCols(), Delta->getDim());
-    Matrix* PastActivationT = PastActivation->Transpose();
-    deltaActivation->CrossProduct(PastActivationT, d2);
+    // Faut faire weightsL * activationsL-1.Transpose() (avec CUBLAS ça s'inverse probablement avec le column-major...) et mettre le result dans d2
+    Matrix_GPU* d2 = new Matrix(Delta->getRows(), Delta->getCols(), Delta->getDim());
+    cublasStatus_t cublasSgeam(cublasHandle_t handle,
+                          cublasOperation_t transa, cublasOperation_t transb,
+                          int m, int n,
+                          const float           *alpha,
+                          const float           *A, int lda,
+                          const float           *beta,
+                          const float           *B, int ldb,
+                          float           *C, int ldc)
+    //Matrix* d2 = new Matrix(Delta->getRows(), Delta->getCols(), Delta->getDim());
+    //Matrix* PastActivationT = PastActivation->Transpose();
+    //deltaActivation->CrossProduct(PastActivationT, d2);
     Delta->Add(d2, Delta);
     delete d2;
-    delete PastActivationT;
+    //delete PastActivationT;
 
+    // Faure faire weightsL.Transpose() * deltaActivation (avec CUBLAS ça s'inverse probablement avec le column-major...) et mettre le result dans newDelta
     Matrix* weightsT = Weights->Transpose();
     weightsT->CrossProduct(deltaActivation, newDelta);
     delete weightsT;
