@@ -213,6 +213,16 @@ public:
 
     float* GetData_CPU();
 
+    // This is a true Matrix multiplication (not Hadamard product)
+    static void Multiply(const Matrix_GPU& a, const Matrix_GPU& b, Matrix_GPU& res)
+
+    void Add(const Matrix_GPU& other, Matrix_GPU& res);
+
+    Matrix_GPU* operator*=(float n);
+
+    void Reshape(int rows_, int cols_, int dims);
+
+    void Flatten();
 private:
 
     float* data_d;

@@ -24,9 +24,15 @@ const std::string MNIST_FASHION_DATA_PATH = "./datasets/mnist_fashion/train-imag
 const std::string MNIST_FASHIOIN_LABEL_PATH = "./datasets/mnist_fashion/train-labels-idx1-ubyte";
 
 
+#if USE_GPU
+Matrix_GPU* LabelToMatrix(int label)
+{
+    auto* matrix = new Matrix_GPU(10, 1, 0.0f);
+#else
 Matrix* LabelToMatrix(int label)
 {
     auto* matrix = new Matrix(10, 1, 0.0f);
+#endif
     matrix->operator[](label) = 1;
     return matrix;
 }
@@ -46,8 +52,8 @@ int MatrixToLabel(const Matrix* matrix)
     return label;
 }
 
-
-Matrix*** GetDataset(std::string path, int dataLength, bool format2D)
+#if USE_GPU
+Matrix_GPU*** GetDataset(std::string path, int dataLength, bool format2D)
 {
     int cols = 0;
     int rows = 0;
@@ -64,8 +70,11 @@ Matrix*** GetDataset(std::string path, int dataLength, bool format2D)
 
     std::ifstream file(path);
 
-
+#if USE_GPU
+    Matrix_GPU*** dataset = new Matrix** [dataLength];
+#else
     Matrix*** dataset = new Matrix** [dataLength];
+#endif
 
     std::string line;
     std::string value;
@@ -74,11 +83,11 @@ Matrix*** GetDataset(std::string path, int dataLength, bool format2D)
         int j = 0;
         while (getline(file, line))
         {
-            dataset[j] = new Matrix* [2];
+            dataset[j] = new Matrix_GPU* [2];
 
             std::stringstream s(line);
             int i = -1;
-            dataset[j][0] = new Matrix(rows, cols);
+            dataset[j][0] = new Matrix_GPU(rows, cols);
 
             while (getline(s, value, ','))
             {
@@ -104,13 +113,78 @@ Matrix*** GetDataset(std::string path, int dataLength, bool format2D)
     return dataset;
 
 }
+#else
+Matrix_GPU*** GetDataset(std::string path, int dataLength, bool format2D)
+{
+    int cols = 0;
+    int rows = 0;
+    if (format2D)
+    {
+        cols = 28;
+        rows = 28;
+    }
+    else
+    {
+        cols = 1;
+        rows = 784;
+    }
 
+    std::ifstream file(path);
+
+#if USE_GPU
+    Matrix_GPU*** dataset = new Matrix** [dataLength];
+#else
+    Matrix*** dataset = new Matrix** [dataLength];
+#endif
+
+    std::string line;
+    std::string value;
+    if (file.is_open())
+    {
+        int j = 0;
+        while (getline(file, line))
+        {
+            dataset[j] = new Matrix_GPU* [2];
+
+            std::stringstream s(line);
+            int i = -1;
+            dataset[j][0] = new Matrix_GPU(rows, cols);
+
+            while (getline(s, value, ','))
+            {
+
+                if (i == -1)
+                {
+                    dataset[j][1] = LabelToMatrix(std::stoi(value));
+                }
+                else
+                {
+                    dataset[j][0][0][i] = std::stod(value);
+                }
+                i++;
+            }
+            j++;
+        }
+    }
+    else
+    {
+        std::cout << "File not found" << std::endl;
+    }
+    std::cout << "Dataset loaded" << std::endl;
+    return dataset;
+
+}
+#endif
 
 void Mnist1()
 {
     std::cout << "mnist 1\n";
     int dataLength = CSVTools::CsvLength(MNIST_DATA_PATH);
+#if USE_GPU
+    Matrix_GPU*** data = GetDataset(MNIST_DATA_PATH, dataLength, false);
+#else
     Matrix*** data = GetDataset(MNIST_DATA_PATH, dataLength, false);
+#endif
 
     std::cout << "Data length: " << dataLength << std::endl;
 
@@ -273,13 +347,20 @@ void FashionMnist2()
     std::cout << "Testing Accuracy : " << testingAccuracy * 100 << "% \n";
 }
 
-
+#if USE_GPU
+double TestAccuracy(Network* network, Matrix_GPU*** data, int dataLength)
+#else
 double TestAccuracy(Network* network, Matrix*** data, int dataLength)
+#endif
 {
     int correct = 0;
     for (int i = 0; i < dataLength; i++)
     {
+#if USE_GPU
+        Matrix_GPU* prediction = network->Process(data[i][0]);
+#else
         Matrix* prediction = network->Process(data[i][0]);
+#endif
         if (MatrixToLabel(prediction) == MatrixToLabel(data[i][1]))
         {
             correct++;

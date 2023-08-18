@@ -43,6 +43,52 @@ void Matrix_GPU::DivideAllDims(const float factor){
     checkCUDNN(cudnnScaleTensor(
                        handle, desc, data_d, 1f / factor));
 }
+
+void Matrix_GPU::Multiply(const Matrix_GPU& a, const Matrix_GPU& b, Matrix_GPU& res)
+{
+    // Help to deal with CUBLAS fuckin column-major order
+    https://mccormickml.com/2015/08/29/matrix-multiplication-with-cublas-example/
+    cublasStatus_t cublasSgeam(cublasHandle_t handle,
+                          cublasOperation_t transa, cublasOperation_t transb,
+                          int m, int n,
+                          const float           *alpha,
+                          const float           *A, int lda,
+                          const float           *beta,
+                          const float           *B, int ldb,
+                          float           *C, int ldc)
+}
+
+void Matrix_GPU::Add(const Matrix_GPU& other, Matrix_GPU& res)
+{
+    throw std::runtime_error("How to handle difference btw Add and AddAllDims ? (because of tensor descriptors)")
+    cublasStatus_t cublasSgeam(cublasHandle_t handle,
+                          cublasOperation_t transa, cublasOperation_t transb,
+                          int m, int n,
+                          const float           *alpha,
+                          const float           *A, int lda,
+                          const float           *beta,
+                          const float           *B, int ldb,
+                          float           *C, int ldc)
+}
+
+Matrix_GPU* operator*=(float n){
+    cudnnStatus_t cudnnScaleTensor(
+    cudnnHandle_t handle,
+    const cudnnTensorDescriptor_t yDesc,
+    void *y,
+    const void *alpha)
+}
+
+void Matrix_GPU::Reshape(int rows_, int cols_, int dims){
+    checkCUDNN(cudnnSetTensor4dDescriptor(desc, CUDNN_TENSOR_NHWC, CUDNN_DATA_FLOAT, 1, 1, size, 1));
+    rows = rows_;
+    cols = cols_;
+    dims = dims_;
+}
+
+void Matrix_GPU::Flatten(){
+    Reshape(rows * cols * dims, 1, 1);
+}
 #endif
 
 //MATRIX
@@ -861,7 +907,6 @@ void Matrix::Flatten() const
     rows *= cols * dim;
     cols = 1;
     dim = 1;
-    matrixSize = rows * cols;
 }
 
 void Matrix::Reshape(const int rows_, const int cols_, const int dims) const

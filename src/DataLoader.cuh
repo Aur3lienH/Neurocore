@@ -9,12 +9,20 @@
 class DataLoader
 {
 public:
+#if USE_GPU
+    DataLoader(Matrix_GPU*** data, int dataLength);
+#else
     DataLoader(Matrix*** data, int dataLength);
+#endif
 
     void Shuffle();
 
     int dataLength;
+#if USE_GPU
+    Matrix_GPU*** data;
+#else
     Matrix*** data;
+#endif
 private:
 
     std::random_device rd;
