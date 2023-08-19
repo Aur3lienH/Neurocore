@@ -15,43 +15,24 @@ void Flatten::Compile(LayerShape* previous)
     LayerID = 3;
 }
 
-#if USE_GPU
-const Matrix_GPU* Flatten::FeedForward(const Matrix_GPU* input)
+const MAT* Flatten::FeedForward(const MAT* _input)
 {
-    this->input = input;
+    this->input = _input;
     input->Flatten();
     return input;
 }
 
-const Matrix_GPU* Flatten::BackPropagate(const Matrix_GPU* delta, const Matrix_GPU* pastActivation)
+const MAT* Flatten::BackPropagate(const MAT* delta, const MAT* pastActivation)
 {
     input->Reshape(rows, cols, dims);
     delta->Reshape(rows, cols, dims);
     return delta;
 }
-const Matrix_GPU* Flatten::getResult() const
-{
-    return input;
-}
-#else
-const Matrix* Flatten::FeedForward(const Matrix* input)
-{
-    this->input = input;
-    input->Flatten();
-    return input;
-}
 
-const Matrix* Flatten::BackPropagate(const Matrix* delta, const Matrix* pastActivation)
-{
-    input->Reshape(rows, cols, dims);
-    delta->Reshape(rows, cols, dims);
-    return delta;
-}
-const Matrix* Flatten::getResult() const
+const MAT* Flatten::getResult() const
 {
     return input;
 }
-#endif
 
 
 void Flatten::ClearDelta()
@@ -74,7 +55,7 @@ std::string Flatten::getLayerTitle()
 {
     std::string buffer;
     buffer += "Flatten\n";
-    buffer += "Output Size : " + std::to_string(layerShape->dimensions[0]) + "\n";
+    buffer += "Output GetSize : " + std::to_string(layerShape->dimensions[0]) + "\n";
     return buffer;
 }
 

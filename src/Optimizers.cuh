@@ -16,7 +16,7 @@ public:
 
     virtual void Compile(int size) = 0;
 
-    virtual void Compute(Matrix* gradient, Matrix* parameters, int offset = 0) = 0;
+    virtual void Compute(MAT* gradient, MAT* parameters, int offset = 0) = 0;
 };
 
 
@@ -27,7 +27,7 @@ public:
 
     void Compile(int size) override;
 
-    void Compute(Matrix* gradient, Matrix* parameters, int offset) override;
+    void Compute(MAT* gradient, MAT* parameters, int offset) override;
 
 private:
     double learningRate;
@@ -41,7 +41,7 @@ public:
 
     void Compile(int size) override;
 
-    void Compute(Matrix* gradient, Matrix* parameters, int offset) override;
+    void Compute(MAT* gradient, MAT* parameters, int offset) override;
 
 private:
     double alpha;

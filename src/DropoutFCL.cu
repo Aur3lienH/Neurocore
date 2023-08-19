@@ -11,10 +11,10 @@ DropoutFCL::DropoutFCL(int NeuronsCount, Activation* activation, double dropoutR
 
 }
 
-DropoutFCL::DropoutFCL(int NeuronsCount, Activation* activation, Matrix* weights, Matrix* bias, Matrix* delta,
-                       Matrix* deltaActivation, double dropoutRate) : FCL(NeuronsCount, activation, weights, bias,
-                                                                          delta, deltaActivation),
-                                                                      dropoutRate(dropoutRate)
+DropoutFCL::DropoutFCL(int NeuronsCount, Activation* activation, MAT* weights, MAT* bias, MAT* delta,
+                       MAT* deltaActivation, double dropoutRate) : FCL(NeuronsCount, activation, weights, bias,
+                                                                       delta, deltaActivation),
+                                                                   dropoutRate(dropoutRate)
 {
 
 }
@@ -36,6 +36,9 @@ void DropoutFCL::Compile(LayerShape* previousLayer)
 
 void DropoutFCL::SetIsTraining(const bool isTraining_)
 {
+#if USE_GPU
+    throw std::runtime_error("DropoutFCL::SetIsTraining not implemented for GPU");
+#else
     isTraining = isTraining_;
     if (isTraining)
     {
@@ -48,7 +51,7 @@ void DropoutFCL::SetIsTraining(const bool isTraining_)
         Save();
         const double scale = 1.0 / (1.0 - dropoutRate);
 
-        for (int i = 0; i < Weights->size(); ++i)
+        for (int i = 0; i < Weights->GetSize(); ++i)
         {
             if ((*Weights)[i] == 0)
             {
@@ -60,28 +63,33 @@ void DropoutFCL::SetIsTraining(const bool isTraining_)
             }
         }
     }
+#endif
 }
 
 void DropoutFCL::Drop()
 {
+#if USE_GPU
+    throw std::runtime_error("DropoutFCL::Drop not implemented for GPU");
+#else
     const double scale = 1.0 / (1.0 - dropoutRate);
 
     // Zero out columns of droppedWeights and droppedBiases and scale the rest
-    for (int i = 0; i < Weights->getCols(); i++)
+    for (int i = 0; i < Weights->GetCols(); i++)
     {
         if (rand() / ((double) RAND_MAX) < dropoutRate)
         {
-            for (int j = 0; j < Weights->getRows(); j++)
+            for (int j = 0; j < Weights->GetRows(); j++)
             {
                 (*Weights)(j, i) = 0;
             }
         }
         else
         {
-            for (int j = 0; j < Weights->getRows(); j++)
+            for (int j = 0; j < Weights->GetRows(); j++)
             {
                 (*Weights)(j, i) *= scale;
             }
         }
     }
+#endif
 }

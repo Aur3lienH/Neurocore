@@ -1,3 +1,4 @@
+/*
 #include "ThreadArg.cuh"
 
 ThreadArg::ThreadArg(Network* network, Matrix*** data, std::mutex* mutex, std::condition_variable* cv,
@@ -10,4 +11,4 @@ ThreadArg::ThreadArg(Network* network, Matrix*** data, std::mutex* mutex, std::c
     this->batchSize = batchSize;
     this->numberOfBatch = numberOfBatch;
 
-}
+}*/

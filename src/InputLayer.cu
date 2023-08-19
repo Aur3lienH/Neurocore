@@ -19,41 +19,21 @@ InputLayer::InputLayer(LayerShape* LayerShape)
     this->layerShape = LayerShape;
 }
 
-#if USE_GPU
-const Matrix_GPU* InputLayer::FeedForward(const Matrix_GPU* _input)
+const MAT* InputLayer::FeedForward(const MAT* _input)
 {
     input = _input;
     return _input;
 }
 
-const Matrix_GPU* InputLayer::BackPropagate(const Matrix_GPU* delta, const Matrix_GPU* lastWeights)
+const MAT* InputLayer::BackPropagate(const MAT* delta, const MAT* lastWeights)
 {
     return nullptr;
 }
 
-const Matrix_GPU* InputLayer::getResult() const
+const MAT* InputLayer::getResult() const
 {
     return input;
 }
-#else
-
-const Matrix* InputLayer::FeedForward(const Matrix* _input)
-{
-    input = _input;
-    return _input;
-}
-
-const Matrix* InputLayer::BackPropagate(const Matrix* delta, const Matrix* lastWeights)
-{
-    return nullptr;
-}
-
-const Matrix* InputLayer::getResult() const
-{
-    return input;
-}
-
-#endif
 
 void InputLayer::ClearDelta()
 {

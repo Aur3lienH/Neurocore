@@ -5,7 +5,7 @@
 
 
 std::default_random_engine ImagePreProcessing::generator;
-std::uniform_real_distribution<double> ImagePreProcessing::distribution(0.0,1.0);
+std::uniform_real_distribution<double> ImagePreProcessing::distribution(0.0, 1.0);
 
 
 double ImagePreProcessing::Random(double mean, double stddev)
@@ -21,16 +21,16 @@ double ImagePreProcessing::Random(double mean, double stddev)
 
 Matrix* ImagePreProcessing::ImageWithNoise(const Matrix* origianl)
 {
-    Matrix* res = new Matrix(origianl->getRows(),origianl->getCols(),origianl->getDim());
+    Matrix* res = new Matrix(origianl->GetRows(), origianl->GetCols(), origianl->GetDims());
 
 
-    for (int k = 0; k < origianl->getDim(); k++)
+    for (int k = 0; k < origianl->GetDims(); k++)
     {
-        for (int i = 0; i < origianl->getRows(); i++)
+        for (int i = 0; i < origianl->GetRows(); i++)
         {
-            for (int j = 0; j < origianl->getCols(); j++)
+            for (int j = 0; j < origianl->GetCols(); j++)
             {
-                (*res)(i,j) = (*origianl)(i,j) + Random(10,0);
+                (*res)(i, j) = (*origianl)(i, j) + Random(10, 0);
             }
         }
     }
@@ -39,23 +39,23 @@ Matrix* ImagePreProcessing::ImageWithNoise(const Matrix* origianl)
 
 Matrix* ImagePreProcessing::Rotate(const Matrix* original, double angle)
 {
-    Matrix* res = new Matrix(original->getRows(),original->getCols(),original->getDim());
+    Matrix* res = new Matrix(original->GetRows(), original->GetCols(), original->GetDims());
 
-    for (int k = 0; k < original->getDim(); k++)
+    for (int k = 0; k < original->GetDims(); k++)
     {
-        for (int i = 0; i < original->getRows(); i++)
+        for (int i = 0; i < original->GetRows(); i++)
         {
-            for (int j = 0; j < original->getCols(); j++)
+            for (int j = 0; j < original->GetCols(); j++)
             {
-                double x = i - original->getRows() / 2.0;
-                double y = j - original->getCols() / 2.0;
+                double x = i - original->GetRows() / 2.0;
+                double y = j - original->GetCols() / 2.0;
                 double x1 = x * std::cos(angle) - y * std::sin(angle);
                 double y1 = x * std::sin(angle) + y * std::cos(angle);
-                x1 += original->getRows() / 2.0;
-                y1 += original->getCols() / 2.0;
-                if (x1 < 0 || x1 >= original->getRows() || y1 < 0 || y1 >= original->getCols())
+                x1 += original->GetRows() / 2.0;
+                y1 += original->GetCols() / 2.0;
+                if (x1 < 0 || x1 >= original->GetRows() || y1 < 0 || y1 >= original->GetCols())
                     continue;
-                (*res)(i,j) = (*original)(x1,y1);
+                (*res)(i, j) = (*original)(x1, y1);
             }
         }
         original->GoToNextMatrix();
@@ -68,15 +68,15 @@ Matrix* ImagePreProcessing::Rotate(const Matrix* original, double angle)
 
 Matrix* ImagePreProcessing::DownSize(Matrix* input, int rows, int cols)
 {
-    Matrix* res = new Matrix(rows,cols,input->getDim());
+    Matrix* res = new Matrix(rows, cols, input->GetDims());
 
-    for (int k = 0; k < input->getDim(); k++)
+    for (int k = 0; k < input->GetDims(); k++)
     {
         for (int i = 0; i < rows; i++)
         {
             for (int j = 0; j < cols; j++)
             {
-                (*res)(i,j) = (*input)(i * input->getRows() / rows,j * input->getCols() / cols);
+                (*res)(i, j) = (*input)(i * input->GetRows() / rows, j * input->GetCols() / cols);
             }
         }
         input->GoToNextMatrix();
@@ -90,21 +90,23 @@ Matrix* ImagePreProcessing::DownSize(Matrix* input, int rows, int cols)
 
 Matrix* ImagePreProcessing::ToBlackAndWhite(Matrix** original, bool alpha)
 {
-    Matrix* res = new Matrix((*original)->getRows(),(*original)->getCols(),1);
+    Matrix* res = new Matrix((*original)->GetRows(), (*original)->GetCols(), 1);
 
-    for (int k = 0; k < (*original)->getDim(); k++)
+    for (int k = 0; k < (*original)->GetDims(); k++)
     {
-        for (int i = 0; i < (*original)->getRows(); i++)
+        for (int i = 0; i < (*original)->GetRows(); i++)
         {
-            for (int j = 0; j < (*original)->getCols(); j++)
+            for (int j = 0; j < (*original)->GetCols(); j++)
             {
                 if (alpha)
                 {
-                    (*res)(i,j) = 0.299 * (*(*original))(i,j) + 0.587 * (*(*original))(i,j) + 0.114 * (*(*original))(i,j);
+                    (*res)(i, j) =
+                            0.299 * (*(*original))(i, j) + 0.587 * (*(*original))(i, j) + 0.114 * (*(*original))(i, j);
                 }
                 else
                 {
-                    (*res)(i,j) = 0.299 * (*(*original))(i,j) + 0.587 * (*(*original))(i,j) + 0.114 * (*(*original))(i,j);
+                    (*res)(i, j) =
+                            0.299 * (*(*original))(i, j) + 0.587 * (*(*original))(i, j) + 0.114 * (*(*original))(i, j);
                 }
             }
         }
@@ -121,15 +123,15 @@ Matrix* ImagePreProcessing::ToBlackAndWhite(Matrix** original, bool alpha)
 
 Matrix* ImagePreProcessing::Stretch(const Matrix* input, double x, double y)
 {
-    Matrix* res = new Matrix(input->getRows() * x,input->getCols() * y,input->getDim());
+    Matrix* res = new Matrix(input->GetRows() * x, input->GetCols() * y, input->GetDims());
 
-    for (int k = 0; k < input->getDim(); k++)
+    for (int k = 0; k < input->GetDims(); k++)
     {
-        for (int i = 0; i < input->getRows() * x; i++)
+        for (int i = 0; i < input->GetRows() * x; i++)
         {
-            for (int j = 0; j < input->getCols() * y; j++)
+            for (int j = 0; j < input->GetCols() * y; j++)
             {
-                (*res)(i,j) = (*input)(i / x,j / y);
+                (*res)(i, j) = (*input)(i / x, j / y);
             }
         }
         input->GoToNextMatrix();

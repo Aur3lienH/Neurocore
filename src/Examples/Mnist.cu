@@ -25,23 +25,44 @@ const std::string MNIST_FASHIOIN_LABEL_PATH = "./datasets/mnist_fashion/train-la
 
 
 #if USE_GPU
-Matrix_GPU* LabelToMatrix(int label)
+
+Matrix_GPU* LabelToMatrix(const int label)
 {
     auto* matrix = new Matrix_GPU(10, 1, 0.0f);
+    matrix->SetAt(label, 1);
 #else
+
 Matrix* LabelToMatrix(int label)
 {
     auto* matrix = new Matrix(10, 1, 0.0f);
-#endif
     matrix->operator[](label) = 1;
+#endif
     return matrix;
 }
+
+#if USE_GPU
+int MatrixToLabel(const Matrix_GPU* matrix)
+{
+    int label = 0;
+    double max = 0;
+    for (int i = 0; i < matrix->GetRows(); i++)
+    {
+        const float value = matrix->GetAt(i);
+        if (value > max)
+        {
+            max = value;
+            label = i;
+        }
+    }
+    return label;
+}
+#else
 
 int MatrixToLabel(const Matrix* matrix)
 {
     int label = 0;
     double max = 0;
-    for (int i = 0; i < matrix->getRows(); i++)
+    for (int i = 0; i < matrix->GetRows(); i++)
     {
         if (matrix->operator[](i) > max)
         {
@@ -52,8 +73,9 @@ int MatrixToLabel(const Matrix* matrix)
     return label;
 }
 
-#if USE_GPU
-Matrix_GPU*** GetDataset(std::string path, int dataLength, bool format2D)
+#endif
+
+MAT*** GetDataset(const std::string& path, const int dataLength, const bool format2D)
 {
     int cols = 0;
     int rows = 0;
@@ -70,11 +92,7 @@ Matrix_GPU*** GetDataset(std::string path, int dataLength, bool format2D)
 
     std::ifstream file(path);
 
-#if USE_GPU
-    Matrix_GPU*** dataset = new Matrix** [dataLength];
-#else
-    Matrix*** dataset = new Matrix** [dataLength];
-#endif
+    MAT*** dataset = new MAT** [dataLength];
 
     std::string line;
     std::string value;
@@ -83,11 +101,15 @@ Matrix_GPU*** GetDataset(std::string path, int dataLength, bool format2D)
         int j = 0;
         while (getline(file, line))
         {
-            dataset[j] = new Matrix_GPU* [2];
+            dataset[j] = new MAT* [2];
 
             std::stringstream s(line);
             int i = -1;
-            dataset[j][0] = new Matrix_GPU(rows, cols);
+#if USE_GPU
+            Matrix m = Matrix(rows, cols); // Data is loaded in CPU and then copied to GPU
+#else
+            dataset[j][0] = new Matrix(rows, cols);
+#endif
 
             while (getline(s, value, ','))
             {
@@ -98,10 +120,18 @@ Matrix_GPU*** GetDataset(std::string path, int dataLength, bool format2D)
                 }
                 else
                 {
+#if USE_GPU
+                    m[i] = std::stod(value);
+#else
                     dataset[j][0][0][i] = std::stod(value);
+#endif
                 }
                 i++;
             }
+
+#if USE_GPU
+            dataset[j][0] = new Matrix_GPU(m); // Data is loaded in the GPU
+#endif
             j++;
         }
     }
@@ -113,78 +143,13 @@ Matrix_GPU*** GetDataset(std::string path, int dataLength, bool format2D)
     return dataset;
 
 }
-#else
-Matrix_GPU*** GetDataset(std::string path, int dataLength, bool format2D)
-{
-    int cols = 0;
-    int rows = 0;
-    if (format2D)
-    {
-        cols = 28;
-        rows = 28;
-    }
-    else
-    {
-        cols = 1;
-        rows = 784;
-    }
-
-    std::ifstream file(path);
-
-#if USE_GPU
-    Matrix_GPU*** dataset = new Matrix** [dataLength];
-#else
-    Matrix*** dataset = new Matrix** [dataLength];
-#endif
-
-    std::string line;
-    std::string value;
-    if (file.is_open())
-    {
-        int j = 0;
-        while (getline(file, line))
-        {
-            dataset[j] = new Matrix_GPU* [2];
-
-            std::stringstream s(line);
-            int i = -1;
-            dataset[j][0] = new Matrix_GPU(rows, cols);
-
-            while (getline(s, value, ','))
-            {
-
-                if (i == -1)
-                {
-                    dataset[j][1] = LabelToMatrix(std::stoi(value));
-                }
-                else
-                {
-                    dataset[j][0][0][i] = std::stod(value);
-                }
-                i++;
-            }
-            j++;
-        }
-    }
-    else
-    {
-        std::cout << "File not found" << std::endl;
-    }
-    std::cout << "Dataset loaded" << std::endl;
-    return dataset;
-
-}
-#endif
 
 void Mnist1()
 {
     std::cout << "mnist 1\n";
     int dataLength = CSVTools::CsvLength(MNIST_DATA_PATH);
-#if USE_GPU
-    Matrix_GPU*** data = GetDataset(MNIST_DATA_PATH, dataLength, false);
-#else
-    Matrix*** data = GetDataset(MNIST_DATA_PATH, dataLength, false);
-#endif
+
+    MAT*** data = GetDataset(MNIST_DATA_PATH, dataLength, false);
 
     std::cout << "Data length: " << dataLength << std::endl;
 
@@ -217,7 +182,7 @@ void Mnist2()
 {
 
     int dataLength = CSVTools::CsvLength(MNIST_DATA_PATH);
-    Matrix*** data = GetDataset(MNIST_DATA_PATH, dataLength, true);
+    MAT*** data = GetDataset(MNIST_DATA_PATH, dataLength, true);
 
     std::cout << "Data length: " << dataLength << std::endl;
 
@@ -239,31 +204,36 @@ void Mnist2()
 
     network->PrintNetwork();
 
-    int trainLength = dataLength * 0.8;
-    int testLength = dataLength - trainLength;
+    const int trainLength = dataLength * 0.8;
+    //const int testLength = dataLength - trainLength;
 
+#if USE_GPU
+    network->Learn(1, 0.1, new DataLoader(data, trainLength), 32, 1);
+#else
     const int numThreads = static_cast<int>(std::thread::hardware_concurrency());
-    network->Learn(1, 0.1, new DataLoader(data, trainLength), 32, 16);
+    network->Learn(1, 0.1, new DataLoader(data, trainLength), 32, numThreads);
+#endif
 
     network->Save("./Models/MNIST_11.net");
 
 
-    double trainingAccuracy = TestAccuracy(network, data, 1000);
+    const double trainingAccuracy = TestAccuracy(network, data, 1000);
 
     std::cout << "Training Accuracy : " << trainingAccuracy * 100 << "% \n";
 
 
-    double testingAccuracy = TestAccuracy(network, data + trainLength, 1000);
+    const double testingAccuracy = TestAccuracy(network, data + trainLength, 1000);
     std::cout << "Testing Accuracy : " << testingAccuracy * 100 << "% \n";
 
     delete network;
+    delete data;
 }
 
 
 void FashionMnist1()
 {
     int dataLength;
-    Matrix*** data = GetFashionDataset(MNIST_FASHION_DATA_PATH, MNIST_FASHIOIN_LABEL_PATH, dataLength, false);
+    MAT*** data = GetFashionDataset(MNIST_FASHION_DATA_PATH, MNIST_FASHIOIN_LABEL_PATH, dataLength, false);
 
     std::cout << "Data length: " << dataLength << std::endl;
 
@@ -283,20 +253,25 @@ void FashionMnist1()
 
     network->PrintNetwork();
 
-    int trainLength = dataLength * 0.8;
-    int testLength = dataLength - trainLength;
+    const int trainLength = dataLength * 0.8;
+    //const int testLength = dataLength - trainLength;
 
-    network->Learn(10, 0.1, new DataLoader(data, trainLength), 64, 4);
+#if USE_GPU
+    network->Learn(10, 0.1, new DataLoader(data, trainLength), 64, 1);
+#else
+    const int numThreads = static_cast<int>(std::thread::hardware_concurrency());
+    network->Learn(10, 0.1, new DataLoader(data, trainLength), 64, numThreads);
+#endif
 
     network->Save("./Models/MNIST_11.net");
 
 
-    double trainingAccuracy = TestAccuracy(network, data, 1000);
+    const double trainingAccuracy = TestAccuracy(network, data, 1000);
 
     std::cout << "Training Accuracy : " << trainingAccuracy * 100 << "% \n";
 
 
-    double testingAccuracy = TestAccuracy(network, data + trainLength, 1000);
+    const double testingAccuracy = TestAccuracy(network, data + trainLength, 1000);
     std::cout << "Testing Accuracy : " << testingAccuracy * 100 << "% \n";
 }
 
@@ -304,7 +279,7 @@ void FashionMnist1()
 void FashionMnist2()
 {
     int dataLength;
-    Matrix*** data = GetFashionDataset(MNIST_FASHION_DATA_PATH, MNIST_FASHIOIN_LABEL_PATH, dataLength, true);
+    MAT*** data = GetFashionDataset(MNIST_FASHION_DATA_PATH, MNIST_FASHIOIN_LABEL_PATH, dataLength, true);
 
     std::cout << "Data length: " << dataLength << std::endl;
 
@@ -331,36 +306,33 @@ void FashionMnist2()
 
     network->PrintNetwork();
 
-    int trainLength = dataLength * 0.8;
-    int testLength = dataLength - trainLength;
+    const int trainLength = dataLength * 0.8;
+    const int testLength = dataLength - trainLength;
 
+#if USE_GPU
     network->Learn(5, 0.1, new DataLoader(data, trainLength), 64, 1);
+#else
+    const int numThreads = static_cast<int>(std::thread::hardware_concurrency());
+    network->Learn(5, 0.1, new DataLoader(data, trainLength), 64, numThreads);
+#endif
     network->Save("./Models/MNIST_11.net");
 
 
-    double trainingAccuracy = TestAccuracy(network, data, 1000);
+    const double trainingAccuracy = TestAccuracy(network, data, 1000);
 
     std::cout << "Training Accuracy : " << trainingAccuracy * 100 << "% \n";
 
 
-    double testingAccuracy = TestAccuracy(network, data + trainLength, 1000);
+    const double testingAccuracy = TestAccuracy(network, data + trainLength, 1000);
     std::cout << "Testing Accuracy : " << testingAccuracy * 100 << "% \n";
 }
 
-#if USE_GPU
-double TestAccuracy(Network* network, Matrix_GPU*** data, int dataLength)
-#else
-double TestAccuracy(Network* network, Matrix*** data, int dataLength)
-#endif
+double TestAccuracy(Network* network, MAT*** data, const int dataLength)
 {
     int correct = 0;
     for (int i = 0; i < dataLength; i++)
     {
-#if USE_GPU
-        Matrix_GPU* prediction = network->Process(data[i][0]);
-#else
-        Matrix* prediction = network->Process(data[i][0]);
-#endif
+        MAT* prediction = network->Process(data[i][0]);
         if (MatrixToLabel(prediction) == MatrixToLabel(data[i][1]))
         {
             correct++;
@@ -369,7 +341,7 @@ double TestAccuracy(Network* network, Matrix*** data, int dataLength)
     return (double) correct / (double) dataLength;
 }
 
-void LoadAndTest(std::string filename, bool is2D)
+void LoadAndTest(std::string filename, const bool is2D)
 {
     Network* network = Network::Load(filename);
 
@@ -378,21 +350,22 @@ void LoadAndTest(std::string filename, bool is2D)
     network->PrintNetwork();
 
     int dataLength = CSVTools::CsvLength(MNIST_DATA_PATH);
-    Matrix*** data = GetDataset(MNIST_DATA_PATH, dataLength, is2D);
 
-    int trainLength = dataLength * 0.8;
-    int testLength = dataLength - trainLength;
+    MAT*** data = GetDataset(MNIST_DATA_PATH, dataLength, is2D);
+
+    const int trainLength = dataLength * 0.8;
+    //const int testLength = dataLength - trainLength;
 
 
-    double trainingAccuracy = TestAccuracy(network, data, 1000);
+    const double trainingAccuracy = TestAccuracy(network, data, 1000);
     std::cout << "Training Accuracy : " << trainingAccuracy * 100 << "% \n";
 
 
-    double testingAccuracy = TestAccuracy(network, data + trainLength, 1000);
+    const double testingAccuracy = TestAccuracy(network, data + trainLength, 1000);
     std::cout << "Testing Accuracy : " << testingAccuracy * 100 << "% \n";
 }
 
-Matrix*** GetFashionDataset(std::string data, std::string label, int& dataLength, bool format2D)
+MAT*** GetFashionDataset(const std::string& data, const std::string& label, int& dataLength, const bool format2D)
 {
     int labelLength;
     int cols = 0;
@@ -445,26 +418,38 @@ Matrix*** GetFashionDataset(std::string data, std::string label, int& dataLength
     dataFile.read((char*) &n_cols, sizeof(n_cols));
     n_cols = ReverseInt(n_cols);
 
-    Matrix*** dataset = new Matrix** [dataLength];
+
+    MAT*** dataset = new MAT** [dataLength];
 
     for (int i = 0; i < dataLength; i++)
     {
-        dataset[i] = new Matrix* [2];
+        dataset[i] = new MAT* [2];
 
         unsigned char label;
 
         labelFile.read((char*) &label, sizeof(label));
         dataset[i][1] = LabelToMatrix(label);
+#if USE_GPU
+        Matrix m(rows, cols);
+#else
         dataset[i][0] = new Matrix(rows, cols);
+#endif
         for (int j = 0; j < rows; j++)
         {
             for (int k = 0; k < cols; k++)
             {
                 unsigned char value;
                 dataFile.read((char*) &value, sizeof(value));
+#if USE_GPU
+                m(j, k) = (double) value;
+#else
                 (*dataset[i][0])(j, k) = (double) value;
+#endif
             }
         }
+#if USE_GPU
+        dataset[i][0] = new Matrix_GPU(m);
+#endif
     }
 
     return dataset;

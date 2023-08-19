@@ -14,6 +14,7 @@ public:
     ~FCL() override;
 
 #if USE_GPU
+
     FCL(int NeuronsCount, Activation* activation, Matrix_GPU* weights, Matrix_GPU* bias, Matrix_GPU* delta,
         Matrix_GPU* deltaActivation);
 
@@ -31,7 +32,9 @@ public:
 
     //Getter for the result of the layer
     [[nodiscard]] const Matrix_GPU* getResult() const override;
+
 #else
+
     FCL(int NeuronsCount, Activation* activation, Matrix* weights, Matrix* bias, Matrix* delta,
         Matrix* deltaActivation);
 
@@ -49,6 +52,7 @@ public:
 
     //Getter for the result of the layer
     [[nodiscard]] const Matrix* getResult() const override;
+
 #endif
 
     //Clear partial derivative (named delta)
@@ -76,60 +80,35 @@ public:
     void AverageGradients(int batchSize) override;
 
 protected:
-#if USE_GPU
 //Partial derivative of the weights
-    Matrix_GPU* Delta = nullptr;
+    MAT* Delta = nullptr;
 
     //Partial derivative of the biases
-    Matrix_GPU* DeltaBiases = nullptr;
+    MAT* DeltaBiases = nullptr;
 
     //Results of the layer
-    Matrix_GPU* Result = nullptr;
+    MAT* Result = nullptr;
 
-    Matrix_GPU* Weights = nullptr;
-    Matrix_GPU* Biases = nullptr;
-
-    //Result before passing through the activation function
-    Matrix_GPU* z = nullptr;
-#else
-    //Partial derivative of the weights
-    Matrix* Delta = nullptr;
-
-    //Partial derivative of the biases
-    Matrix* DeltaBiases = nullptr;
-
-    //Results of the layer
-    Matrix* Result = nullptr;
-
-    Matrix* Weights = nullptr;
-    Matrix* Biases = nullptr;
+    MAT* Weights = nullptr;
+    MAT* Biases = nullptr;
 
     //Result before passing through the activation function
-    Matrix* z = nullptr;
-#endif
+    MAT* z = nullptr;
 
     //Activation function
     Activation* activation = nullptr;
 
     int NeuronsCount;
 private:
-#if USE_GPU
-    //Delta passed to the previous network in backpropagation
-    Matrix_GPU* newDelta = nullptr;
-
-    //Delta from the activation function
-    Matrix_GPU* deltaActivation = nullptr;
-#else
     const Matrix* BackPropagateSSE2(const Matrix* delta, const Matrix* lastWeigths);
 
     const Matrix* BackPropagateAX2(const Matrix* delta, const Matrix* lastWeigths);
 
     //Delta passed to the previous network in backpropagation
-    Matrix* newDelta = nullptr;
+    MAT* newDelta = nullptr;
 
     //Delta from the activation function
-    Matrix* deltaActivation = nullptr;
-#endif
+    MAT* deltaActivation = nullptr;
     //Neurons in the previous layer
     int previousNeuronsCount;
 

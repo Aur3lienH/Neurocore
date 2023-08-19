@@ -4,7 +4,7 @@
 #include <fstream>
 #include "Tools/Serializer.cuh"
 
-#define USE_GPU 1
+#define USE_GPU 0
 
 class Matrix
 {
@@ -72,13 +72,13 @@ public:
 
     float Sum();
 
-    int getRows() const;
+    int GetRows() const;
 
-    int getCols() const;
+    int GetCols() const;
 
-    int getDim() const;
+    int GetDims() const;
 
-    int size() const;
+    int GetSize() const;
 
     Matrix* operator+=(const Matrix& other);
 
@@ -183,6 +183,7 @@ public:
 #if USE_GPU
 
 #include "cudnn.h"
+#include "cublas.h"
 
 #define checkCUDNN(expression)                               \
   {                                                          \
@@ -194,38 +195,144 @@ public:
     }                                                        \
   }
 
+//Macro for checking cuda errors following a cuda launch or api call
+#define checkCUDA(expression) {                                          \
+ cudaError_t e = (expression);                                 \
+ if(e!=cudaSuccess) {                                              \
+   printf("Cuda failure %s:%d: '%s'\n",__FILE__,__LINE__,cudaGetErrorString(e));           \
+   exit(0); \
+ }                                                                 \
+}
+
+static const char* cublasGetErrorEnum(cublasStatus_t error)
+{
+    switch (error)
+    {
+        case CUBLAS_STATUS_SUCCESS:
+            return "CUBLAS_STATUS_SUCCESS";
+
+        case CUBLAS_STATUS_NOT_INITIALIZED:
+            return "CUBLAS_STATUS_NOT_INITIALIZED";
+
+        case CUBLAS_STATUS_ALLOC_FAILED:
+            return "CUBLAS_STATUS_ALLOC_FAILED";
+
+        case CUBLAS_STATUS_INVALID_VALUE:
+            return "CUBLAS_STATUS_INVALID_VALUE";
+
+        case CUBLAS_STATUS_ARCH_MISMATCH:
+            return "CUBLAS_STATUS_ARCH_MISMATCH";
+
+        case CUBLAS_STATUS_MAPPING_ERROR:
+            return "CUBLAS_STATUS_MAPPING_ERROR";
+
+        case CUBLAS_STATUS_EXECUTION_FAILED:
+            return "CUBLAS_STATUS_EXECUTION_FAILED";
+
+        case CUBLAS_STATUS_INTERNAL_ERROR:
+            return "CUBLAS_STATUS_INTERNAL_ERROR";
+
+        case CUBLAS_STATUS_NOT_SUPPORTED:
+            return "CUBLAS_STATUS_NOT_SUPPORTED";
+
+        case CUBLAS_STATUS_LICENSE_ERROR:
+            return "CUBLAS_STATUS_LICENSE_ERROR";
+    }
+
+    return "<unknown>";
+}
+
+#include "CUDA.cuh"
+
+static constexpr float one = 1; // Yes this is useful
+static constexpr float zero = 0; // Yes this is useful
 
 class Matrix_GPU
 {
 public:
-    int rows, cols, dims, size, matrixSize;
-    cudnnTensorDescriptor_t desc;
+    Matrix_GPU() = default;
 
     Matrix_GPU(int rows, int cols, int dims = 1);
 
-    Matrix_GPU(const Matrix& mat);
+    explicit Matrix_GPU(const Matrix& mat);
 
     void Zero();
 
     void DivideAllDims(float factor);
 
-    ~Matrix_GPU();
+    virtual ~Matrix_GPU();
 
-    float* GetData_CPU();
+    float* GetData_CPU() const;
 
     // This is a true Matrix multiplication (not Hadamard product)
-    static void Multiply(const Matrix_GPU& a, const Matrix_GPU& b, Matrix_GPU& res)
+    static void Multiply(const Matrix_GPU& a, const Matrix_GPU& b, Matrix_GPU& res);
 
     void Add(const Matrix_GPU& other, Matrix_GPU& res);
 
     Matrix_GPU* operator*=(float n);
 
-    void Reshape(int rows_, int cols_, int dims);
+    void Reshape(int rows_, int cols_, int dims) const;
 
-    void Flatten();
-private:
+    void Flatten() const;
 
+    void SetAt(int index, float value);
+
+    float GetAt(int index) const;
+
+    [[nodiscard]] int GetRows() const;
+
+    [[nodiscard]] int GetCols() const;
+
+    [[nodiscard]] int GetDims() const;
+
+    [[nodiscard]] int GetSize() const;
+
+    [[nodiscard]] float* GetData() const;
+
+    Matrix_GPU* Copy() const;
+
+    void Save(std::ofstream& writer) const;
+
+    Matrix_GPU* CopyWithSameData() const;
+
+#if USE_GPU
+
+    [[nodiscard]] cudnnTensorDescriptor_t* GetDescriptor() const;
+
+    static inline CUDA* cuda = new CUDA();
+
+#endif
+
+
+protected:
     float* data_d;
+    mutable int rows, cols, dims, size, matrixSize;
+    mutable cudnnTensorDescriptor_t desc;
 };
 
+class CloneMatrix_GPU : public Matrix_GPU
+{
+public:
+    ~CloneMatrix_GPU() override
+    {
+        checkCUDNN(cudnnDestroyTensorDescriptor(desc));
+    };
+
+    CloneMatrix_GPU() : Matrix_GPU()
+    {};
+
+    CloneMatrix_GPU(int rows, int cols) : Matrix_GPU(rows, cols)
+    {};
+
+    CloneMatrix_GPU(int rows, int cols, int size) : Matrix_GPU(rows, cols, size)
+    {};
+};
+
+#endif
+
+
+#if USE_GPU
+typedef Matrix_GPU MAT;
+#else
+typedef Matrix MAT;
 #endif

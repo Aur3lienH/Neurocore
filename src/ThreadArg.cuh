@@ -1,3 +1,4 @@
+/*
 #pragma once
 
 #include "Network.cuh"
@@ -18,4 +19,4 @@ public:
     int batchSize;
     int numberOfBatch;
     std::mutex* mutex;
-};
+};*/

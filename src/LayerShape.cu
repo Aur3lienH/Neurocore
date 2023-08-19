@@ -22,16 +22,16 @@ LayerShape::LayerShape(const int rows, const int cols, const int dims, const int
 }
 
 //Convert the format of the layer to an array of matrix.
-Matrix* LayerShape::ToMatrix() const
+MAT* LayerShape::ToMatrix() const
 {
     if (dimensions[2] == 1)
     {
-        return new Matrix(dimensions[0], dimensions[1]);
+        return new MAT(dimensions[0], dimensions[1]);
     }
-    auto* res = new Matrix[dimensions[2]];
+    auto* res = new MAT[dimensions[2]];
     for (int i = 0; i < dimensions[2]; i++)
     {
-        res[i] = Matrix(dimensions[0], dimensions[1]);
+        res[i] = MAT(dimensions[0], dimensions[1]);
     }
 
     return res;

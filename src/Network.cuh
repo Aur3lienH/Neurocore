@@ -20,36 +20,25 @@ public:
     //Add a layer to the network
     void AddLayer(Layer* layer);
 
-#if USE_GPU
     //Backpropagate threw the Network and store all the derivative
-    double BackPropagate(Matrix_GPU* input, Matrix_GPU* output);
+    double BackPropagate(MAT* input, MAT* output);
 
-    void Learn(int epochs, double learningRate, Matrix_GPU** inputs, Matrix_GPU** outputs, int dataLength);
+    void Learn(int epochs, double learningRate, MAT** inputs, MAT** outputs, int dataLength);
 
     //Compute a value threw the neural network
-    Matrix_GPU* Process(Matrix_GPU* input);
+    MAT* Process(MAT* input);
 
     //Compute values through the neural network
-    const Matrix_GPU* FeedForward(Matrix_GPU* input);
-#else
-    //Backpropagate threw the Network and store all the derivative
-    double BackPropagate(Matrix* input, Matrix* output);
+    const MAT* FeedForward(MAT* input);
 
-    void Learn(int epochs, double learningRate, Matrix** inputs, Matrix** outputs, int dataLength);
 
-    //Compute a value threw the neural network
-    Matrix* Process(Matrix* input);
-
-    //Compute values through the neural network
-    const Matrix* FeedForward(Matrix* input);
-#endif
-    /// @brief Multithreading learning 
+    /// @brief Multithreading learning
     /// @param epochs Number of times which the neural network will see the dataset
     /// @param learningRate 
     /// @param inputs The inputs of the dataset
     /// @param outputs The outputs of the dataset
     /// @param batchSize The number of turn before updating weights
-    /// @param dataLength The size of the dataset
+    /// @param dataLength The GetSize of the dataset
     /// @param threadNumber The number of thread used to train the model
     void Learn(int epochs, double learningRate, DataLoader* dataLoader, int batchSize, int threadNumber);
 
@@ -70,25 +59,14 @@ public:
 private:
     void UpdateWeights(double learningRate, int batchSize);
 
-#if USE_GPU
     //Compute values and loss
-    double FeedForward(Matrix_GPU* input, Matrix_GPU* desiredOutput);
+    double FeedForward(MAT* input, MAT* desiredOutput);
 
     //The output of the network
-    const Matrix_GPU* output = nullptr;
+    const MAT* output = nullptr;
 
     //The partial derivative of the cost
-    Matrix_GPU* costDerivative;
-#else
-    //Compute values and loss
-    double FeedForward(Matrix* input, Matrix* desiredOutput);
-
-    //The output of the network
-    const Matrix* output = nullptr;
-
-    //The partial derivative of the cost
-    Matrix* costDerivative;
-#endif
+    MAT* costDerivative;
 
     Layer** Layers;
 
