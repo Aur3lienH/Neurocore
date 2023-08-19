@@ -2,11 +2,7 @@
 #include <algorithm>
 #include <random>
 
-#if USE_GPU
-DataLoader::DataLoader(Matrix_GPU*** _data, int _dataLength)
-#else
-DataLoader::DataLoader(Matrix*** _data, int _dataLength)
-#endif
+DataLoader::DataLoader(MAT*** _data, int _dataLength)
 {
     data = _data;
     dataLength = _dataLength;

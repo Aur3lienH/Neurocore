@@ -18,9 +18,9 @@ public:
 
 
     //Convert the format of the layer to an array of matrix.
-    [[nodiscard]] Matrix* ToMatrix() const;
+    [[nodiscard]] MAT* ToMatrix() const;
 
-    //The size of each dimensions
+    //The GetSize of each dimensions
     int* dimensions;
 
     //The number of dimensions

@@ -4,58 +4,23 @@
 
 #include "AveragePooling.cuh"
 
+
+const MAT* AveragePoolLayer::FeedForward(const MAT* input)
+{
 #if USE_GPU
-
-const Matrix_GPU* AveragePoolLayer::FeedForward(const Matrix_GPU* input)
-{
-    Matrix::AveragePool(input, result, filterSize, stride);
-
-    return result;
-}
-
-Matrix_GPU* AveragePoolLayer::BackPropagate(const Matrix_GPU* delta, const Matrix_GPU* previousActivation)
-{
-    // All elements in the pooling window have the same delta which is delta / (filterSize * filterSize)
-    for (int d = 0; d < layerShape->dimensions[2]; ++d)
-    {
-        for (int i = 0; i < layerShape->dimensions[0]; ++i)
-        {
-            for (int j = 0; j < layerShape->dimensions[1]; ++j)
-            {
-                for (int k = 0; k < filterSize; ++k)
-                {
-                    for (int l = 0; l < filterSize; ++l)
-                    {
-                        (*newDelta)(i * stride + k, j * stride + l) = (*delta)(i, j) / fs_2;
-                    }
-                }
-            }
-        }
-        previousActivation->GoToNextMatrix();
-        result->GoToNextMatrix();
-        newDelta->GoToNextMatrix();
-        delta->GoToNextMatrix();
-    }
-
-    previousActivation->ResetOffset();
-    result->ResetOffset();
-    newDelta->ResetOffset();
-    delta->ResetOffset();
-
-    return newDelta;
-}
-
+    throw std::runtime_error("AveragePoolLayer::FeedForward not implemented for GPU");
 #else
-
-const Matrix* AveragePoolLayer::FeedForward(const Matrix* input)
-{
     Matrix::AveragePool(input, result, filterSize, stride);
 
     return result;
+#endif
 }
 
-Matrix* AveragePoolLayer::BackPropagate(const Matrix* delta, const Matrix* previousActivation)
+MAT* AveragePoolLayer::BackPropagate(const MAT* delta, const MAT* previousActivation)
 {
+#if USE_GPU
+    throw std::runtime_error("AveragePoolLayer::BackPropagatenot implemented for GPU");
+#else
     // All elements in the pooling window have the same delta which is delta / (filterSize * filterSize)
     for (int d = 0; d < layerShape->dimensions[2]; ++d)
     {
@@ -84,16 +49,15 @@ Matrix* AveragePoolLayer::BackPropagate(const Matrix* delta, const Matrix* previ
     delta->ResetOffset();
 
     return newDelta;
-}
-
 #endif
+}
 
 
 std::string AveragePoolLayer::getLayerTitle()
 {
     std::string buf;
     buf += "AveragePool Layer\n";
-    buf += "Size: " + std::to_string(filterSize) + "\n";
+    buf += "GetSize: " + std::to_string(filterSize) + "\n";
     buf += "Stride: " + std::to_string(stride) + "\n";
 
     return buf;

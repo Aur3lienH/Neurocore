@@ -37,7 +37,7 @@ void Tests::ExecuteTests()
     }
 
     //system("clear");
-    for (int i = 0; i < functions.size(); i++)
+    for (int i = 0; i < functions.GetSize(); i++)
     {
         if(array[i])
         {

@@ -16,18 +16,9 @@ public:
 
     static Layer* Load(std::ifstream& reader);
 
-#if USE_GPU
+    const MAT* FeedForward(const MAT* input) override;
 
-    const Matrix_GPU* FeedForward(const Matrix_GPU* input) override;
-
-    Matrix_GPU* BackPropagate(const Matrix_GPU* delta, const Matrix_GPU* previousActivation) override;
-
-#else
-    const Matrix* FeedForward(const Matrix* input) override;
-
-    Matrix* BackPropagate(const Matrix* delta, const Matrix* previousActivation) override;
-
-#endif
+    MAT* BackPropagate(const MAT* delta, const MAT* previousActivation) override;
 
     std::string getLayerTitle() override;
 
@@ -37,7 +28,7 @@ public:
 
 
 private:
-    // Filter size squared
+    // Filter GetSize squared
     const int fs_2;
 };
 

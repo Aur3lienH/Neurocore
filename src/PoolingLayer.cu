@@ -22,16 +22,12 @@ void PoolingLayer::Compile(LayerShape* previousActivation)
     layerShape = new LayerShape((previousActivation->dimensions[0] - filterSize) / stride + 1,
                                 (previousActivation->dimensions[1] - filterSize) / stride + 1,
                                 previousActivation->dimensions[2]);
-    result = new Matrix(layerShape->dimensions[0], layerShape->dimensions[1], layerShape->dimensions[2]);
-    newDelta = new Matrix(previousActivation->dimensions[0], previousActivation->dimensions[1],
-                          previousActivation->dimensions[2]);
+    result = new MAT(layerShape->dimensions[0], layerShape->dimensions[1], layerShape->dimensions[2]);
+    newDelta = new MAT(previousActivation->dimensions[0], previousActivation->dimensions[1],
+                       previousActivation->dimensions[2]);
 }
 
-#if USE_GPU
-const Matrix_GPU* PoolingLayer::getResult() const
-#else
-const Matrix* PoolingLayer::getResult() const
-#endif
+const MAT* PoolingLayer::getResult() const
 {
     return result;
 }

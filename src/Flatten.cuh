@@ -7,19 +7,11 @@ class Flatten : public Layer
 public:
     Flatten();
 
-#if USE_GPU
-    const Matrix_GPU* FeedForward(const Matrix_GPU* input) override;
+    const MAT* FeedForward(const MAT* _input) override;
 
-    const Matrix_GPU* BackPropagate(const Matrix_GPU* delta, const Matrix_GPU* pastActivation) override;
+    const MAT* BackPropagate(const MAT* delta, const MAT* pastActivation) override;
 
-    [[nodiscard]] const Matrix_GPU* getResult() const override;
-#else
-    const Matrix* FeedForward(const Matrix* input) override;
-
-    const Matrix* BackPropagate(const Matrix* delta, const Matrix* pastActivation) override;
-
-    [[nodiscard]] const Matrix* getResult() const override;
-#endif
+    [[nodiscard]] const MAT* getResult() const override;
 
     void ClearDelta() override;
 
@@ -41,11 +33,7 @@ public:
     void AverageGradients(int batchSize) override;
 
 private:
-#if USE_GPU
-    const Matrix_GPU* input;
-#else
-    const Matrix* input;
-#endif
+    const MAT* input;
     int rows, cols, dims = 0;
 
 

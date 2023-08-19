@@ -21,26 +21,17 @@ class ConvLayer : public Layer
 
 public:
     ~ConvLayer() override;
-    
+
     ConvLayer(LayerShape* filterShape, Activation* activation);
 
-#if USE_GPU
-    ConvLayer(Matrix_GPU* filters, LayerShape* layerShape, Activation* activation);    
+    ConvLayer(MAT* filters, LayerShape* layerShape, Activation* activation);
 
-    Matrix_GPU* FeedForward(const Matrix_GPU* input) override;
+    MAT* FeedForward(const MAT* input) override;
 
-    Matrix_GPU* BackPropagate(const Matrix_GPU* delta, const Matrix_GPU* lastWeights) override;
+    MAT* BackPropagate(const MAT* delta, const MAT* lastWeights) override;
 
-    [[nodiscard]] Matrix_GPU* getResult() const override;
-#else
-    ConvLayer(Matrix* filters, LayerShape* layerShape, Activation* activation);    
+    [[nodiscard]] MAT* getResult() const override;
 
-    Matrix* FeedForward(const Matrix* input) override;
-
-    Matrix* BackPropagate(const Matrix* delta, const Matrix* lastWeights) override;
-
-    [[nodiscard]] Matrix* getResult() const override;
-#endif
 
     void Compile(LayerShape* previousLayer) override;
 

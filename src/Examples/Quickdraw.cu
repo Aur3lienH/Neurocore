@@ -14,8 +14,15 @@
 #include <iostream>
 #include <fstream>
 #include <string>
-#include <math.h>
+#include <cmath>
 #include <sstream>
+
+#if USE_GPU
+#else
+
+#include <thread>
+
+#endif
 
 std::pair<int, int> GetDataLengthAndNumCategories(const std::string& path, const int numDrawingsPerCategory)
 {
@@ -46,8 +53,9 @@ void QuickDraw1(const int numDrawingsPerCategory)
     std::pair<int, int> dataInfo = GetDataLengthAndNumCategories("datasets/Quickdraw", numDrawingsPerCategory);
     const int dataLength = dataInfo.first;
     const int numCategories = dataInfo.second;
-    Matrix*** data = GetQuickdrawDataset("datasets/Quickdraw", dataLength, numCategories, numDrawingsPerCategory,
-                                         false);
+    MAT*** data = GetQuickdrawDataset("datasets/Quickdraw", dataLength, numCategories, numDrawingsPerCategory,
+                                      false);
+
     std::cout << "loaded" << std::endl;
 
     auto* network = new Network();
@@ -58,16 +66,22 @@ void QuickDraw1(const int numDrawingsPerCategory)
     network->Compile(Opti::Adam, new CrossEntropy());
     std::cout << "compiled ! \n";
 
-    int trainLength = dataLength * 0.8;
-    int testLength = dataLength - trainLength;
+    const int trainLength = dataLength * 0.8;
+    const int testLength = dataLength - trainLength;
     auto* dataLoader = new DataLoader(data, trainLength);
-    network->Learn(20, 0.01, dataLoader, 64, 16);
 
-    double trainingAccuracy = TestAccuracy(network, data, 1000);
+#if USE_GPU
+    network->Learn(20, 0.01, dataLoader, 64, 1);
+#else
+    const int numThreads = std::thread::hardware_concurrency();
+    network->Learn(20, 0.01, dataLoader, 64, numThreads);
+#endif
+
+    const double trainingAccuracy = TestAccuracy(network, data, 1000);
     std::cout << "Training Accuracy : " << trainingAccuracy * 100 << "% \n";
 
 
-    double testingAccuracy = TestAccuracy(network, data + trainLength, 1000);
+    const double testingAccuracy = TestAccuracy(network, data + trainLength, 1000);
     std::cout << "Testing Accuracy : " << testingAccuracy * 100 << "% \n";
 }
 
@@ -77,7 +91,12 @@ void QuickDraw2(const int numDrawingsPerCategory)
     std::pair<int, int> dataInfo = GetDataLengthAndNumCategories("datasets/Quickdraw", numDrawingsPerCategory);
     const int dataLength = dataInfo.first;
     const int numCategories = dataInfo.second;
+#if USE_GPU
+    Matrix_GPU*** data = GetQuickdrawDataset("datasets/Quickdraw", dataLength, numCategories, numDrawingsPerCategory,
+                                             true);
+#else
     Matrix*** data = GetQuickdrawDataset("datasets/Quickdraw", dataLength, numCategories, numDrawingsPerCategory, true);
+#endif
     std::cout << "loaded" << std::endl;
 
     auto* network = new Network();
@@ -90,11 +109,16 @@ void QuickDraw2(const int numDrawingsPerCategory)
     network->Compile(Opti::Adam, new CrossEntropy());
 
     network->PrintNetwork();
-    int trainLength = dataLength * 0.8;
-    int testLength = dataLength - trainLength;
+    const int trainLength = dataLength * 0.8;
+    const int testLength = dataLength - trainLength;
     auto* dataLoader = new DataLoader(data, trainLength);
     dataLoader->Shuffle();
-    network->Learn(10, 0.01, dataLoader, 96, 16);
+#if USE_GPU
+    network->Learn(10, 0.01, dataLoader, 96, 1);
+#else
+    const int numThreads = std::thread::hardware_concurrency();
+    network->Learn(10, 0.01, dataLoader, 96, numThreads);
+#endif
 
     double trainingAccuracy = TestAccuracy(network, data, 1000);
     std::cout << "Training Accuracy : " << trainingAccuracy * 100 << "% \n";
@@ -104,13 +128,16 @@ void QuickDraw2(const int numDrawingsPerCategory)
     std::cout << "Testing Accuracy : " << testingAccuracy * 100 << "% \n";
 }
 
-Matrix***
-GetQuickdrawDataset(const std::string& path, int dataLength, int numCategories, const int numDrawingsPerCategory,
-                    bool format2D)
+MAT*** GetQuickdrawDataset(const std::string& path, int dataLength, int numCategories,
+                           int numDrawingsPerCategory, bool format2D)
 {
     using recursive_directory_iterator = std::filesystem::recursive_directory_iterator;
 
+#if USE_GPU
+    auto*** dataset = new Matrix_GPU** [dataLength];
+#else
     auto*** dataset = new Matrix** [dataLength];
+#endif
 
     int inputIndex = 0, categoryIndex = 0;
     const int rows = format2D ? 28 : 28 * 28;
@@ -144,15 +171,27 @@ GetQuickdrawDataset(const std::string& path, int dataLength, int numCategories, 
                 }
                 in.seekg(pos);
             }*/
-            dataset[inputIndex] = new Matrix* [2];
+
+            dataset[inputIndex] = new MAT* [2];
             dataset[inputIndex][1] = LabelToMatrix(categoryIndex, numCategories);
+#if USE_GPU
+            Matrix m(rows, cols);
+#else
             dataset[inputIndex][0] = new Matrix(rows, cols);
+#endif
             for (int p = 0; p < 28 * 28; p++)
             {
                 unsigned char pixVal;
                 in.read((char*) &pixVal, 1);
+#if USE_GPU
+                m[p] = static_cast<double>(pixVal) / 255.0;
+#else
                 (*dataset[inputIndex][0])[p] = static_cast<double>(pixVal) / 255.0;
+#endif
             }
+#if USE_GPU
+            dataset[inputIndex][0] = new Matrix_GPU(m);
+#endif
 
             inputIndex++;
         }
@@ -170,10 +209,24 @@ GetQuickdrawDataset(const std::string& path, int dataLength, int numCategories, 
     return dataset;
 }
 
-Matrix* LabelToMatrix(const int label, const int numLabels)
+#if USE_GPU
+
+Matrix_GPU* LabelToMatrix(const int label, const int numLabels)
 {
-    auto* res = new Matrix(numLabels, 1);
+    auto* res = new Matrix_GPU(numLabels, 1);
+    res->SetAt(label, 1);
+
+    return res;
+}
+
+#else
+
+MAT* LabelToMatrix(int label, int numLabels)
+{
+    auto* res = new MAT(numLabels, 1);
     (*res)[label] = 1;
 
     return res;
 }
+
+#endif

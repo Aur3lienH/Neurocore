@@ -10,9 +10,9 @@ public:
 
     virtual ~Loss() = default;
 
-    virtual double Cost(const Matrix* output, const Matrix* target) = 0;
+    virtual double Cost(const MAT* output, const MAT* target) = 0;
 
-    virtual void CostDerivative(const Matrix* output, const Matrix* target, Matrix* result) = 0;
+    virtual void CostDerivative(const MAT* output, const MAT* target, MAT* result) = 0;
 
     static Loss* Read(std::ifstream& reader);
 
@@ -27,9 +27,9 @@ class MSE : public Loss
 public:
     MSE();
 
-    double Cost(const Matrix* output, const Matrix* target) override;
+    double Cost(const MAT* output, const MAT* target) override;
 
-    void CostDerivative(const Matrix* output, const Matrix* target, Matrix* result) override;
+    void CostDerivative(const MAT* output, const MAT* target, MAT* result) override;
 };
 
 class CrossEntropy : public Loss
@@ -37,7 +37,7 @@ class CrossEntropy : public Loss
 public:
     CrossEntropy();
 
-    double Cost(const Matrix* output, const Matrix* target) override;
+    double Cost(const MAT* output, const MAT* target) override;
 
-    void CostDerivative(const Matrix* output, const Matrix* target, Matrix* result) override;
+    void CostDerivative(const MAT* output, const MAT* target, MAT* result) override;
 };

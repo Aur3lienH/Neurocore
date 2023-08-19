@@ -15,11 +15,7 @@ public:
 
     void Compile(LayerShape* previousActivation) override;
 
-#if USE_GPU
-    [[nodiscard]] const Matrix_GPU* getResult() const override;
-#else
-    [[nodiscard]] const Matrix* getResult() const override;
-#endif
+    [[nodiscard]] const MAT* getResult() const override;
 
     void SpecificSave(std::ofstream& writer) override;
 
@@ -29,11 +25,6 @@ public:
 protected:
     const int filterSize, stride;
 
-#if USE_GPU
-    Matrix_GPU* result;
-    Matrix_GPU* newDelta;
-#else
-    Matrix* result;
-    Matrix* newDelta;
-#endif
+    MAT* result;
+    MAT* newDelta;
 };

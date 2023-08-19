@@ -14,21 +14,13 @@ public:
 
     virtual ~Layer();
 
-#if USE_GPU
-    virtual const Matrix_GPU* FeedForward(const Matrix_GPU* input) = 0;
+    virtual const MAT* FeedForward(const MAT* input) = 0;
 
-    virtual const Matrix_GPU* BackPropagate(const Matrix_GPU* delta, const Matrix_GPU* previousActivation) = 0;
+    virtual const MAT* BackPropagate(const MAT* delta, const MAT* previousActivation) = 0;
 
-    [[nodiscard]] virtual const Matrix_GPU* getResult() const = 0;
-#else
-    virtual const Matrix* FeedForward(const Matrix* input) = 0;
+    [[nodiscard]] virtual const MAT* getResult() const = 0;
 
-    virtual const Matrix* BackPropagate(const Matrix* delta, const Matrix* previousActivation) = 0;
-
-    [[nodiscard]] virtual const Matrix* getResult() const = 0;
-#endif
     virtual void ClearDelta() = 0;
-
 
     virtual void UpdateWeights(double learningRate, int batchSize) = 0;
 

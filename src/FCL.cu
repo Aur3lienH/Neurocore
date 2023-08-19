@@ -30,12 +30,16 @@ FCL::FCL(int NeuronsCount, Activation* _activation, Matrix_GPU* weights, Matrix_
 
 Matrix_GPU* FCL::FeedForward(const Matrix_GPU* input)
 {
+#if USE_GPU
+    throw std::runtime_error("FCL::FeedForward not implemented for GPU");
+#else
     input->Flatten();
     Result = *Weights * *input;
     //this->Weights->CrossProduct(input, Result);
     Result->Add(Biases, z);
     activation->FeedForward(z, Result);
     return Result;
+#endif
 }
 
 void FCL::Compile(LayerShape* previousLayer)
@@ -67,9 +71,11 @@ void FCL::Compile(LayerShape* previousLayer)
     optimizer->Compile(NeuronsCount * previousNeuronsCount + NeuronsCount);
 }
 
-const Matrix* FCL::BackPropagate(const Matrix_GPU* lastDelta, const Matrix_GPU* PastActivation)
+const MAT* FCL::BackPropagate(const Matrix_GPU* lastDelta, const Matrix_GPU* PastActivation)
 {
-    //newDelta->Flatten();
+#if USE_GPU
+    throw std::runtime_error("FCL::BackPropagate not implemented for GPU");
+    /*//newDelta->Flatten();
     activation->Derivative(z, deltaActivation);
     deltaActivation->operator*=(lastDelta); // Trouver comment faire le Hadamard product sur GPU (CUBLAS et cuDNN le font pas)
 
@@ -85,7 +91,7 @@ const Matrix* FCL::BackPropagate(const Matrix_GPU* lastDelta, const Matrix_GPU* 
                           const float           *beta,
                           const float           *B, int ldb,
                           float           *C, int ldc)
-    //Matrix* d2 = new Matrix(Delta->getRows(), Delta->getCols(), Delta->getDim());
+    //Matrix* d2 = new Matrix(Delta->GetRows(), Delta->GetCols(), Delta->GetDims());
     //Matrix* PastActivationT = PastActivation->Transpose();
     //deltaActivation->CrossProduct(PastActivationT, d2);
     Delta->Add(d2, Delta);
@@ -97,7 +103,27 @@ const Matrix* FCL::BackPropagate(const Matrix_GPU* lastDelta, const Matrix_GPU* 
     weightsT->CrossProduct(deltaActivation, newDelta);
     delete weightsT;
 
+    return newDelta;*/
+#else
+    newDelta->Flatten();
+    activation->Derivative(z, deltaActivation);
+    deltaActivation->operator*=(lastDelta);
+
+    DeltaBiases->Add(deltaActivation, DeltaBiases);
+
+    Matrix* d2 = new Matrix(Delta->getRows(), Delta->getCols(), Delta->getDim());
+    Matrix* PastActivationT = PastActivation->Transpose();
+    deltaActivation->CrossProduct(PastActivationT, d2);
+    Delta->Add(d2, Delta);
+    delete d2;
+    delete PastActivationT;
+
+    Matrix* weightsT = Weights->Transpose();
+    weightsT->CrossProduct(deltaActivation, newDelta);
+    delete weightsT;
+
     return newDelta;
+#endif
 }
 
 const Matrix_GPU* FCL::getResult() const
@@ -185,7 +211,7 @@ const Matrix* FCL::BackPropagate(const Matrix* lastDelta, const Matrix* PastActi
 
     DeltaBiases->Add(deltaActivation, DeltaBiases);
 
-    Matrix* d2 = new Matrix(Delta->getRows(), Delta->getCols(), Delta->getDim());
+    Matrix* d2 = new Matrix(Delta->GetRows(), Delta->GetCols(), Delta->GetDims());
     Matrix* PastActivationT = PastActivation->Transpose();
     deltaActivation->CrossProduct(PastActivationT, d2);
     Delta->Add(d2, Delta);
@@ -344,7 +370,7 @@ void FCL::ClearDelta()
 void FCL::UpdateWeights(double learningRate, int batchSize)
 {
     optimizer->Compute(Delta, Weights);
-    optimizer->Compute(DeltaBiases, Biases, Weights->size());
+    optimizer->Compute(DeltaBiases, Biases, Weights->GetSize());
 
     Delta->Zero();
     DeltaBiases->Zero();
@@ -352,10 +378,13 @@ void FCL::UpdateWeights(double learningRate, int batchSize)
 
 void FCL::AddDeltaFrom(Layer* otherLayer)
 {
-
+#if USE_GPU
+    throw std::runtime_error("FCL::AddDeltaFrom not implemented for GPU");
+#else
     FCL* _FCLLayer = (FCL*) otherLayer;
     Delta->AddAllDims(_FCLLayer->Delta, Delta);
     DeltaBiases->AddAllDims(_FCLLayer->DeltaBiases, DeltaBiases);
+#endif
 }
 
 std::string FCL::getLayerTitle()

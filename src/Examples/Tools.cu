@@ -3,15 +3,15 @@
 #include <fstream>
 
 
-int CSVTools::CsvLength(std::string path)
+int CSVTools::CsvLength(const std::string& path)
 {
     std::ifstream file(path);
     std::string line;
 
     int i = 0;
-    if(file.is_open())
+    if (file.is_open())
     {
-        while(getline(file, line))
+        while (getline(file, line))
         {
             i++;
         }
