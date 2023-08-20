@@ -1,5 +1,4 @@
 #include "Examples/Mnist.cuh"
-#include "CUDA.cuh"
 
 #define TEST_ACTIVATION_BACKWARD 0
 

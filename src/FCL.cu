@@ -30,16 +30,13 @@ FCL::FCL(int NeuronsCount, Activation* _activation, Matrix_GPU* weights, Matrix_
 
 Matrix_GPU* FCL::FeedForward(const Matrix_GPU* input)
 {
-#if USE_GPU
-    throw std::runtime_error("FCL::FeedForward not implemented for GPU");
-#else
     input->Flatten();
-    Result = *Weights * *input;
-    //this->Weights->CrossProduct(input, Result);
-    Result->Add(Biases, z);
+    Matrix_GPU::HadamardProduct(*Weights, *input, *Result);
+    Matrix_GPU::Multiply(*Weights, *input, *Result);
+    Result->Add(*Biases, *z);
     activation->FeedForward(z, Result);
+    
     return Result;
-#endif
 }
 
 void FCL::Compile(LayerShape* previousLayer)

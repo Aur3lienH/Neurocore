@@ -4,7 +4,7 @@
 #include <fstream>
 #include "Tools/Serializer.cuh"
 
-#define USE_GPU 0
+#define USE_GPU 1
 
 class Matrix
 {
@@ -182,27 +182,7 @@ public:
 
 #if USE_GPU
 
-#include "cudnn.h"
-#include "cublas.h"
-
-#define checkCUDNN(expression)                               \
-  {                                                          \
-    cudnnStatus_t status = (expression);                     \
-    if (status != CUDNN_STATUS_SUCCESS) {                    \
-      std::cerr << "Error on line " << __LINE__ << ": "      \
-                << cudnnGetErrorString(status) << std::endl; \
-      std::exit(EXIT_FAILURE);                               \
-    }                                                        \
-  }
-
-//Macro for checking cuda errors following a cuda launch or api call
-#define checkCUDA(expression) {                                          \
- cudaError_t e = (expression);                                 \
- if(e!=cudaSuccess) {                                              \
-   printf("Cuda failure %s:%d: '%s'\n",__FILE__,__LINE__,cudaGetErrorString(e));           \
-   exit(0); \
- }                                                                 \
-}
+#include "CUDA.cuh"
 
 static const char* cublasGetErrorEnum(cublasStatus_t error)
 {
@@ -242,7 +222,6 @@ static const char* cublasGetErrorEnum(cublasStatus_t error)
     return "<unknown>";
 }
 
-#include "CUDA.cuh"
 
 static constexpr float one = 1; // Yes this is useful
 static constexpr float zero = 0; // Yes this is useful
@@ -267,7 +246,9 @@ public:
     // This is a true Matrix multiplication (not Hadamard product)
     static void Multiply(const Matrix_GPU& a, const Matrix_GPU& b, Matrix_GPU& res);
 
-    void Add(const Matrix_GPU& other, Matrix_GPU& res);
+    static void HadamardProduct(const Matrix_GPU& a, const Matrix_GPU& b, Matrix_GPU& res);
+
+    static void Add(const Matrix_GPU& other, Matrix_GPU& res);
 
     Matrix_GPU* operator*=(float n);
 
@@ -295,13 +276,9 @@ public:
 
     Matrix_GPU* CopyWithSameData() const;
 
-#if USE_GPU
-
     [[nodiscard]] cudnnTensorDescriptor_t* GetDescriptor() const;
 
     static inline CUDA* cuda = new CUDA();
-
-#endif
 
 
 protected:
