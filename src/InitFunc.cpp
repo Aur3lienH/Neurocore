@@ -1,7 +1,13 @@
 #include "InitFunc.h"
 #include <cmath>
+#include <random>
+#include <iostream>
 
-void XavierInit(const int inputSize, Matrix* weights)
+
+std::mt19937 WeightsInit::rng = std::mt19937(std::random_device{}());
+
+
+void WeightsInit::XavierInit(const int inputSize, Matrix* weights)
 {
     float upper = 1.0 / sqrt((float) inputSize);
     float lower = -upper;
@@ -13,7 +19,7 @@ void XavierInit(const int inputSize, Matrix* weights)
 };
 
 
-void NormalizedXavierInit(const int inputSize, const int outputSize, Matrix* weights)
+void WeightsInit::NormalizedXavierInit(const int inputSize, const int outputSize, Matrix* weights)
 {
     float upper = (sqrt(6.0) / sqrt((float) inputSize + (float) outputSize));
     float lower = -upper;
@@ -24,14 +30,14 @@ void NormalizedXavierInit(const int inputSize, const int outputSize, Matrix* wei
     }
 };
 
-void HeInit(const int inputSize, Matrix* weights)
+void WeightsInit::HeUniform(const int inputSize, Matrix* weights)
 {
-    float range = sqrt(2.0 / (float) inputSize);
+    double limit = std::sqrt(6.0 / inputSize);
+    
+    std::uniform_real_distribution<double> distribution(-limit, limit);
 
-    for (int i = 0; i < weights->size(); i++)
-    {
-        weights[0][i] = (rand() / ((float) RAND_MAX) - 0.5) * 2 * range;
+    for (int i = 0; i < weights->size(); ++i) {
+        (*weights)[i] = distribution(rng);
     }
-
 };
 

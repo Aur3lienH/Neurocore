@@ -14,7 +14,8 @@
 
 int main()
 {
-   
+
+ 
 
 
     Mnist1();

@@ -87,7 +87,7 @@ double Network::FeedForward(Matrix* input, Matrix* desiredOutput)
         //std::cout << "feedforward : " << i << "\n";
         output = Layers[i]->FeedForward(output);
     }
-
+    //std::cout << *output;
     return loss->Cost(output, desiredOutput);
 }
 
@@ -141,10 +141,8 @@ double Network::BackPropagate(Matrix* input, Matrix* desiredOutput)
     output = costDerivative;
     for (int i = layersCount - 1; i > 0; i--)
     {
-        //std::cout << "i : " << i << "\n";
         output = Layers[i]->BackPropagate(output, Layers[i - 1]->getResult());
     }
-
 
     return NetworkLoss;
 }

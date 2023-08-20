@@ -37,7 +37,7 @@ private:
 class Adam : public Optimizer
 {
 public:
-    explicit Adam(double alpha = 0.00025, double beta1 = 0.9, double beta2 = 0.999, double gamma = 10e-8);
+    explicit Adam(double alpha = 0.001, double beta1 = 0.9, double beta2 = 0.999, double gamma = 10e-7);
 
     void Compile(int size) override;
 

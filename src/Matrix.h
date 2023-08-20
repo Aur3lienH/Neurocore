@@ -9,11 +9,11 @@ class Matrix
 public:
     Matrix();
 
-    Matrix(int rows, int cols);
+    Matrix(int rows, int cols, bool aligned = false);
 
     Matrix(int rows, int cols, int size, bool aligned = false);
 
-    Matrix(int rows, int cols, float value);
+    Matrix(int rows, int cols, float value, bool aligned = false);
 
     Matrix(int rows, int cols, float* data);
 
@@ -25,6 +25,11 @@ public:
 
     static void FullConvolution(const Matrix* m, const Matrix* filter, Matrix* output);
 
+    static void FullConvolutionAVX2(const Matrix* m, const Matrix* filter, Matrix* output);
+
+    //FullConvolution FS4 = Filter Size 4
+    static void FullConvolutionFS4(const Matrix* m, const Matrix* filter, Matrix* output);
+
     static void Convolution(const Matrix* a, const Matrix* b, Matrix* output, int stride = 1);
 
     static void MaxPool(const Matrix* a, Matrix* output, int filterSize = 2, int stride = 2);
@@ -33,8 +38,10 @@ public:
 
     static Matrix Random(int rows, int cols);
 
+    Matrix* Transpose() const;
 
-    //Movement threw the matrix with the offset
+
+    //Movement threw the matrix with the offset, all the operations are done with matrix with this offset
     void GoToNextMatrix() const;
 
     void ResetOffset() const;
@@ -119,7 +126,9 @@ public:
 
     static Matrix* Copy(const Matrix* a);
 
-    //static void FullConvolutionAVX2(const Matrix* m, const Matrix* filter, Matrix* output);
+    static bool IsNull(const Matrix* a);
+
+
 
 protected:
     mutable float* data;
@@ -128,6 +137,9 @@ protected:
     mutable int dim;
     mutable int matrixSize;
     mutable int offset = 0;
+
+private:
+    void Init(const int rows,const int cols,const int dims, float value = 0, bool aligned = false);
 };
 
 

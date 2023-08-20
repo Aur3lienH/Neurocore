@@ -17,13 +17,7 @@ std::string Activation::getName() const
 
 Matrix* Activation::InitBiases(const int outputSize)
 {
-    auto* Biases = new Matrix(outputSize, 1);
-    for (int i = 0; i < outputSize; i++)
-    {
-        Biases[0][i] = 0;
-    }
-
-    return Biases;
+    return new Matrix(outputSize,1,1,false);
 }
 
 void Activation::FeedForward(const Matrix* input, Matrix* output)
@@ -114,7 +108,7 @@ double Sigmoid::Derive(const double input)
 Matrix* Sigmoid::InitWeights(const int previousNeuronsCount, const int NeuronsCount)
 {
     auto* weights = new Matrix(NeuronsCount, previousNeuronsCount,1,true);
-    XavierInit(previousNeuronsCount, weights);
+    WeightsInit::XavierInit(previousNeuronsCount, weights);
     return weights;
 }
 
@@ -137,7 +131,7 @@ double SigmoidPrime::Derive(const double input)
 Matrix* SigmoidPrime::InitWeights(const int previousNeuronsCount, const int NeuronsCount)
 {
     auto* weights = new Matrix(NeuronsCount, previousNeuronsCount);
-    XavierInit(previousNeuronsCount, weights);
+    WeightsInit::XavierInit(previousNeuronsCount, weights);
     return weights;
 }
 
@@ -215,8 +209,13 @@ double ReLU::Derive(const double input)
 Matrix* ReLU::InitWeights(const int previousNeuronsCount, const int NeuronsCount)
 {
     auto* weights = new Matrix(NeuronsCount, previousNeuronsCount,1,true);
-    HeInit(previousNeuronsCount, weights);
+    WeightsInit::HeUniform(previousNeuronsCount, weights);
     return weights;
+}
+
+Matrix* ReLU::InitBiases(const int outputSize)
+{
+    return new Matrix(outputSize,1,0.01f);
 }
 
 LeakyReLU::LeakyReLU(const double _alpha)
@@ -244,7 +243,7 @@ void LeakyReLU::Save(std::ofstream& writer)
 Matrix* LeakyReLU::InitWeights(const int previousNeuronsCount, const int NeuronsCount)
 {
     auto* weights = new Matrix(NeuronsCount, previousNeuronsCount,1,true);
-    HeInit(previousNeuronsCount, weights);
+    WeightsInit::HeUniform(previousNeuronsCount, weights);
     return weights;
 }
 
@@ -287,7 +286,7 @@ void Softmax::Derivative(const Matrix* input, Matrix* output)
 Matrix* Softmax::InitWeights(const int previousNeuronsCount, const int NeuronsCount)
 {
     auto* weights = new Matrix(NeuronsCount, previousNeuronsCount,1,true);
-    XavierInit(previousNeuronsCount, weights);
+    WeightsInit::XavierInit(previousNeuronsCount, weights);
     return weights;
 }
 
@@ -320,7 +319,7 @@ double Tanh::Derive(const double input)
 Matrix* Tanh::InitWeights(const int previousNeuronsCount, const int NeuronsCount)
 {
     auto* weights = new Matrix(NeuronsCount, previousNeuronsCount,1,true);
-    XavierInit(previousNeuronsCount, weights);
+    WeightsInit::XavierInit(previousNeuronsCount, weights);
     return weights;
 }
 
