@@ -1,6 +1,8 @@
 #pragma once
 
 #include <iostream>
+#include <vector>
+#include "Operations.h"
 #include <fstream>
 #include "Tools/Serializer.h"
 
@@ -129,6 +131,11 @@ public:
     static bool IsNull(const Matrix* a);
 
 
+    std::vector<Operation*> O_CrossProduct(Matrix* a, Matrix* b, Matrix* output);
+
+
+
+
 
 protected:
     mutable float* data;
@@ -140,6 +147,15 @@ protected:
 
 private:
     void Init(const int rows,const int cols,const int dims, float value = 0, bool aligned = false);
+};
+
+
+class HorizontalMatrix : public Matrix
+{
+public:
+    HorizontalMatrix(const int rows, const int cols, const int dims, float value = 0.0f, bool aligned = false);
+private:
+    void Init(const int rows, const int cols, const int dims, float value = 0, bool aligned = false);
 };
 
 
