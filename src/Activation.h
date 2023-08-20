@@ -15,11 +15,11 @@ public:
 
     virtual Matrix* InitWeights(int inputSize, int outputSize) = 0;
 
+    virtual Matrix* InitBiases(int outputSize);
+
     static Activation* Read(std::ifstream& reader);
 
     virtual void Save(std::ofstream& write);
-
-    static Matrix* InitBiases(int outputSize);
 
     [[nodiscard]] std::string getName() const;
 
@@ -74,6 +74,8 @@ public:
     double Derive(double input) override;
 
     Matrix* InitWeights(int inputSize, int outputSize) override;
+
+    Matrix* InitBiases(const int outputSize) override;  
 };
 
 class LeakyReLU : public Activation

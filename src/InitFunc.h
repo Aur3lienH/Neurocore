@@ -1,9 +1,20 @@
 #pragma once
 #include "Matrix.h"
+#include <random>
+#include <iostream>
 
 
-void XavierInit(int inputSize, Matrix* weights);
+//Class in which there are functions to init weigths
+class WeightsInit
+{
+public:
+    static void XavierInit(int inputSize, Matrix* weights);
 
-void NormalizedXavierInit(int inputSize,int outputSize, Matrix* weights);
+    static void NormalizedXavierInit(int inputSize,int outputSize, Matrix* weights);
 
-void HeInit(int inputSize, Matrix* weights);
+    static void HeUniform(int inputSize, Matrix* weights);
+private:
+    static std::mt19937 rng;
+};
+
+
