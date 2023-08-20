@@ -28,19 +28,20 @@ const std::string MNIST_FASHIOIN_LABEL_PATH = "./datasets/mnist_fashion/train-la
 
 Matrix_GPU* LabelToMatrix(const int label)
 {
-    auto* matrix = new Matrix_GPU(10, 1, 0.0f);
+    auto* matrix = new Matrix_GPU(10, 1);
     matrix->SetAt(label, 1);
 #else
 
-Matrix* LabelToMatrix(int label)
-{
-    auto* matrix = new Matrix(10, 1, 0.0f);
-    matrix->operator[](label) = 1;
+    Matrix* LabelToMatrix(int label)
+    {
+        auto* matrix = new Matrix(10, 1, 0.0f);
+        matrix->operator[](label) = 1;
 #endif
     return matrix;
 }
 
 #if USE_GPU
+
 int MatrixToLabel(const Matrix_GPU* matrix)
 {
     int label = 0;
@@ -56,6 +57,7 @@ int MatrixToLabel(const Matrix_GPU* matrix)
     }
     return label;
 }
+
 #else
 
 int MatrixToLabel(const Matrix* matrix)
@@ -162,13 +164,17 @@ void Mnist1()
     Network* network = new Network();
     network->AddLayer(new InputLayer(784));
     network->AddLayer(new FCL(512, new ReLU()));
-    network->AddLayer(new FCL(10, new Softmax()));
+    network->AddLayer(new FCL(10, new Sigmoid()));
     std::cout << "before compiling !\n";
     network->Compile(Opti::Adam, new CrossEntropy());
     std::cout << "compiled ! \n";
     int trainLength = dataLength * 0.8;
     int testLength = dataLength - trainLength;
+#if USE_GPU
+    network->Learn(1, 0.01, new DataLoader(data, trainLength), 128, 1);
+#else
     network->Learn(1, 0.01, new DataLoader(data, trainLength), 128, 16);
+#endif
 
     double trainingAccuracy = TestAccuracy(network, data, 1000);
     std::cout << "Training Accuracy : " << trainingAccuracy * 100 << "% \n";

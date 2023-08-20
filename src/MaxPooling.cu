@@ -81,7 +81,7 @@ std::string MaxPoolLayer::getLayerTitle()
 {
     std::string buf;
     buf += "MaxPool Layer\n";
-    buf += "GetSize: " + std::to_string(filterSize) + "\n";
+    buf += "Size: " + std::to_string(filterSize) + "\n";
     buf += "Stride: " + std::to_string(stride) + "\n";
     buf += "Output : " + layerShape->GetDimensions() + "\n";
     return buf;

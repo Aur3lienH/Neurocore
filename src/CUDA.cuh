@@ -1,10 +1,14 @@
-#if USE_GPU
 //
 // Created by mat on 19/08/23.
 //
 
 #ifndef DEEPLEARNING_CUDA_CUH
 #define DEEPLEARNING_CUDA_CUH
+
+#if USE_GPU
+
+#include "cudnn.h"
+#include "cublas_v2.h"
 
 #define checkCUDNN(expression)                               \
   {                                                          \
@@ -51,8 +55,9 @@ public:
 
     cudnnHandle_t cudnnHandle;
     const float alpha = 1.0f, beta = 0.0f;
+    const int threadsPerBlock = 256;
 };
 
 
-#endif //DEEPLEARNING_CUDA_CUH
 #endif
+#endif //DEEPLEARNING_CUDA_CUH

@@ -3,15 +3,8 @@
 #include <fstream>
 #include <cfloat>
 #include <emmintrin.h>
-#include <immintrin.h>
-#include <stdlib.h>
+#include <cstdlib>
 #include "Matrix.cuh"
-
-#if USE_GPU
-
-#include <cublas.h>
-
-#endif
 
 #define SAFE false
 
@@ -45,7 +38,7 @@ void Matrix_GPU::Zero()
 
 float* Matrix_GPU::GetData_CPU() const
 {
-    float* data_h;
+    float* data_h = new float[size];
     cudaMemcpy(data_h, data_d, size * sizeof(float), cudaMemcpyDeviceToHost);
 
     return data_h;
@@ -75,7 +68,8 @@ void Matrix_GPU::Multiply(const Matrix_GPU& a, const Matrix_GPU& b, Matrix_GPU& 
 void Matrix_GPU::Add(const Matrix_GPU& other, Matrix_GPU& res)
 {
     throw std::runtime_error("How to handle difference btw Add and AddAllDims ? (because of tensor descriptors)");
-    checkCUDNN(cudnnAddTensor(cuda->cudnnHandle, &one, desc, data_d, other.data_d, desc, data_d));
+    // Non là on ajoute dans data_d, faut ajouter dans res.data_d
+    //checkCUDNN(cudnnAddTensor(cuda->cudnnHandle, &one, desc, data_d, other.data_d, desc, data_d));
 }
 
 Matrix_GPU* Matrix_GPU::operator*=(const float n)
@@ -85,15 +79,15 @@ Matrix_GPU* Matrix_GPU::operator*=(const float n)
 
 void Matrix_GPU::Reshape(int rows_, int cols_, int dims_) const
 {
-    checkCUDNN(cudnnSetTensor4dDescriptor(desc, CUDNN_TENSOR_NHWC, CUDNN_DATA_FLOAT, 1, 1, size, 1));
     rows = rows_;
     cols = cols_;
-    dims = dims;
+    dims = dims_;
+    checkCUDNN(cudnnSetTensor4dDescriptor(desc, CUDNN_TENSOR_NHWC, CUDNN_DATA_FLOAT, 1, dims, rows, cols));
 }
 
 void Matrix_GPU::Flatten() const
 {
-    Reshape(rows * cols * dims, 1, 1);
+    Reshape(size, 1, 1);
 }
 
 float Matrix_GPU::GetAt(int index) const
@@ -159,6 +153,25 @@ Matrix_GPU* Matrix_GPU::CopyWithSameData() const
     res->data_d = data_d;
 
     return res;
+}
+
+__global__
+void CoeffWiseMultKernel(const float* a, const float* b, float* res, const int size)
+{
+    int index = blockIdx.x * blockDim.x + threadIdx.x;
+    if (index < size)
+    {
+        res[index] = a[index] * b[index];
+    }
+}
+
+void Matrix_GPU::HadamardProduct(const Matrix_GPU& a, const Matrix_GPU& b, Matrix_GPU& res)
+{
+    std::cout << "This is done on all Dims\n";
+    const int size = a.GetSize();
+    int blocksPerGrid = (size + cuda->threadsPerBlock - 1) / cuda->threadsPerBlock;
+    CoeffWiseMultKernel<<<blocksPerGrid, cuda->threadsPerBlock>>>(a.data_d, b.data_d, res.data_d, size);
+    checkCUDA(cudaDeviceSynchronize());
 }
 
 #endif
