@@ -6,7 +6,7 @@
 #include <cstdlib>
 #include "Matrix.cuh"
 
-#define SAFE false
+#define SAFE true
 
 #if USE_GPU
 
@@ -17,17 +17,24 @@ Matrix_GPU::Matrix_GPU(const int rows, const int cols, const int dims) : rows(ro
     checkCUDA(cudaMalloc(&data_d, rows * cols * dims * sizeof(float)));
     checkCUDA(cudaMemset(data_d, 0, rows * cols * dims * sizeof(float)));
     checkCUDNN(cudnnCreateTensorDescriptor(&desc));
+    checkCUDNN(cudnnCreateTensorDescriptor(&desc_1D));
     checkCUDNN(cudnnSetTensor4dDescriptor(desc, CUDNN_TENSOR_NHWC, CUDNN_DATA_FLOAT, 1, dims, rows, cols));
+    checkCUDNN(cudnnSetTensor4dDescriptor(desc_1D, CUDNN_TENSOR_NHWC, CUDNN_DATA_FLOAT, 1, 1, rows, cols));
 }
 
 Matrix_GPU::Matrix_GPU(const Matrix& mat) : Matrix_GPU(mat.GetRows(), mat.GetCols(), mat.GetDims())
 {
+#if SAFE
+    if (size != mat.GetSize())
+        throw std::runtime_error("Matrices dimensions do not match !");
+#endif
     checkCUDA(cudaMemcpy(data_d, mat.GetData(), mat.GetSize() * sizeof(float), cudaMemcpyHostToDevice));
 }
 
 Matrix_GPU::~Matrix_GPU()
 {
     checkCUDNN(cudnnDestroyTensorDescriptor(desc));
+    checkCUDNN(cudnnDestroyTensorDescriptor(desc_1D));
     cudaFree(data_d);
 }
 
@@ -52,29 +59,28 @@ void Matrix_GPU::DivideAllDims(const float factor)
 
 void Matrix_GPU::Multiply(const Matrix_GPU& a, const Matrix_GPU& b, Matrix_GPU& res)
 {
-    throw std::runtime_error("Matrix_GPU::Multiply not implemented yet !");
-    // Help to deal with CUBLAS fuckin column-major order
+    // Help to deal with CUBLAS fucking column-major order
     //https://mccormickml.com/2015/08/29/matrix-multiplication-with-cublas-example/
-    /*checkCUBLAS(cublasSgeam(cublasHandle,
-                               cublasOperation_t transa, cublasOperation_t transb,
-                               int m, int n,
-                               const float* alpha,
-                               const float* A, int lda,
-                               const float* beta,
-                               const float* B, int ldb,
-                               float* C, int ldc));*/
+    //https://github.com/zchee/cuda-sample/blob/master/0_Simple/matrixMulCUBLAS/matrixMulCUBLAS.cpp#L293
+    checkCUBLAS(cublasSgemm(cuda->cublasHandle, CUBLAS_OP_N, CUBLAS_OP_N, b.GetCols(), a.GetRows(), a.GetCols(),
+                            &cuda->one, b.data_d, b.GetCols(), a.data_d, a.GetCols(), &cuda->one, res.data_d,
+                            b.GetCols()));
 }
 
 void Matrix_GPU::Add(const Matrix_GPU& other, Matrix_GPU& res)
 {
-    throw std::runtime_error("How to handle difference btw Add and AddAllDims ? (because of tensor descriptors)");
-    // Non là on ajoute dans data_d, faut ajouter dans res.data_d
-    //checkCUDNN(cudnnAddTensor(cuda->cudnnHandle, &one, desc, data_d, other.data_d, desc, data_d));
+#if SAFE
+    if (matrixSize != other.matrixSize)
+        throw std::runtime_error("Matrices dimensions mismatch");
+#endif
+    checkCUBLAS(
+            cublasSgeam(cuda->cublasHandle, CUBLAS_OP_N, CUBLAS_OP_N, rows, cols,
+                        &cuda->one, data_d, rows, &cuda->one, other.data_d, rows, res.data_d, rows));
 }
 
 Matrix_GPU* Matrix_GPU::operator*=(const float n)
 {
-    checkCUDNN(cudnnScaleTensor(cuda->cudnnHandle, desc, data_d, &n));
+    checkCUDNN(cudnnScaleTensor(cuda->cudnnHandle, desc_1D, data_d, &n));
 }
 
 void Matrix_GPU::Reshape(int rows_, int cols_, int dims_) const
@@ -83,6 +89,7 @@ void Matrix_GPU::Reshape(int rows_, int cols_, int dims_) const
     cols = cols_;
     dims = dims_;
     checkCUDNN(cudnnSetTensor4dDescriptor(desc, CUDNN_TENSOR_NHWC, CUDNN_DATA_FLOAT, 1, dims, rows, cols));
+    checkCUDNN(cudnnSetTensor4dDescriptor(desc, CUDNN_TENSOR_NHWC, CUDNN_DATA_FLOAT, 1, 1, rows, cols));
 }
 
 void Matrix_GPU::Flatten() const
@@ -90,7 +97,7 @@ void Matrix_GPU::Flatten() const
     Reshape(size, 1, 1);
 }
 
-float Matrix_GPU::GetAt(int index) const
+float Matrix_GPU::GetAt(const int index) const
 {
     float res;
     checkCUDA(cudaMemcpy(&res, data_d + index, sizeof(float), cudaMemcpyDeviceToHost));
@@ -98,7 +105,7 @@ float Matrix_GPU::GetAt(int index) const
     return res;
 }
 
-void Matrix_GPU::SetAt(const int index, float value)
+void Matrix_GPU::SetAt(const int index, const float value)
 {
     checkCUDA(cudaMemcpy(data_d + index, &value, sizeof(float), cudaMemcpyHostToDevice));
 }
@@ -133,6 +140,11 @@ cudnnTensorDescriptor_t* Matrix_GPU::GetDescriptor() const
     return &desc;
 }
 
+cudnnTensorDescriptor_t* Matrix_GPU::GetDescriptor_1D() const
+{
+    return &desc_1D;
+}
+
 Matrix_GPU* Matrix_GPU::Copy() const
 {
     auto* res = new Matrix_GPU(rows, cols, dims);
@@ -158,20 +170,46 @@ Matrix_GPU* Matrix_GPU::CopyWithSameData() const
 __global__
 void CoeffWiseMultKernel(const float* a, const float* b, float* res, const int size)
 {
-    int index = blockIdx.x * blockDim.x + threadIdx.x;
+    const int index = blockIdx.x * blockDim.x + threadIdx.x;
     if (index < size)
-    {
         res[index] = a[index] * b[index];
-    }
+
 }
 
 void Matrix_GPU::HadamardProduct(const Matrix_GPU& a, const Matrix_GPU& b, Matrix_GPU& res)
 {
     std::cout << "This is done on all Dims\n";
+#if SAFE
+    if (a.GetSize() != b.GetSize())
+        throw std::runtime_error("Matrices dimensions mismatch !");
+#endif
     const int size = a.GetSize();
-    int blocksPerGrid = (size + cuda->threadsPerBlock - 1) / cuda->threadsPerBlock;
+    const int blocksPerGrid = (size + cuda->threadsPerBlock - 1) / cuda->threadsPerBlock;
     CoeffWiseMultKernel<<<blocksPerGrid, cuda->threadsPerBlock>>>(a.data_d, b.data_d, res.data_d, size);
     checkCUDA(cudaDeviceSynchronize());
+}
+
+std::ostream& operator<<(std::ostream& os, const Matrix_GPU& matrix)
+{
+    std::cout << "Matrix: " << matrix.rows << "x" << matrix.cols << std::endl;
+    float* data = matrix.GetData_CPU();
+    for (int i = 0; i < matrix.rows; i++)
+    {
+        os << "[";
+        for (int j = 0; j < matrix.cols; j++)
+        {
+            os << data[i * matrix.cols + j];
+            if (j != matrix.cols - 1)
+            {
+                os << " ";
+            }
+        }
+        os << "]\n";
+    }
+
+    delete data;
+
+    return os;
 }
 
 #endif
@@ -939,7 +977,7 @@ void Matrix::Convolution(const Matrix* input, const Matrix* filter, Matrix* outp
 
 
 #if SAFE
-    int filterSize = filter->getRows();
+    int filterSize = filter->GetRows();
     int inputCols = input->GetCols();
     int inputRows = input->GetRows();
     int outputCols = (inputCols - filterSize) / stride + 1;

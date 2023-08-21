@@ -30,14 +30,18 @@ MAT* Activation::InitBiases(const int outputSize)
 
 void Activation::FeedForward(const MAT* input, MAT* output)
 {
+#if SAFE
     if (input->GetCols() != output->GetCols() || input->GetRows() != output->GetRows() ||
         input->GetDims() != output->GetDims())
     {
         throw std::invalid_argument("Activation::FeedForward : Both matrix must have the same shape !");
     }
+#endif
 
 #if USE_GPU
-    Function(*input, *output);
+    checkCUDNN(cudnnActivationForward(Matrix_GPU::cuda->cudnnHandle, activationDesc, &Matrix_GPU::cuda->one,
+                                      *input->GetDescriptor_1D(), input->GetData(), &Matrix_GPU::cuda->zero,
+                                      *output->GetDescriptor_1D(), output->GetData()));
 #else
     for (int i = 0; i < input->GetSize(); i++)
     {
@@ -118,9 +122,9 @@ Activation* Activation::Read(std::ifstream& reader)
 
 void Activation::Function(const MAT& input, MAT& output)
 {
-    checkCUDNN(cudnnActivationForward(Matrix_GPU::cuda->cudnnHandle, activationDesc, &one, *input.GetDescriptor(),
-                                      input.GetData(),
-                                      &zero, *output.GetDescriptor(), output.GetData()));
+    checkCUDNN(cudnnActivationForward(Matrix_GPU::cuda->cudnnHandle, activationDesc, &Matrix_GPU::cuda->one,
+                                      *input.GetDescriptor_1D(), input.GetData(), &Matrix_GPU::cuda->zero,
+                                      *output.GetDescriptor_1D(), output.GetData()));
 }
 
 #endif
@@ -202,47 +206,26 @@ ReLU::ReLU()
 #endif
 }
 
-
+#if not USE_GPU
 void ReLU::FeedForward(const MAT* input, MAT* output)
 {
     __m128 zero = _mm_setzero_ps();
 
-#if USE_GPU
-    Matrix inputCpy(input->GetRows(), input->GetCols(), input->GetData_CPU());
-    Matrix outputCpy(output->GetRows(), output->GetCols(), output->GetData_CPU());
-#endif
-
     size_t i;
     for (i = 0; i <= input->GetSize() - 4; i += 4)
     {
-#if USE_GPU
-        __m128 vals = _mm_loadu_ps(&(inputCpy[i]));
-#else
         __m128 vals = _mm_loadu_ps(&((*input)[i]));
-#endif
         __m128 result = _mm_max_ps(zero, vals);
-#if USE_GPU
-        _mm_storeu_ps(&(outputCpy[i]), result);
-#else
         _mm_storeu_ps(&((*output)[i]), result);
-#endif
     }
 
     // Process any remaining values
     for (; i < input->GetSize(); ++i)
     {
-#if USE_GPU
-        if (outputCpy[i] < 0) outputCpy[i] = 0;
-#else
         if ((*input)[i] < 0) (*output)[i] = 0;
-#endif
     }
-
-#if USE_GPU
-    checkCUDA(cudaMemcpy(output->GetData(), outputCpy.GetData(), output->GetSize() * sizeof(float),
-                         cudaMemcpyHostToDevice));
-#endif
 }
+#endif
 
 void ReLU::Derivative(const MAT* input, MAT* output)
 {

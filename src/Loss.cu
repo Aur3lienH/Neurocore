@@ -114,35 +114,45 @@ double CrossEntropy::Cost(const MAT* output, const MAT* target)
         cost += target[0][i] * log(output[0][i] + 1e-15) + (1 - target[0][i]) * log(1 - output[0][i] + 1e-15);
 #endif
     }
+
+#if USE_GPU
+    checkCUDA(cudaMemcpy(output->GetData(), outputCPU.GetData(), output->GetSize() * sizeof(float),
+                         cudaMemcpyHostToDevice));
+    checkCUDA(cudaMemcpy(target->GetData(), targetCPU.GetData(), target->GetSize() * sizeof(float),
+                         cudaMemcpyHostToDevice));
+#endif
+
     return -cost / output->GetRows();
+}
+
+__global__
+void CostDerivativeKernel(const float* output, const float* target, float* result, const int size)
+{
+    const int i = blockIdx.x * blockDim.x + threadIdx.x;
+    if (i < size)
+    {
+        if (target[i] == 1)
+        {
+            result[i] = -1 + output[i];
+        }
+        else
+        {
+            result[i] = output[i];
+        }
+    }
 }
 
 void CrossEntropy::CostDerivative(const MAT* output, const MAT* target, MAT* result)
 {
 #if USE_GPU
-    std::cout << "CrossEntropy::CostDerivative kernel not implemented yet\n";
-    Matrix outputCPU(output->GetRows(), output->GetCols(), output->GetDims());
-    checkCUDA(cudaMemcpy(outputCPU.GetData(), output->GetData(), output->GetSize() * sizeof(float),
-                         cudaMemcpyDeviceToHost));
-    Matrix targetCPU(target->GetRows(), target->GetCols(), target->GetDims());
-    checkCUDA(cudaMemcpy(targetCPU.GetData(), target->GetData(), target->GetSize() * sizeof(float),
-                         cudaMemcpyDeviceToHost));
-    Matrix resultCPU(result->GetRows(), result->GetCols(), result->GetDims());
-    checkCUDA(cudaMemcpy(resultCPU.GetData(), result->GetData(), result->GetSize() * sizeof(float),
-                         cudaMemcpyDeviceToHost));
-#endif
+    const int blocksPerGrid =
+            (output->GetSize() + Matrix_GPU::cuda->threadsPerBlock - 1) / Matrix_GPU::cuda->threadsPerBlock;
+    CostDerivativeKernel<<<blocksPerGrid, Matrix_GPU::cuda->threadsPerBlock>>>(output->GetData(), target->GetData(),
+                                                                               result->GetData(), output->GetSize());
+    checkCUDA(cudaDeviceSynchronize());
+#else
     for (int i = 0; i < output->GetRows() * output->GetCols(); i++)
     {
-#if USE_GPU
-        if (targetCPU[i] == 1)
-        {
-            resultCPU[i] = -1 / outputCPU[i];
-        }
-        else
-        {
-            resultCPU[i] = outputCPU[i];
-        }
-#else
         if (target[0][i] == 1)
         {
             result[0][i] = -1 + output[0][i];
@@ -151,12 +161,7 @@ void CrossEntropy::CostDerivative(const MAT* output, const MAT* target, MAT* res
         {
             result[0][i] = output[0][i];
         }
-#endif
     }
-
-#if USE_GPU
-    checkCUDA(cudaMemcpy(result->GetData(), resultCPU.GetData(), result->GetSize() * sizeof(float),
-                         cudaMemcpyHostToDevice));
 #endif
 }
 

@@ -35,8 +35,8 @@ void ConvLayer::Compile(LayerShape* previousLayer)
         throw std::invalid_argument("ConvLayer : Must have an activation function !");
     }
 
-    int outputRow = previousLayer->dimensions[0] - filterShape->dimensions[0] + 1;
-    int outputCol = previousLayer->dimensions[1] - filterShape->dimensions[1] + 1;
+    //const int outputRow = previousLayer->dimensions[0] - filterShape->dimensions[0] + 1;
+    //const int outputCol = previousLayer->dimensions[1] - filterShape->dimensions[1] + 1;
 
 
     filterCount = filterShape->dimensions[2];

@@ -67,7 +67,7 @@ void QuickDraw1(const int numDrawingsPerCategory)
     std::cout << "compiled ! \n";
 
     const int trainLength = dataLength * 0.8;
-    const int testLength = dataLength - trainLength;
+    //const int testLength = dataLength - trainLength;
     auto* dataLoader = new DataLoader(data, trainLength);
 
 #if USE_GPU
@@ -110,7 +110,7 @@ void QuickDraw2(const int numDrawingsPerCategory)
 
     network->PrintNetwork();
     const int trainLength = dataLength * 0.8;
-    const int testLength = dataLength - trainLength;
+    //const int testLength = dataLength - trainLength;
     auto* dataLoader = new DataLoader(data, trainLength);
     dataLoader->Shuffle();
 #if USE_GPU
