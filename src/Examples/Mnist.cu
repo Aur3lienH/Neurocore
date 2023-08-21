@@ -79,18 +79,8 @@ int MatrixToLabel(const Matrix* matrix)
 
 MAT*** GetDataset(const std::string& path, const int dataLength, const bool format2D)
 {
-    int cols = 0;
-    int rows = 0;
-    if (format2D)
-    {
-        cols = 28;
-        rows = 28;
-    }
-    else
-    {
-        cols = 1;
-        rows = 784;
-    }
+    const int cols = format2D ? 28 : 1;
+    const int rows = format2D ? 28 : 784;
 
     std::ifstream file(path);
 
@@ -149,7 +139,8 @@ MAT*** GetDataset(const std::string& path, const int dataLength, const bool form
 void Mnist1()
 {
     std::cout << "mnist 1\n";
-    int dataLength = CSVTools::CsvLength(MNIST_DATA_PATH);
+    //const int dataLength = 10;
+    const int dataLength = CSVTools::CsvLength(MNIST_DATA_PATH);
 
     MAT*** data = GetDataset(MNIST_DATA_PATH, dataLength, false);
 
@@ -168,12 +159,12 @@ void Mnist1()
     std::cout << "before compiling !\n";
     network->Compile(Opti::Adam, new CrossEntropy());
     std::cout << "compiled ! \n";
-    int trainLength = dataLength * 0.8;
-    int testLength = dataLength - trainLength;
+    const int trainLength = dataLength * 0.8;
+    //int const testLength = dataLength - trainLength;
 #if USE_GPU
-    network->Learn(1, 0.01, new DataLoader(data, trainLength), 128, 1);
+    network->Learn(1, 0.01, new DataLoader(data, trainLength), 1, 1);
 #else
-    network->Learn(1, 0.01, new DataLoader(data, trainLength), 128, 16);
+    network->Learn(1, 0.01, new DataLoader(data, trainLength), 128, 1);
 #endif
 
     double trainingAccuracy = TestAccuracy(network, data, 1000);
@@ -313,7 +304,7 @@ void FashionMnist2()
     network->PrintNetwork();
 
     const int trainLength = dataLength * 0.8;
-    const int testLength = dataLength - trainLength;
+    //const int testLength = dataLength - trainLength;
 
 #if USE_GPU
     network->Learn(5, 0.1, new DataLoader(data, trainLength), 64, 1);

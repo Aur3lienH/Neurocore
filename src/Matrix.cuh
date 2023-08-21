@@ -184,48 +184,6 @@ public:
 
 #include "CUDA.cuh"
 
-static const char* cublasGetErrorEnum(cublasStatus_t error)
-{
-    switch (error)
-    {
-        case CUBLAS_STATUS_SUCCESS:
-            return "CUBLAS_STATUS_SUCCESS";
-
-        case CUBLAS_STATUS_NOT_INITIALIZED:
-            return "CUBLAS_STATUS_NOT_INITIALIZED";
-
-        case CUBLAS_STATUS_ALLOC_FAILED:
-            return "CUBLAS_STATUS_ALLOC_FAILED";
-
-        case CUBLAS_STATUS_INVALID_VALUE:
-            return "CUBLAS_STATUS_INVALID_VALUE";
-
-        case CUBLAS_STATUS_ARCH_MISMATCH:
-            return "CUBLAS_STATUS_ARCH_MISMATCH";
-
-        case CUBLAS_STATUS_MAPPING_ERROR:
-            return "CUBLAS_STATUS_MAPPING_ERROR";
-
-        case CUBLAS_STATUS_EXECUTION_FAILED:
-            return "CUBLAS_STATUS_EXECUTION_FAILED";
-
-        case CUBLAS_STATUS_INTERNAL_ERROR:
-            return "CUBLAS_STATUS_INTERNAL_ERROR";
-
-        case CUBLAS_STATUS_NOT_SUPPORTED:
-            return "CUBLAS_STATUS_NOT_SUPPORTED";
-
-        case CUBLAS_STATUS_LICENSE_ERROR:
-            return "CUBLAS_STATUS_LICENSE_ERROR";
-    }
-
-    return "<unknown>";
-}
-
-
-static constexpr float one = 1; // Yes this is useful
-static constexpr float zero = 0; // Yes this is useful
-
 class Matrix_GPU
 {
 public:
@@ -248,7 +206,7 @@ public:
 
     static void HadamardProduct(const Matrix_GPU& a, const Matrix_GPU& b, Matrix_GPU& res);
 
-    static void Add(const Matrix_GPU& other, Matrix_GPU& res);
+    void Add(const Matrix_GPU& other, Matrix_GPU& res);
 
     Matrix_GPU* operator*=(float n);
 
@@ -278,13 +236,18 @@ public:
 
     [[nodiscard]] cudnnTensorDescriptor_t* GetDescriptor() const;
 
+    [[nodiscard]] cudnnTensorDescriptor_t* GetDescriptor_1D() const;
+
     static inline CUDA* cuda = new CUDA();
 
+    friend std::ostream& operator<<(std::ostream&, const Matrix_GPU&);
 
 protected:
     float* data_d;
     mutable int rows, cols, dims, size, matrixSize;
     mutable cudnnTensorDescriptor_t desc;
+    // Descriptor for the matrix to perform operations on a single dimension
+    mutable cudnnTensorDescriptor_t desc_1D;
 };
 
 class CloneMatrix_GPU : public Matrix_GPU
@@ -293,6 +256,7 @@ public:
     ~CloneMatrix_GPU() override
     {
         checkCUDNN(cudnnDestroyTensorDescriptor(desc));
+        checkCUDNN(cudnnDestroyTensorDescriptor(desc_1D));
     };
 
     CloneMatrix_GPU() : Matrix_GPU()

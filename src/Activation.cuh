@@ -78,12 +78,13 @@ class ReLU : public Activation
 public:
     ReLU();
 
-    void FeedForward(const MAT* input, MAT* output) override;
 
     void Derivative(const MAT* input, MAT* output) override;
 
 #if not USE_GPU
     double Function(double input) override;
+
+    void FeedForward(const MAT* input, MAT* output) override;
 #endif
 
     double Derive(double input) override;

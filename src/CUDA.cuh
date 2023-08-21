@@ -10,6 +10,44 @@
 #include "cudnn.h"
 #include "cublas_v2.h"
 
+static const char* cublasGetErrorEnum(cublasStatus_t error)
+{
+    switch (error)
+    {
+        case CUBLAS_STATUS_SUCCESS:
+            return "CUBLAS_STATUS_SUCCESS";
+
+        case CUBLAS_STATUS_NOT_INITIALIZED:
+            return "CUBLAS_STATUS_NOT_INITIALIZED";
+
+        case CUBLAS_STATUS_ALLOC_FAILED:
+            return "CUBLAS_STATUS_ALLOC_FAILED";
+
+        case CUBLAS_STATUS_INVALID_VALUE:
+            return "CUBLAS_STATUS_INVALID_VALUE";
+
+        case CUBLAS_STATUS_ARCH_MISMATCH:
+            return "CUBLAS_STATUS_ARCH_MISMATCH";
+
+        case CUBLAS_STATUS_MAPPING_ERROR:
+            return "CUBLAS_STATUS_MAPPING_ERROR";
+
+        case CUBLAS_STATUS_EXECUTION_FAILED:
+            return "CUBLAS_STATUS_EXECUTION_FAILED";
+
+        case CUBLAS_STATUS_INTERNAL_ERROR:
+            return "CUBLAS_STATUS_INTERNAL_ERROR";
+
+        case CUBLAS_STATUS_NOT_SUPPORTED:
+            return "CUBLAS_STATUS_NOT_SUPPORTED";
+
+        case CUBLAS_STATUS_LICENSE_ERROR:
+            return "CUBLAS_STATUS_LICENSE_ERROR";
+    }
+
+    return "<unknown>";
+}
+
 #define checkCUDNN(expression)                               \
   {                                                          \
     cudnnStatus_t status = (expression);                     \
@@ -33,7 +71,7 @@
         if (expression != CUBLAS_STATUS_SUCCESS)                                                             \
         {                                                                                             \
             fprintf(stderr, "checkCublasErrors() API error = %04d \"%s\" from file <%s>, line %i.\n", \
-                    expression, _cublasGetErrorEnum(expression), __FILE__, __LINE__);                                 \
+                    expression, cublasGetErrorEnum(expression), __FILE__, __LINE__);                                 \
             exit(-1);                                                                                 \
         }                                                                                             \
     }
@@ -44,17 +82,18 @@ public:
     CUDA()
     {
         checkCUDNN(cudnnCreate(&cudnnHandle));
-        //checkCUDNN(cublasCreate_v2(&cublasHandle));
+        checkCUBLAS(cublasCreate_v2(&cublasHandle));
     }
 
     ~CUDA()
     {
         checkCUDNN(cudnnDestroy(cudnnHandle));
-        //checkCUDNN(cublasDestroy_v2(cublasHandle));
+        checkCUBLAS(cublasDestroy_v2(cublasHandle));
     }
 
     cudnnHandle_t cudnnHandle;
-    const float alpha = 1.0f, beta = 0.0f;
+    cublasHandle_t cublasHandle;
+    const float one = 1.0f, zero = 0.0f;
     const int threadsPerBlock = 256;
 };
 
