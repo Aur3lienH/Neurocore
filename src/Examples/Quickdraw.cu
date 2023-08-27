@@ -1,21 +1,15 @@
 #include "Quickdraw.cuh"
 #include <filesystem>
 #include "Mnist.cuh"
-#include "../Network.cuh"
-#include "../Matrix.cuh"
-#include "../Layer.cuh"
 #include "../InputLayer.cuh"
 #include "../FCL.cuh"
 #include "../ConvLayer.cuh"
 #include "../Flatten.cuh"
 #include "../MaxPooling.cuh"
-#include "../Optimizers.cuh"
-#include "Tools.cuh"
 #include <iostream>
 #include <fstream>
 #include <string>
 #include <cmath>
-#include <sstream>
 
 #if USE_GPU
 #else

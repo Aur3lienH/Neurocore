@@ -1,5 +1,4 @@
 #include "Optimizers.cuh"
-#include "Layer.cuh"
 #include "cmath"
 
 
@@ -13,30 +12,31 @@ void Constant::Compile(const int size)
 
 }
 
+
+__global__
+void ConstantComputeKernel(const float* gradient, float* parameters, const int size, const double learningRate)
+{
+    const int i = blockIdx.x * blockDim.x + threadIdx.x;
+    if (i < size)
+        parameters[i] -= gradient[i] * learningRate;
+
+}
+
 void Constant::Compute(MAT* gradient, MAT* parameters, const int offset)
 {
 #if USE_GPU
-    std::cout << "Constant::Compute kernel not implemented for GPU yet" << std::endl;
-    Matrix gradientCPU(gradient->GetRows(), gradient->GetCols(), gradient->GetDims());
-    Matrix parametersCPU(parameters->GetRows(), parameters->GetCols(), parameters->GetDims());
-    checkCUDA(cudaMemcpy(gradientCPU.GetData(), gradient->GetData(), gradient->GetSize() * sizeof(float),
-                         cudaMemcpyDeviceToHost));
-    checkCUDA(cudaMemcpy(parametersCPU.GetData(), parameters->GetData(), parameters->GetSize() * sizeof(float),
-                         cudaMemcpyDeviceToHost));
-#endif
+    const int numBlocks =
+            (gradient->GetSize() + Matrix_GPU::cuda->threadsPerBlock - 1) / Matrix_GPU::cuda->threadsPerBlock;
+    ConstantComputeKernel<<<numBlocks, Matrix_GPU::cuda->threadsPerBlock>>>(gradient->GetData() + offset,
+                                                                            parameters->GetData() + offset,
+                                                                            gradient->GetSize(), learningRate);
+    checkCUDA(cudaDeviceSynchronize());
+#else
 
     for (int i = 0; i < gradient->GetSize(); i++)
     {
-#if USE_GPU
-        parametersCPU[i] -= gradientCPU[i] * learningRate;
-#else
         (*parameters)[i] -= (*gradient)[i] * learningRate;
-#endif
     }
-
-#if USE_GPU
-    checkCUDA(cudaMemcpy(parameters->GetData(), parametersCPU.GetData(), parameters->GetSize() * sizeof(float),
-                         cudaMemcpyHostToDevice));
 #endif
 }
 
@@ -59,7 +59,6 @@ void Adam::Compile(const int size)
         {
             momentum1[i] = 0;
         }
-
     }
     if (momentum2 == nullptr)
     {
@@ -68,7 +67,6 @@ void Adam::Compile(const int size)
         {
             momentum2[i] = 0;
         }
-
     }
 
     if (biasCorrectedMomentum1 == nullptr)
@@ -78,7 +76,6 @@ void Adam::Compile(const int size)
         {
             biasCorrectedMomentum1[i] = 0;
         }
-
     }
 
     if (biasCorrectedMomentum2 == nullptr)
@@ -88,11 +85,9 @@ void Adam::Compile(const int size)
         {
             biasCorrectedMomentum2[i] = 0;
         }
-
     }
 
 }
-
 
 void Adam::Compute(MAT* _gradient, MAT* parameters, const int offset)
 {
@@ -103,21 +98,17 @@ void Adam::Compute(MAT* _gradient, MAT* parameters, const int offset)
     double* _biasCorrectedMomentum2 = biasCorrectedMomentum2 + offset;
 
 #if USE_GPU
-    std::cout << "Adam::Compute kernel not implemented for GPU yet" << std::endl;
-    Matrix gradientCPU(_gradient->GetRows(), _gradient->GetCols(), _gradient->GetDims());
-    Matrix parametersCPU(parameters->GetRows(), parameters->GetCols(), parameters->GetDims());
-    checkCUDA(cudaMemcpy(gradientCPU.GetData(), _gradient->GetData(), _gradient->GetSize() * sizeof(float),
-                         cudaMemcpyDeviceToHost));
-    checkCUDA(cudaMemcpy(parametersCPU.GetData(), parameters->GetData(), parameters->GetSize() * sizeof(float),
-                         cudaMemcpyDeviceToHost));
+    Matrix gradientCPU(_gradient->GetRows(), _gradient->GetCols(), _gradient->GetData_CPU());
+    Matrix parametersCPU(parameters->GetRows(), parameters->GetCols(), parameters->GetData_CPU());
 #endif
+
 
     for (int i = 0; i < _gradient->GetSize(); i++)
     {
 #if USE_GPU
-        double gradient = gradientCPU[i];
+        const double gradient = gradientCPU[i];
 #else
-        double gradient = (*_gradient)[i];
+        const double gradient = (*_gradient)[i];
 #endif
 
         _momentum1[i] = beta1 * _momentum1[i] + (1 - beta1) * gradient;
@@ -125,23 +116,48 @@ void Adam::Compute(MAT* _gradient, MAT* parameters, const int offset)
 
         _biasCorrectedMomentum1[i] = _momentum1[i] / (1 - adjBeta1);
         _biasCorrectedMomentum2[i] = _momentum2[i] / (1 - adjBeta2);
-
 #if USE_GPU
-        parametersCPU[i] -= alpha * _biasCorrectedMomentum1[i] / (sqrt(_biasCorrectedMomentum2[i]) + gamma);
+        parametersCPU[i] =
+                parametersCPU[i] - alpha * _biasCorrectedMomentum1[i] / (sqrt(_biasCorrectedMomentum2[i]) + gamma);
 #else
         (*parameters)[i] =
                 (*parameters)[i] - alpha * _biasCorrectedMomentum1[i] / (sqrt(_biasCorrectedMomentum2[i]) + gamma);
 #endif
     }
 
-
     adjBeta1 *= beta1;
     adjBeta2 *= beta2;
 
+/*#if USE_GPU
+    std::string path = "w.txt";
+    std::ofstream writer(path);
+    parametersCPU.Save(writer);
+#else
+    std::string path = "w.txt";
+    std::ifstream reader(path);
+    Matrix m = *Matrix::Read(reader);
+    for (int j = 0; j < parameters->GetSize(); j++)
+    {
+        // Float comparison
+        if (std::abs((*parameters)[j] - m[j]) > 0.0001)
+            std::cout << "Diff at " << j << ": " << (*parameters)[j] << "!=" << m[j]
+                      << std::endl;
+    }
+#endif
+    abort();*/
+
 #if USE_GPU
-    checkCUDA(cudaMemcpy(parameters->GetData(), parametersCPU.GetData(), parameters->GetSize() * sizeof(float),
+    checkCUDA(cudaMemcpy(parameters->GetData(), parametersCPU.GetData(), parametersCPU.GetSize() * sizeof(float),
                          cudaMemcpyHostToDevice));
 #endif
+}
+
+Adam::~Adam()
+{
+    delete[] momentum1;
+    delete[] momentum2;
+    delete[] biasCorrectedMomentum1;
+    delete[] biasCorrectedMomentum2;
 }
 
 

@@ -50,12 +50,24 @@ void Activation::FeedForward(const MAT* input, MAT* output)
 #endif
 }
 
+
+#if USE_GPU
+
+void Activation::Derivative(const MAT* input, const MAT* lastDelta, const MAT* z, MAT* output)
+#else
+
 void Activation::Derivative(const MAT* input, MAT* output)
+#endif
 {
 #if USE_GPU
-    Matrix inputCpy(input->GetRows(), input->GetCols(), input->GetData_CPU());
-    Matrix outputCpy(output->GetRows(), output->GetCols(), output->GetData_CPU());
-#endif
+    checkCUDNN(cudnnActivationBackward(Matrix_GPU::cuda->cudnnHandle, activationDesc, &Matrix_GPU::cuda->one,
+                                       *input->GetDescriptor_1D(), input->GetData(),
+                                       *lastDelta->GetDescriptor_1D(),
+                                       lastDelta->GetData(), *z->GetDescriptor_1D(), z->GetData(),
+                                       &Matrix_GPU::cuda->zero, *output->GetDescriptor_1D(), output->GetData()));
+
+#else
+
     if (input->GetCols() != output->GetCols() || input->GetRows() != output->GetRows() ||
         input->GetDims() != output->GetDims())
     {
@@ -64,16 +76,8 @@ void Activation::Derivative(const MAT* input, MAT* output)
 
     for (int i = 0; i < input->GetSize(); i++)
     {
-#if USE_GPU
-        outputCpy[i] = Derive(inputCpy[i]);
-#else
         output[0][i] = Derive(input[0][i]);
-#endif
     }
-
-#if USE_GPU
-    checkCUDA(cudaMemcpy(output->GetData(), outputCpy.GetData(), output->GetSize() * sizeof(float),
-                         cudaMemcpyHostToDevice));
 #endif
 }
 
@@ -141,10 +145,12 @@ Sigmoid::Sigmoid()
 }
 
 #if not USE_GPU
+
 double Sigmoid::Function(const double input)
 {
     return 1 / (1 + exp(-input));
 }
+
 #endif
 
 double Sigmoid::Derive(const double input)
@@ -157,7 +163,7 @@ MAT* Sigmoid::InitWeights(const int previousNeuronsCount, const int NeuronsCount
 #if USE_GPU
     auto* weights = new Matrix_GPU(NeuronsCount, previousNeuronsCount);
 #else
-    auto* weights = new Matrix(NeuronsCount, previousNeuronsCount, 1, true);
+    auto* weights = new MAT(NeuronsCount, previousNeuronsCount, 1, true);
 #endif
     XavierInit(previousNeuronsCount, weights);
     return weights;
@@ -173,10 +179,12 @@ SigmoidPrime::SigmoidPrime()
 }
 
 #if not USE_GPU
+
 double SigmoidPrime::Function(const double input)
 {
     return 0.5 + 0.5 * tanh(0.5 * input);
 }
+
 #endif
 
 double SigmoidPrime::Derive(const double input)
@@ -207,6 +215,7 @@ ReLU::ReLU()
 }
 
 #if not USE_GPU
+
 void ReLU::FeedForward(const MAT* input, MAT* output)
 {
     __m128 zero = _mm_setzero_ps();
@@ -225,53 +234,33 @@ void ReLU::FeedForward(const MAT* input, MAT* output)
         if ((*input)[i] < 0) (*output)[i] = 0;
     }
 }
+
 #endif
+
+#if not USE_GPU
 
 void ReLU::Derivative(const MAT* input, MAT* output)
 {
     __m128 zero = _mm_setzero_ps();
     __m128 one = _mm_set1_ps(1.0);
 
-#if USE_GPU
-    Matrix inputCpy(input->GetRows(), input->GetCols(), input->GetData_CPU());
-    Matrix outputCpy(output->GetRows(), output->GetCols(), output->GetData_CPU());
-#endif
-
     int i;
     for (i = 0; i <= input->GetSize() - 4; i += 4)
     {
-#if USE_GPU
-        __m128 vals = _mm_loadu_ps(&(inputCpy[i]));
-#else
         __m128 vals = _mm_loadu_ps(&((*input)[i]));
-#endif
         __m128 mask = _mm_cmpgt_ps(vals,
                                    zero); // Create a mask where each element is either 0xFFFFFFFFFFFFFFFF if vals > 0 or 0x0 otherwise
         __m128 result = _mm_and_ps(one, mask);  // Set to 1.0 where mask is true
-#if USE_GPU
-        _mm_storeu_ps(&(outputCpy[i]), result);
-#else
         _mm_storeu_ps(&((*output)[i]), result);
-#endif
     }
 
     // Process any remaining values
     for (; i < input->GetSize(); ++i)
     {
-#if USE_GPU
-        if (inputCpy[i] > 0) outputCpy[i] = 1.0;
-#else
         (*output)[i] = ((*input)[i] > 0) ? 1.0 : 0.0;
-#endif
     }
-
-#if USE_GPU
-    checkCUDA(cudaMemcpy(output->GetData(), outputCpy.GetData(), output->GetSize() * sizeof(float),
-                         cudaMemcpyHostToDevice));
-#endif
 }
 
-#if not USE_GPU
 double ReLU::Function(const double input)
 {
     if (input > 0)
@@ -283,6 +272,7 @@ double ReLU::Function(const double input)
         return 0;
     }
 }
+
 #endif
 
 double ReLU::Derive(const double input)
@@ -318,10 +308,12 @@ LeakyReLU::LeakyReLU(const double _alpha)
 }
 
 #if not USE_GPU
+
 double LeakyReLU::Function(const double input)
 {
     return input > 0 ? input : 0.01 * input;
 }
+
 #endif
 
 double LeakyReLU::Derive(const double input)
@@ -404,17 +396,15 @@ void Softmax::FeedForward(const MAT* input, MAT* output)
 #endif
 }
 
+#if not USE_GPU
 void Softmax::Derivative(const MAT* input, MAT* output)
 {
-#if USE_GPU
-    checkCUDA(cudaMemset(output->GetData(), 1, output->GetSize() * sizeof(float)));
-#else
     for (int i = 0; i < input->GetSize(); i++)
     {
         output[0][i] = 1;
     }
-#endif
 }
+#endif
 
 MAT* Softmax::InitWeights(const int previousNeuronsCount, const int NeuronsCount)
 {
@@ -428,10 +418,12 @@ MAT* Softmax::InitWeights(const int previousNeuronsCount, const int NeuronsCount
 }
 
 #if not USE_GPU
+
 double Softmax::Function(const double input)
 {
     return 0;
 }
+
 #endif
 
 double Softmax::Derive(const double input)
@@ -450,10 +442,12 @@ Tanh::Tanh()
 }
 
 #if not USE_GPU
+
 double Tanh::Function(const double input)
 {
     return tanh(input);
 }
+
 #endif
 
 double Tanh::Derive(const double input)
@@ -479,10 +473,12 @@ None::None() : Activation()
 }
 
 #if not USE_GPU
+
 double None::Function(const double input)
 {
     return 0;
 }
+
 #endif
 
 

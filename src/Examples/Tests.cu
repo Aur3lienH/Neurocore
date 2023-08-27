@@ -1,4 +1,4 @@
-#include "Tests.cuh"
+/*#include "Tests.cuh"
 #include <iostream>
 #include "../Network.cuh"
 #include "../InputLayer.cuh"
@@ -10,7 +10,7 @@
 #include <tuple>
 #include <iomanip>
 
-/*
+
 void Tests::ExecuteTests()
 {
     std::vector<std::tuple<void*,std::string>> functions;

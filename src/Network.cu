@@ -135,10 +135,20 @@ void Network::Compile(Opti _opti, Loss* _loss)
 
 }
 
+#include "FCL.cuh"
+
 double Network::BackPropagate(MAT* input, MAT* desiredOutput)
 {
+/*    FCL* fcl = (FCL*) Layers[1];
+#if USE_GPU
+    fcl->Save("FCL", ctr);
+#else
+    fcl->Compare("FCL", ctr);
+#endif*/
+
     //std::cout << "feeding forward ! \n";
     double NetworkLoss = FeedForward(input, desiredOutput);
+    //if (++ctr == 2) abort();
     //std::cout << "feeding stoped ! \n";
     loss->CostDerivative(Layers[layersCount - 1]->getResult(), desiredOutput, costDerivative);
     output = costDerivative;
@@ -147,7 +157,6 @@ double Network::BackPropagate(MAT* input, MAT* desiredOutput)
         //std::cout << "i : " << i << "\n";
         output = Layers[i]->BackPropagate(output, Layers[i - 1]->getResult());
     }
-
 
     return NetworkLoss;
 }

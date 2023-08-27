@@ -1,19 +1,13 @@
 #include "Mnist.cuh"
-#include "../Network.cuh"
-#include "../Matrix.cuh"
-#include "../Layer.cuh"
 #include "../InputLayer.cuh"
 #include "../FCL.cuh"
 #include "../ConvLayer.cuh"
 #include "../Flatten.cuh"
 #include "../MaxPooling.cuh"
-#include "../Optimizers.cuh"
-#include "../DropoutFCL.cuh"
 #include "Tools.cuh"
 #include <iostream>
 #include <fstream>
 #include <string>
-#include <math.h>
 #include <sstream>
 #include <thread>
 
@@ -139,18 +133,16 @@ MAT*** GetDataset(const std::string& path, const int dataLength, const bool form
 void Mnist1()
 {
     std::cout << "mnist 1\n";
-    //const int dataLength = 10;
+
     const int dataLength = CSVTools::CsvLength(MNIST_DATA_PATH);
 
     MAT*** data = GetDataset(MNIST_DATA_PATH, dataLength, false);
 
     std::cout << "Data length: " << dataLength << std::endl;
 
+    const float scale = 1.0f / 255.0f;
     for (int i = 0; i < dataLength; i++)
-    {
-        data[i][0]->operator*=(1.0 / 255.0);
-    }
-
+        *data[i][0] *= scale;
 
     Network* network = new Network();
     network->AddLayer(new InputLayer(784));
@@ -162,9 +154,9 @@ void Mnist1()
     const int trainLength = dataLength * 0.8;
     //int const testLength = dataLength - trainLength;
 #if USE_GPU
-    network->Learn(1, 0.01, new DataLoader(data, trainLength), 1, 1);
+    network->Learn(10, 0.01, new DataLoader(data, trainLength), 128, 1);
 #else
-    network->Learn(1, 0.01, new DataLoader(data, trainLength), 128, 1);
+    network->Learn(1, 0.01, new DataLoader(data, trainLength), 128, 16);
 #endif
 
     double trainingAccuracy = TestAccuracy(network, data, 1000);
@@ -365,43 +357,24 @@ void LoadAndTest(std::string filename, const bool is2D)
 MAT*** GetFashionDataset(const std::string& data, const std::string& label, int& dataLength, const bool format2D)
 {
     int labelLength;
-    int cols = 0;
-    int rows = 0;
-    if (format2D)
-    {
-        cols = 28;
-        rows = 28;
-    }
-    else
-    {
-        cols = 1;
-        rows = 784;
-    }
+    const int cols = format2D ? 28 : 1;
+    const int rows = format2D ? 28 : 784;
     std::ifstream dataFile(data);
     std::ifstream labelFile(label);
 
     if (!dataFile.is_open() || !labelFile.is_open())
-    {
         throw std::runtime_error("File not found");
-        return nullptr;
-    }
 
 
     int magicNumber = 0;
     dataFile.read((char*) &magicNumber, sizeof(int));
     if (ReverseInt(magicNumber) != 2051)
-    {
         throw std::runtime_error("Invalid magic number");
-        return nullptr;
-    }
 
 
     labelFile.read((char*) &magicNumber, sizeof(int));
     if (ReverseInt(magicNumber) != 2049)
-    {
         throw std::runtime_error("Invalid magic number");
-        return nullptr;
-    }
 
 
     dataFile.read((char*) &dataLength, sizeof(int));

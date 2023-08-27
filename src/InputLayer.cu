@@ -57,8 +57,7 @@ void InputLayer::AddDeltaFrom(Layer* otherLayer)
 
 std::string InputLayer::getLayerTitle()
 {
-    std::string buf;
-    buf += "InputLayer" + '\n';
+    std::string buf = "InputLayer\n";
     buf += layerShape->GetDimensions() + "\n";
     return buf;
 }

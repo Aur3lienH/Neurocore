@@ -5,7 +5,6 @@
 #include "ConvLayer.cuh"
 #include "InitFunc.cuh"
 #include "LayerShape.cuh"
-#include "Optimizers.cuh"
 
 ConvLayer::ConvLayer(LayerShape* _filterShape, Activation* activation)
 {

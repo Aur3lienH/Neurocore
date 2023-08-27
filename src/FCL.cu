@@ -1,8 +1,6 @@
 #include "FCL.cuh"
 #include <iostream>
-#include <cmath>
 #include <emmintrin.h>
-#include <immintrin.h>
 #include <fstream>
 #include "Matrix.cuh"
 #include "LayerShape.cuh"
@@ -13,6 +11,35 @@ FCL::FCL(const int NeuronsCount, Activation* activation)
     this->NeuronsCount = NeuronsCount;
     this->activation = activation;
     LayerID = 0;
+}
+
+void FCL::Compile(LayerShape* previousLayer)
+{
+    buffer = new float[8];
+    if (previousLayer->size != 1)
+    {
+        throw std::invalid_argument("Previous Layer must have one dimension ! ");
+    }
+    previousNeuronsCount = previousLayer->dimensions[0];
+    if (Weights == nullptr)
+    {
+        Weights = activation->InitWeights(previousNeuronsCount, NeuronsCount);
+    }
+    if (Delta == nullptr)
+        Delta = new MAT(NeuronsCount, previousNeuronsCount);
+    if (deltaActivation == nullptr)
+        deltaActivation = new MAT(NeuronsCount, 1);
+    if (DeltaBiases == nullptr)
+        DeltaBiases = new MAT(NeuronsCount, 1);
+    if (Biases == nullptr)
+        Biases = activation->InitBiases(NeuronsCount);
+    if (Result == nullptr)
+        Result = new MAT(NeuronsCount, 1);
+    z = new MAT(NeuronsCount, 1);
+    newDelta = new MAT(previousNeuronsCount, 1);
+
+    layerShape = new LayerShape(NeuronsCount);
+    optimizer->Compile(NeuronsCount * previousNeuronsCount + NeuronsCount);
 }
 
 #if USE_GPU
@@ -38,88 +65,17 @@ Matrix_GPU* FCL::FeedForward(const Matrix_GPU* input)
     return Result;
 }
 
-void FCL::Compile(LayerShape* previousLayer)
-{
-    buffer = new float[8];
-    if (previousLayer->size != 1)
-    {
-        throw std::invalid_argument("Previous Layer must have one dimension ! ");
-    }
-    previousNeuronsCount = previousLayer->dimensions[0];
-    if (Weights == nullptr)
-    {
-        Weights = activation->InitWeights(previousNeuronsCount, NeuronsCount);
-    }
-    if (Delta == nullptr)
-        Delta = new Matrix_GPU(previousNeuronsCount, NeuronsCount);
-    if (deltaActivation == nullptr)
-        deltaActivation = new Matrix_GPU(NeuronsCount, 1);
-    if (DeltaBiases == nullptr)
-        DeltaBiases = new Matrix_GPU(NeuronsCount, 1);
-    if (Biases == nullptr)
-        Biases = activation->InitBiases(NeuronsCount);
-    if (Result == nullptr)
-        Result = new Matrix_GPU(NeuronsCount, 1);
-    z = new Matrix_GPU(NeuronsCount, 1);
-    newDelta = new Matrix_GPU(previousNeuronsCount, 1);
-
-    layerShape = new LayerShape(NeuronsCount);
-    optimizer->Compile(NeuronsCount * previousNeuronsCount + NeuronsCount);
-}
-
 const MAT* FCL::BackPropagate(const Matrix_GPU* lastDelta, const Matrix_GPU* PastActivation)
 {
-#if USE_GPU
-    throw std::runtime_error("FCL::BackPropagate not implemented for GPU");
-    /*//newDelta->Flatten();
-    activation->Derivative(z, deltaActivation);
-    deltaActivation->operator*=(lastDelta); // Trouver comment faire le Hadamard product sur GPU (CUBLAS et cuDNN le font pas)
+    //newDelta->Flatten();
+    activation->Derivative(Result, lastDelta, z, deltaActivation);
+    //deltaActivation->operator*=(lastDelta); // This is done in the previous line
+    DeltaBiases->Add(*deltaActivation, *DeltaBiases);
 
-    DeltaBiases->Add(deltaActivation, DeltaBiases);
-
-    // Faut faire weightsL * activationsL-1.Transpose() (avec CUBLAS ça s'inverse probablement avec le column-major...) et mettre le result dans d2
-    Matrix_GPU* d2 = new Matrix(Delta->getRows(), Delta->getCols(), Delta->getDim());
-    cublasStatus_t cublasSgeam(cublasHandle_t handle,
-                          cublasOperation_t transa, cublasOperation_t transb,
-                          int m, int n,
-                          const float           *alpha,
-                          const float           *A, int lda,
-                          const float           *beta,
-                          const float           *B, int ldb,
-                          float           *C, int ldc)
-    //Matrix* d2 = new Matrix(Delta->GetRows(), Delta->GetCols(), Delta->GetDims());
-    //Matrix* PastActivationT = PastActivation->Transpose();
-    //deltaActivation->CrossProduct(PastActivationT, d2);
-    Delta->Add(d2, Delta);
-    delete d2;
-    //delete PastActivationT;
-
-    // Faure faire weightsL.Transpose() * deltaActivation (avec CUBLAS ça s'inverse probablement avec le column-major...) et mettre le result dans newDelta
-    Matrix* weightsT = Weights->Transpose();
-    weightsT->CrossProduct(deltaActivation, newDelta);
-    delete weightsT;
-
-    return newDelta;*/
-#else
-    newDelta->Flatten();
-    activation->Derivative(z, deltaActivation);
-    deltaActivation->operator*=(lastDelta);
-
-    DeltaBiases->Add(deltaActivation, DeltaBiases);
-
-    Matrix* d2 = new Matrix(Delta->getRows(), Delta->getCols(), Delta->getDim());
-    Matrix* PastActivationT = PastActivation->Transpose();
-    deltaActivation->CrossProduct(PastActivationT, d2);
-    Delta->Add(d2, Delta);
-    delete d2;
-    delete PastActivationT;
-
-    Matrix* weightsT = Weights->Transpose();
-    weightsT->CrossProduct(deltaActivation, newDelta);
-    delete weightsT;
+    deltaActivation->MultiplyByTransposeAndAddToRes(*PastActivation, *Delta);
+    Weights->MultiplyTransposeBy(*deltaActivation, *newDelta);
 
     return newDelta;
-#endif
 }
 
 const Matrix_GPU* FCL::getResult() const
@@ -167,37 +123,8 @@ Matrix* FCL::FeedForward(const Matrix* input)
     this->Weights->CrossProduct(input, Result);
     Result->Add(Biases, z);
     activation->FeedForward(z, Result);
-    std::cout << *Result << std::endl;
+
     return Result;
-}
-
-void FCL::Compile(LayerShape* previousLayer)
-{
-    buffer = new float[8];
-    if (previousLayer->size != 1)
-    {
-        throw std::invalid_argument("Previous Layer must have one dimension ! ");
-    }
-    previousNeuronsCount = previousLayer->dimensions[0];
-    if (Weights == nullptr)
-    {
-        Weights = activation->InitWeights(previousNeuronsCount, NeuronsCount);
-    }
-    if (Delta == nullptr)
-        Delta = new Matrix(NeuronsCount, previousNeuronsCount);
-    if (deltaActivation == nullptr)
-        deltaActivation = new Matrix(NeuronsCount, 1, 1, true);
-    if (DeltaBiases == nullptr)
-        DeltaBiases = new Matrix(NeuronsCount, 1);
-    if (Biases == nullptr)
-        Biases = activation->InitBiases(NeuronsCount);
-    if (Result == nullptr)
-        Result = new Matrix(NeuronsCount, 1);
-    z = new Matrix(NeuronsCount, 1);
-    newDelta = new Matrix(previousNeuronsCount, 1);
-
-    layerShape = new LayerShape(NeuronsCount);
-    optimizer->Compile(NeuronsCount * previousNeuronsCount + NeuronsCount);
 }
 
 const Matrix* FCL::BackPropagate(const Matrix* lastDelta, const Matrix* PastActivation)
@@ -364,7 +291,7 @@ void FCL::ClearDelta()
 }
 
 
-void FCL::UpdateWeights(double learningRate, int batchSize)
+void FCL::UpdateWeights(const double learningRate, const int batchSize)
 {
     optimizer->Compute(Delta, Weights);
     optimizer->Compute(DeltaBiases, Biases, Weights->GetSize());
@@ -424,4 +351,72 @@ FCL::~FCL()
     delete newDelta;
 }
 
+#if USE_GPU
 
+void FCL::Save(const std::string& folderPath, const int n)
+{
+    std::ofstream weightsWriter(folderPath + "/weights" + std::to_string(n) + ".txt");
+    std::ofstream biasesWriter(folderPath + "/biases" + std::to_string(n) + ".txt");
+    std::ofstream deltaWriter(folderPath + "/delta" + std::to_string(n) + ".txt");
+    std::ofstream deltaBiasesWriter(folderPath + "/deltaBiases" + std::to_string(n) + ".txt");
+    Weights->Save(weightsWriter);
+    Biases->Save(biasesWriter);
+    Delta->Save(deltaWriter);
+    DeltaBiases->Save(deltaBiasesWriter);
+    weightsWriter.close();
+    biasesWriter.close();
+    deltaWriter.close();
+    deltaBiasesWriter.close();
+}
+
+#else
+
+void FCL::Compare(const std::string& folderPath, int n)
+{
+    std::ifstream weightsReader(folderPath + "/weights" + std::to_string(n) + ".txt");
+    std::ifstream biasesReader(folderPath + "/biases" + std::to_string(n) + ".txt");
+    std::ifstream deltaReader(folderPath + "/delta" + std::to_string(n) + ".txt");
+    std::ifstream deltaBiasesReader(folderPath + "/deltaBiases" + std::to_string(n) + ".txt");
+    Matrix* weights = Matrix::Read(weightsReader);
+    Matrix* biases = Matrix::Read(biasesReader);
+    Matrix* delta = Matrix::Read(deltaReader);
+    Matrix* deltaBiases = Matrix::Read(deltaBiasesReader);
+    weightsReader.close();
+    biasesReader.close();
+    deltaReader.close();
+    deltaBiasesReader.close();
+    for (int i = 0; i < Weights[0].GetSize(); i++)
+    {
+        if (std::abs(Weights[0][i] - weights[0][i]) > 0.0001)
+        {
+            std::cout << "Weights[" << i << "] : " << Weights[0][i] << " != " << weights[0][i] << "\n";
+        }
+    }
+    for (int i = 0; i < Biases[0].GetSize(); i++)
+    {
+        if (std::abs(Biases[0][i] - biases[0][i]) > 0.0001)
+        {
+            std::cout << "Biases[" << i << "] : " << Biases[0][i] << " != " << biases[0][i] << "\n";
+        }
+    }
+    for (int i = 0; i < Delta[0].GetSize(); i++)
+    {
+        if (std::abs(Delta[0][i] - delta[0][i]) > 0.0001)
+        {
+            std::cout << "Delta[" << i << "] : " << Delta[0][i] << " != " << delta[0][i] << "\n";
+        }
+    }
+    for (int i = 0; i < DeltaBiases[0].GetSize(); i++)
+    {
+        if (std::abs(DeltaBiases[0][i] - deltaBiases[0][i]) > 0.0001)
+        {
+            std::cout << "DeltaBiases[" << i << "] : " << DeltaBiases[0][i] << " != " << deltaBiases[0][i] << "\n";
+        }
+    }
+    delete weights;
+    delete biases;
+    delete delta;
+    delete deltaBiases;
+}
+
+#endif

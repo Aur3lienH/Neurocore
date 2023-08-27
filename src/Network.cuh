@@ -80,5 +80,8 @@ private:
     int layersCount = 0;
 
     Opti opti;
+
+public:
+    static inline int ctr = 0;
 };
 
