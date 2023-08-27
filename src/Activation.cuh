@@ -93,6 +93,7 @@ public:
     ReLU();
 
 #if not USE_GPU
+
     void Derivative(const MAT* input, MAT* output) override;
 
     double Function(double input) override;
@@ -135,15 +136,21 @@ public:
 
     void FeedForward(const MAT* input, MAT* output) override;
 
-#if not USE_GPU
+#if USE_GPU
+
+    void Derivative(const MAT* input, const MAT* lastDelta, const MAT* z, MAT* output) override;
+
+#else
 
     void Derivative(const MAT* input, MAT* output) override;
 
-    double Function(double input) override;
+    double inline Function(double input) override
+    { return 0; };
 
 #endif
 
-    double Derive(double input) override;
+    double inline Derive(double input) override
+    { return 0; };
 
     MAT* InitWeights(int inputSize, int outputSize) override;
 

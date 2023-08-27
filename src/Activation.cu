@@ -342,38 +342,14 @@ Softmax::Softmax()
 {
     name = "Softmax";
     ID = 4;
-#if USE_GPU
-    throw std::runtime_error("Softmax is not implemented on GPU");
-#endif
 }
 
 void Softmax::FeedForward(const MAT* input, MAT* output)
 {
 #if USE_GPU
-    Matrix inputCpy(input->GetRows(), input->GetCols(), input->GetData_CPU());
-    Matrix outputCpy(output->GetRows(), output->GetCols(), output->GetData_CPU());
-
-    double sum = 0;
-    double max = inputCpy[0];
-    for (int i = 0; i < inputCpy.GetSize(); i++)
-    {
-        if (inputCpy[i] > max)
-        {
-            max = inputCpy[i];
-        }
-    }
-
-    for (int i = 0; i < inputCpy.GetSize(); i++)
-    {
-        sum += exp(inputCpy[i] - max);
-    }
-    for (int i = 0; i < inputCpy.GetSize(); i++)
-    {
-        outputCpy[i] = exp(inputCpy[i] - max) / sum;
-    }
-
-    delete output;
-    output = new Matrix_GPU(outputCpy);
+    checkCUDNN(cudnnSoftmaxForward(Matrix_GPU::cuda->cudnnHandle, CUDNN_SOFTMAX_ACCURATE, CUDNN_SOFTMAX_MODE_INSTANCE,
+                                   &Matrix_GPU::cuda->one, *input->GetDescriptor_1D(), input->GetData(),
+                                   &Matrix_GPU::cuda->zero, *output->GetDescriptor_1D(), output->GetData()));
 #else
     double sum = 0;
     double max = input[0][0];
@@ -396,7 +372,30 @@ void Softmax::FeedForward(const MAT* input, MAT* output)
 #endif
 }
 
-#if not USE_GPU
+MAT* Softmax::InitWeights(const int previousNeuronsCount, const int NeuronsCount)
+{
+    MAT* weights = new MAT(NeuronsCount, previousNeuronsCount);
+    XavierInit(previousNeuronsCount, weights);
+    return weights;
+}
+
+#if USE_GPU
+
+void Softmax::Derivative(const MAT* input, const MAT* lastDelta, const MAT* z, MAT* output)
+{
+    /*checkCUDNN(cudnnSoftmaxBackward(Matrix_GPU::cuda->cudnnHandle, CUDNN_SOFTMAX_ACCURATE, CUDNN_SOFTMAX_MODE_INSTANCE,
+                                    &Matrix_GPU::cuda->one, *input->GetDescriptor_1D(), input->GetData(),
+                                    *lastDelta->GetDescriptor_1D(), lastDelta->GetData(), &Matrix_GPU::cuda->zero,
+                                    *output->GetDescriptor_1D(), output->GetData()));*/
+
+    // The CPU version sets all values of output to one, but as the GPU version of Derivative also multiplies output
+    // by lastDelta, we can just copy lastDelta to output
+    checkCUDA(cudaMemcpy(output->GetData(), lastDelta->GetData(), output->GetSize() * sizeof(float),
+                         cudaMemcpyHostToDevice));
+}
+
+#else
+
 void Softmax::Derivative(const MAT* input, MAT* output)
 {
     for (int i = 0; i < input->GetSize(); i++)
@@ -404,32 +403,9 @@ void Softmax::Derivative(const MAT* input, MAT* output)
         output[0][i] = 1;
     }
 }
-#endif
-
-MAT* Softmax::InitWeights(const int previousNeuronsCount, const int NeuronsCount)
-{
-#if USE_GPU
-    auto* weights = new Matrix_GPU(NeuronsCount, previousNeuronsCount);
-#else
-    auto* weights = new Matrix(NeuronsCount, previousNeuronsCount, 1, true);
-#endif
-    XavierInit(previousNeuronsCount, weights);
-    return weights;
-}
-
-#if not USE_GPU
-
-double Softmax::Function(const double input)
-{
-    return 0;
-}
 
 #endif
 
-double Softmax::Derive(const double input)
-{
-    return 0;
-}
 
 Tanh::Tanh()
 {

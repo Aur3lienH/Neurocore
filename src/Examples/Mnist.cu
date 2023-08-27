@@ -147,7 +147,7 @@ void Mnist1()
     Network* network = new Network();
     network->AddLayer(new InputLayer(784));
     network->AddLayer(new FCL(512, new ReLU()));
-    network->AddLayer(new FCL(10, new Sigmoid()));
+    network->AddLayer(new FCL(10, new Softmax()));
     std::cout << "before compiling !\n";
     network->Compile(Opti::Adam, new CrossEntropy());
     std::cout << "compiled ! \n";
@@ -175,10 +175,9 @@ void Mnist2()
 
     std::cout << "Data length: " << dataLength << std::endl;
 
+    const float scale = 1.0f / 255.0f;
     for (int i = 0; i < dataLength; i++)
-    {
-        data[i][0]->operator*=(1.0 / 255.0);
-    }
+        *data[i][0] *= scale;
 
 
     Network* network = new Network();
