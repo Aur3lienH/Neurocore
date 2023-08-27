@@ -1,10 +1,8 @@
 #include "ProgressBar.cuh"
 #include <iostream>
 #include <chrono>
-#include <ctime>
 #include <iomanip>
 #include <cmath>
-#include <limits>
 #include "Unit.cuh"
 
 #ifdef WIN32

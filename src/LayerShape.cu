@@ -1,6 +1,5 @@
 #include "LayerShape.cuh"
 #include "Matrix.cuh"
-#include "Layer.cuh"
 #include "iostream"
 
 LayerShape::LayerShape(const int neuronsCount)

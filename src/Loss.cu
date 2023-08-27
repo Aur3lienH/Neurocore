@@ -96,33 +96,23 @@ CrossEntropy::CrossEntropy()
 
 double CrossEntropy::Cost(const MAT* output, const MAT* target)
 {
+#if USE_GPU
+    Matrix outputCPU(output->GetRows(), output->GetCols(), output->GetData_CPU_1D());
+    Matrix targetCPU(target->GetRows(), target->GetCols(), target->GetData_CPU_1D());
     double cost = 0;
-#if USE_GPU
-    std::cout << "CrossEntropy::Cost kernel not implemented yet\n";
-    Matrix outputCPU(output->GetRows(), output->GetCols(), output->GetDims());
-    checkCUDA(cudaMemcpy(outputCPU.GetData(), output->GetData(), output->GetSize() * sizeof(float),
-                         cudaMemcpyDeviceToHost));
-    Matrix targetCPU(target->GetRows(), target->GetCols(), target->GetDims());
-    checkCUDA(cudaMemcpy(targetCPU.GetData(), target->GetData(), target->GetSize() * sizeof(float),
-                         cudaMemcpyDeviceToHost));
-#endif
-    for (int i = 0; i < output->GetRows() * output->GetCols(); i++)
-    {
-#if USE_GPU
-        cost += targetCPU[i] * log(outputCPU[i] + 1e-15) + (1 - targetCPU[i]) * log(1 - outputCPU[i] + 1e-15);
-#else
-        cost += target[0][i] * log(output[0][i] + 1e-15) + (1 - target[0][i]) * log(1 - output[0][i] + 1e-15);
-#endif
-    }
 
-#if USE_GPU
-    checkCUDA(cudaMemcpy(output->GetData(), outputCPU.GetData(), output->GetSize() * sizeof(float),
-                         cudaMemcpyHostToDevice));
-    checkCUDA(cudaMemcpy(target->GetData(), targetCPU.GetData(), target->GetSize() * sizeof(float),
-                         cudaMemcpyHostToDevice));
-#endif
+    for (int i = 0; i < output->GetMatrixSize(); i++)
+        cost += targetCPU[i] * log(outputCPU[i] + 1e-15) + (1 - targetCPU[i]) * log(1 - outputCPU[i] + 1e-15);
 
     return -cost / output->GetRows();
+#else
+    double cost = 0;
+
+    for (int i = 0; i < output->GetRows() * output->GetCols(); i++)
+        cost += target[0][i] * log(output[0][i] + 1e-15) + (1 - target[0][i]) * log(1 - output[0][i] + 1e-15);
+
+    return -cost / output->GetRows();
+#endif
 }
 
 __global__

@@ -12,7 +12,7 @@
 
 Matrix_GPU::Matrix_GPU(const int rows, const int cols, const int dims) : rows(rows), cols(cols), dims(dims),
                                                                          matrixSize(rows * cols),
-                                                                         size(rows * cols * dims)
+                                                                         size(rows * cols * dims), offset(0)
 {
     checkCUDA(cudaMalloc(&data_d, rows * cols * dims * sizeof(float)));
     checkCUDA(cudaMemset(data_d, 0, rows * cols * dims * sizeof(float)));
@@ -40,13 +40,21 @@ Matrix_GPU::~Matrix_GPU()
 
 void Matrix_GPU::Zero()
 {
-    cudaMemset(data_d, 0, size * sizeof(float));
+    checkCUDA(cudaMemset(data_d, 0, size * sizeof(float)));
 }
 
 float* Matrix_GPU::GetData_CPU() const
 {
     float* data_h = new float[size];
-    cudaMemcpy(data_h, data_d, size * sizeof(float), cudaMemcpyDeviceToHost);
+    checkCUDA(cudaMemcpy(data_h, data_d - offset, size * sizeof(float), cudaMemcpyDeviceToHost));
+
+    return data_h;
+}
+
+float* Matrix_GPU::GetData_CPU_1D() const
+{
+    float* data_h = new float[matrixSize];
+    checkCUDA(cudaMemcpy(data_h, data_d, matrixSize * sizeof(float), cudaMemcpyDeviceToHost));
 
     return data_h;
 }
@@ -62,9 +70,59 @@ void Matrix_GPU::Multiply(const Matrix_GPU& a, const Matrix_GPU& b, Matrix_GPU& 
     // Help to deal with CUBLAS fucking column-major order
     //https://mccormickml.com/2015/08/29/matrix-multiplication-with-cublas-example/
     //https://github.com/zchee/cuda-sample/blob/master/0_Simple/matrixMulCUBLAS/matrixMulCUBLAS.cpp#L293
-    checkCUBLAS(cublasSgemm(cuda->cublasHandle, CUBLAS_OP_N, CUBLAS_OP_N, b.GetCols(), a.GetRows(), a.GetCols(),
-                            &cuda->one, b.data_d, b.GetCols(), a.data_d, a.GetCols(), &cuda->one, res.data_d,
-                            b.GetCols()));
+    checkCUBLAS(cublasSgemm_v2(cuda->cublasHandle, CUBLAS_OP_N, CUBLAS_OP_N, b.GetCols(), a.GetRows(), a.GetCols(),
+                               &cuda->one, b.data_d, b.GetCols(), a.data_d, a.GetCols(), &cuda->zero, res.data_d,
+                               b.GetCols()));
+}
+
+void Matrix_GPU::MultiplyByTransposeAndAddToRes(const Matrix_GPU& other, Matrix_GPU& res)
+{
+    checkCUBLAS(
+            cublasSgemm_v2(cuda->cublasHandle, CUBLAS_OP_T, CUBLAS_OP_N, other.rows, rows, cols, &cuda->one,
+                           other.data_d, other.cols, data_d, cols, &cuda->one, res.data_d, other.rows));
+}
+
+void Matrix_GPU::MultiplyTransposeBy(const Matrix_GPU& other, Matrix_GPU& res)
+{
+    /*int values[] = {rows, cols, other.rows, other.cols};
+    for (const int m : values)
+    {
+        for (const int n : values)
+        {
+            for (const int k : values)
+            {
+                for (const int lda : values)
+                {
+                    for (const int ldb : values)
+                    {
+                        for (const int ldc : values)
+                        {
+                            std::cout << "M: " << m << ", N: " << n << ", K: " << k << ", ldA: " << lda << ", ldB: "
+                                      << ldb << ", ldC: " << ldc << std::endl;
+                            try
+                            {
+                                checkCUBLAS(
+                                        cublasSgemm_v2(cuda->cublasHandle, CUBLAS_OP_N, CUBLAS_OP_T, m, n, k,
+                                                       &cuda->one,
+                                                       other.data_d, lda, data_d, ldb, &cuda->zero, res.data_d,
+                                                       ldc));
+                                std::cout << "Success !\n";
+                                if (std::abs(res.GetAt(0) - 0.0109781f) < .01)
+                                    std::cout << res << std::endl << std::flush;
+                            }
+                            catch (std::exception& e)
+                            {
+                                std::cout << "Fail" << std::endl;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }*/
+    checkCUBLAS(
+            cublasSgemm_v2(cuda->cublasHandle, CUBLAS_OP_N, CUBLAS_OP_T, other.cols, cols, other.rows, &cuda->one,
+                           other.data_d, other.cols, data_d, cols, &cuda->zero, res.data_d, other.cols));
 }
 
 void Matrix_GPU::Add(const Matrix_GPU& other, Matrix_GPU& res)
@@ -80,7 +138,10 @@ void Matrix_GPU::Add(const Matrix_GPU& other, Matrix_GPU& res)
 
 Matrix_GPU* Matrix_GPU::operator*=(const float n)
 {
+    //checkCUBLAS(cublasSscal_v2(cuda->cublasHandle, matrixSize, &n, data_d, 1));
     checkCUDNN(cudnnScaleTensor(cuda->cudnnHandle, desc_1D, data_d, &n));
+
+    return this;
 }
 
 void Matrix_GPU::Reshape(int rows_, int cols_, int dims_) const
@@ -135,6 +196,11 @@ float* Matrix_GPU::GetData() const
     return data_d;
 }
 
+int Matrix_GPU::GetMatrixSize() const
+{
+    return matrixSize;
+}
+
 cudnnTensorDescriptor_t* Matrix_GPU::GetDescriptor() const
 {
     return &desc;
@@ -154,7 +220,6 @@ Matrix_GPU* Matrix_GPU::Copy() const
 
 void Matrix_GPU::Save(std::ofstream& writer) const
 {
-    std::cout << "I was lazy to implement this function, sorry !\n";
     Matrix cpy(rows, cols, GetData_CPU());
     cpy.Save(writer);
 }
@@ -192,7 +257,7 @@ void Matrix_GPU::HadamardProduct(const Matrix_GPU& a, const Matrix_GPU& b, Matri
 std::ostream& operator<<(std::ostream& os, const Matrix_GPU& matrix)
 {
     std::cout << "Matrix: " << matrix.rows << "x" << matrix.cols << std::endl;
-    float* data = matrix.GetData_CPU();
+    float* data = matrix.GetData_CPU() + matrix.offset;
     for (int i = 0; i < matrix.rows; i++)
     {
         os << "[";
@@ -207,6 +272,7 @@ std::ostream& operator<<(std::ostream& os, const Matrix_GPU& matrix)
         os << "]\n";
     }
 
+    data -= matrix.offset;
     delete data;
 
     return os;

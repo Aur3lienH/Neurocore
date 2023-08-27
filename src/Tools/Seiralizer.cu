@@ -1,7 +1,6 @@
 #include "Serializer.cuh"
 #include <fstream>
 #include <cstdarg>
-#include <vector>
 
 
 namespace Tools

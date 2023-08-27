@@ -11,7 +11,15 @@ public:
 
     virtual void FeedForward(const MAT* input, MAT* output);
 
+#if USE_GPU
+
+    virtual void Derivative(const MAT* input, const MAT* lastDelta, const MAT* z, MAT* output);
+
+#else
+
     virtual void Derivative(const MAT* input, MAT* output);
+
+#endif
 
     virtual MAT* InitWeights(int inputSize, int outputSize) = 0;
 
@@ -31,7 +39,9 @@ protected:
     void Function(const MAT& input, MAT& output);
 
 #else
+
     virtual double Function(double input) = 0;
+
 #endif
 
     virtual double Derive(double input) = 0;
@@ -51,7 +61,9 @@ public:
     Sigmoid();
 
 #if not USE_GPU
+
     double Function(double input) override;
+
 #endif
 
     double Derive(double input) override;
@@ -65,7 +77,9 @@ public:
     SigmoidPrime();
 
 #if not USE_GPU
+
     double Function(double input) override;
+
 #endif
 
     double Derive(double input) override;
@@ -78,13 +92,13 @@ class ReLU : public Activation
 public:
     ReLU();
 
-
+#if not USE_GPU
     void Derivative(const MAT* input, MAT* output) override;
 
-#if not USE_GPU
     double Function(double input) override;
 
     void FeedForward(const MAT* input, MAT* output) override;
+
 #endif
 
     double Derive(double input) override;
@@ -98,7 +112,9 @@ public:
     explicit LeakyReLU(double alpha);
 
 #if not USE_GPU
+
     double Function(double input) override;
+
 #endif
 
     double Derive(double input) override;
@@ -119,10 +135,12 @@ public:
 
     void FeedForward(const MAT* input, MAT* output) override;
 
+#if not USE_GPU
+
     void Derivative(const MAT* input, MAT* output) override;
 
-#if not USE_GPU
     double Function(double input) override;
+
 #endif
 
     double Derive(double input) override;
@@ -137,7 +155,9 @@ public:
     Tanh();
 
 #if not USE_GPU
+
     double Function(double input) override;
+
 #endif
 
     double Derive(double input) override;
@@ -151,7 +171,9 @@ public:
     None();
 
 #if not USE_GPU
+
     double Function(double input) override;
+
 #endif
 
     double Derivative(double input);

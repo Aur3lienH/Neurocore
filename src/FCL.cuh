@@ -79,6 +79,14 @@ public:
 
     void AverageGradients(int batchSize) override;
 
+#if USE_GPU
+
+    void Save(const std::string& folderPath, int n);
+
+#else
+    void Compare(const std::string& folderPath, int n);
+#endif
+
 protected:
 //Partial derivative of the weights
     MAT* Delta = nullptr;
@@ -100,9 +108,11 @@ protected:
 
     int NeuronsCount;
 private:
+#if not USE_GPU
     const Matrix* BackPropagateSSE2(const Matrix* delta, const Matrix* lastWeigths);
 
     const Matrix* BackPropagateAX2(const Matrix* delta, const Matrix* lastWeigths);
+#endif
 
     //Delta passed to the previous network in backpropagation
     MAT* newDelta = nullptr;

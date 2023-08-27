@@ -201,8 +201,14 @@ public:
 
     float* GetData_CPU() const;
 
+    float* GetData_CPU_1D() const;
+
     // This is a true Matrix multiplication (not Hadamard product)
     static void Multiply(const Matrix_GPU& a, const Matrix_GPU& b, Matrix_GPU& res);
+
+    void MultiplyByTransposeAndAddToRes(const Matrix_GPU& other, Matrix_GPU& res);
+
+    void MultiplyTransposeBy(const Matrix_GPU& other, Matrix_GPU& res);
 
     static void HadamardProduct(const Matrix_GPU& a, const Matrix_GPU& b, Matrix_GPU& res);
 
@@ -228,6 +234,8 @@ public:
 
     [[nodiscard]] float* GetData() const;
 
+    [[nodiscard]] int GetMatrixSize() const;
+
     Matrix_GPU* Copy() const;
 
     void Save(std::ofstream& writer) const;
@@ -244,7 +252,7 @@ public:
 
 protected:
     float* data_d;
-    mutable int rows, cols, dims, size, matrixSize;
+    mutable int rows, cols, dims, size, matrixSize, offset;
     mutable cudnnTensorDescriptor_t desc;
     // Descriptor for the matrix to perform operations on a single dimension
     mutable cudnnTensorDescriptor_t desc_1D;

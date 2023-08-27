@@ -10,6 +10,17 @@
 #include "cudnn.h"
 #include "cublas_v2.h"
 
+#define checkCUDNN(expression) \
+{ \
+    cudnnStatus_t status = (expression); \
+    if (status != CUDNN_STATUS_SUCCESS) \
+    { \
+        std::cerr << "Error on line " << __LINE__ << ": " \
+                  << cudnnGetErrorString(status) << std::endl; \
+        std::exit(EXIT_FAILURE); \
+    } \
+}
+
 static const char* cublasGetErrorEnum(cublasStatus_t error)
 {
     switch (error)
@@ -47,16 +58,6 @@ static const char* cublasGetErrorEnum(cublasStatus_t error)
 
     return "<unknown>";
 }
-
-#define checkCUDNN(expression)                               \
-  {                                                          \
-    cudnnStatus_t status = (expression);                     \
-    if (status != CUDNN_STATUS_SUCCESS) {                    \
-      std::cerr << "Error on line " << __LINE__ << ": "      \
-                << cudnnGetErrorString(status) << std::endl; \
-      std::exit(EXIT_FAILURE);                               \
-    }                                                        \
-  }
 //Macro for checking cuda errors following a cuda launch or api call
 #define checkCUDA(expression) {                                          \
  cudaError_t e = (expression);                                 \

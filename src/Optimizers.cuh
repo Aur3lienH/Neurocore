@@ -39,6 +39,8 @@ class Adam : public Optimizer
 public:
     explicit Adam(double alpha = 0.00025, double beta1 = 0.9, double beta2 = 0.999, double gamma = 10e-8);
 
+    ~Adam() override;
+
     void Compile(int size) override;
 
     void Compute(MAT* gradient, MAT* parameters, int offset) override;
