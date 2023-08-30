@@ -38,17 +38,8 @@ Matrix_GPU* LabelToMatrix(const int label)
 
 int MatrixToLabel(const Matrix_GPU* matrix)
 {
-    int label = 0;
-    double max = 0;
-    for (int i = 0; i < matrix->GetRows(); i++)
-    {
-        const float value = matrix->GetAt(i);
-        if (value > max)
-        {
-            max = value;
-            label = i;
-        }
-    }
+    int label;
+    checkCUBLAS(cublasIsamax_v2(Matrix_GPU::cuda->cublasHandle, matrix->GetMatrixSize(), matrix->GetData(), 1, &label));
     return label;
 }
 
@@ -154,9 +145,10 @@ void Mnist1()
     const int trainLength = dataLength * 0.8;
     //int const testLength = dataLength - trainLength;
 #if USE_GPU
-    network->Learn(10, 0.01, new DataLoader(data, trainLength), 128, 1);
+    network->Learn(1, 0.01, new DataLoader(data, trainLength), 128, 1);
 #else
-    network->Learn(1, 0.01, new DataLoader(data, trainLength), 128, 16);
+    const int numThreads = static_cast<int>(std::thread::hardware_concurrency());
+    network->Learn(1, 0.01, new DataLoader(data, trainLength), 128, numThreads);
 #endif
 
     double trainingAccuracy = TestAccuracy(network, data, 1000);
@@ -322,9 +314,7 @@ double TestAccuracy(Network* network, MAT*** data, const int dataLength)
     {
         MAT* prediction = network->Process(data[i][0]);
         if (MatrixToLabel(prediction) == MatrixToLabel(data[i][1]))
-        {
             correct++;
-        }
     }
     return (double) correct / (double) dataLength;
 }

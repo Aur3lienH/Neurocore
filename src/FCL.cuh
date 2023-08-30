@@ -108,7 +108,9 @@ protected:
 
     int NeuronsCount;
 private:
-#if not USE_GPU
+#if USE_GPU
+    cudnnTensorDescriptor_t forwardInputDesc, forwardOutputDesc;
+#else
     const Matrix* BackPropagateSSE2(const Matrix* delta, const Matrix* lastWeigths);
 
     const Matrix* BackPropagateAX2(const Matrix* delta, const Matrix* lastWeigths);

@@ -25,6 +25,26 @@ void PoolingLayer::Compile(LayerShape* previousActivation)
     result = new MAT(layerShape->dimensions[0], layerShape->dimensions[1], layerShape->dimensions[2]);
     newDelta = new MAT(previousActivation->dimensions[0], previousActivation->dimensions[1],
                        previousActivation->dimensions[2]);
+
+#if USE_GPU
+
+    checkCUDNN(cudnnCreateTensorDescriptor(&forwardInputDesc));
+    checkCUDNN(cudnnSetTensor4dDescriptor(forwardInputDesc,
+                                          CUDNN_TENSOR_NCHW,
+                                          CUDNN_DATA_FLOAT,
+                                          1,
+                                          previousActivation->dimensions[2],
+                                          previousActivation->dimensions[0],
+                                          previousActivation->dimensions[1]));
+    checkCUDNN(cudnnCreateTensorDescriptor(&forwardOutputDesc));
+    checkCUDNN(cudnnSetTensor4dDescriptor(forwardOutputDesc,
+                                          CUDNN_TENSOR_NCHW,
+                                          CUDNN_DATA_FLOAT,
+                                          1,
+                                          layerShape->dimensions[2],
+                                          layerShape->dimensions[0],
+                                          layerShape->dimensions[1]));
+#endif
 }
 
 const MAT* PoolingLayer::getResult() const
@@ -46,4 +66,13 @@ void PoolingLayer::SpecificSave(std::ofstream& writer)
 void PoolingLayer::AverageGradients(const int batchSize)
 {
 
+}
+
+PoolingLayer::~PoolingLayer()
+{
+#if USE_GPU
+    checkCUDNN(cudnnDestroyPoolingDescriptor(poolingDescriptor));
+    checkCUDNN(cudnnDestroyTensorDescriptor(forwardInputDesc));
+    checkCUDNN(cudnnDestroyTensorDescriptor(forwardOutputDesc));
+#endif
 }

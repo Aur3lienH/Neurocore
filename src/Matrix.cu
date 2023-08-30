@@ -6,7 +6,7 @@
 #include <cstdlib>
 #include "Matrix.cuh"
 
-#define SAFE true
+#define SAFE 0
 
 #if USE_GPU
 
@@ -18,8 +18,8 @@ Matrix_GPU::Matrix_GPU(const int rows, const int cols, const int dims) : rows(ro
     checkCUDA(cudaMemset(data_d, 0, rows * cols * dims * sizeof(float)));
     checkCUDNN(cudnnCreateTensorDescriptor(&desc));
     checkCUDNN(cudnnCreateTensorDescriptor(&desc_1D));
-    checkCUDNN(cudnnSetTensor4dDescriptor(desc, CUDNN_TENSOR_NHWC, CUDNN_DATA_FLOAT, 1, dims, rows, cols));
-    checkCUDNN(cudnnSetTensor4dDescriptor(desc_1D, CUDNN_TENSOR_NHWC, CUDNN_DATA_FLOAT, 1, 1, rows, cols));
+    checkCUDNN(cudnnSetTensor4dDescriptor(desc, CUDNN_TENSOR_NCHW, CUDNN_DATA_FLOAT, 1, dims, rows, cols));
+    checkCUDNN(cudnnSetTensor4dDescriptor(desc_1D, CUDNN_TENSOR_NCHW, CUDNN_DATA_FLOAT, 1, 1, rows, cols));
 }
 
 Matrix_GPU::Matrix_GPU(const Matrix& mat) : Matrix_GPU(mat.GetRows(), mat.GetCols(), mat.GetDims())
@@ -149,8 +149,8 @@ void Matrix_GPU::Reshape(int rows_, int cols_, int dims_) const
     rows = rows_;
     cols = cols_;
     dims = dims_;
-    checkCUDNN(cudnnSetTensor4dDescriptor(desc, CUDNN_TENSOR_NHWC, CUDNN_DATA_FLOAT, 1, dims, rows, cols));
-    checkCUDNN(cudnnSetTensor4dDescriptor(desc, CUDNN_TENSOR_NHWC, CUDNN_DATA_FLOAT, 1, 1, rows, cols));
+    checkCUDNN(cudnnSetTensor4dDescriptor(desc, CUDNN_TENSOR_NCHW, CUDNN_DATA_FLOAT, 1, dims, rows, cols));
+    checkCUDNN(cudnnSetTensor4dDescriptor(desc_1D, CUDNN_TENSOR_NCHW, CUDNN_DATA_FLOAT, 1, 1, rows, cols));
 }
 
 void Matrix_GPU::Flatten() const
@@ -199,16 +199,6 @@ float* Matrix_GPU::GetData() const
 int Matrix_GPU::GetMatrixSize() const
 {
     return matrixSize;
-}
-
-cudnnTensorDescriptor_t* Matrix_GPU::GetDescriptor() const
-{
-    return &desc;
-}
-
-cudnnTensorDescriptor_t* Matrix_GPU::GetDescriptor_1D() const
-{
-    return &desc_1D;
 }
 
 Matrix_GPU* Matrix_GPU::Copy() const
@@ -276,6 +266,17 @@ std::ostream& operator<<(std::ostream& os, const Matrix_GPU& matrix)
     delete data;
 
     return os;
+}
+
+void Matrix_GPU::DisplayTensorInfo(cudnnTensorDescriptor_t const& desc)
+{
+    cudnnDataType_t dataType;
+    int n, c, h, w, nStride, cStride, hStride, wStride;
+    checkCUDNN(cudnnGetTensor4dDescriptor(desc, &dataType, &n, &c, &h, &w, &nStride, &cStride, &hStride, &wStride));
+    std::cout << "DataType: " << dataType << ", n: " << n << ", c: " << c << ", h: " << h << ", w: " << w
+              << ", nStride: "
+              << nStride << ", cStride: " << cStride << ", hStride: " << hStride << ", wStride: " << wStride
+              << std::endl;
 }
 
 #endif
@@ -734,7 +735,7 @@ void Matrix::CrossProduct(const Matrix* other, Matrix* output) const
 
     if (other->rows != this->cols)
     {
-        throw std::runtime_error("Matrice have not the shape to be cross producted !");
+        throw std::runtime_error("Matrix have not the shape to be cross producted !");
     }
     if (output->rows != this->rows || output->cols != other->cols)
     {

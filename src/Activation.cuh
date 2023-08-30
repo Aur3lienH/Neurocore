@@ -9,13 +9,19 @@ class Activation
 public:
     virtual ~Activation() = default;
 
-    virtual void FeedForward(const MAT* input, MAT* output);
-
 #if USE_GPU
 
-    virtual void Derivative(const MAT* input, const MAT* lastDelta, const MAT* z, MAT* output);
+    virtual void FeedForward(const MAT* input, const cudnnTensorDescriptor_t& inputDesc, MAT* output,
+                             const cudnnTensorDescriptor_t& outputDesc);
+
+    virtual void Derivative(const MAT* input, const cudnnTensorDescriptor_t& inputDesc, const MAT* lastDelta,
+                            const cudnnTensorDescriptor_t& lastDeltaDesc, const MAT* z,
+                            const cudnnTensorDescriptor_t& zDesc,
+                            MAT* output, const cudnnTensorDescriptor_t& outputDesc);
 
 #else
+
+    virtual void FeedForward(const MAT* input, MAT* output);
 
     virtual void Derivative(const MAT* input, MAT* output);
 
@@ -36,7 +42,8 @@ protected:
 
 #if USE_GPU
 
-    void Function(const MAT& input, MAT& output);
+    void Function(const MAT& input, const cudnnTensorDescriptor_t& inputDesc, MAT& output,
+                  const cudnnTensorDescriptor_t& outputDesc);
 
 #else
 
@@ -134,13 +141,18 @@ class Softmax : public Activation
 public:
     Softmax();
 
-    void FeedForward(const MAT* input, MAT* output) override;
-
 #if USE_GPU
 
-    void Derivative(const MAT* input, const MAT* lastDelta, const MAT* z, MAT* output) override;
+    void FeedForward(const MAT* input, const cudnnTensorDescriptor_t& inputDesc, MAT* output,
+                     const cudnnTensorDescriptor_t& outputDesc) override;
+
+    void Derivative(const MAT* input, const cudnnTensorDescriptor_t& inputDesc, const MAT* lastDelta,
+                    const cudnnTensorDescriptor_t& lastDeltaDesc, const MAT* z, const cudnnTensorDescriptor_t& zDesc,
+                    MAT* output, const cudnnTensorDescriptor_t& outputDesc) override;
 
 #else
+
+    void FeedForward(const MAT* input, MAT* output) override;
 
     void Derivative(const MAT* input, MAT* output) override;
 

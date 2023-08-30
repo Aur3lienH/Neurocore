@@ -8,18 +8,37 @@
 const MAT* AveragePoolLayer::FeedForward(const MAT* input)
 {
 #if USE_GPU
-    throw std::runtime_error("AveragePoolLayer::FeedForward not implemented for GPU");
+    checkCUDNN(
+            cudnnPoolingForward(Matrix_GPU::cuda->cudnnHandle,
+                                poolingDescriptor,
+                                &Matrix_GPU::cuda->one,
+                                forwardInputDesc,
+                                input->GetData(),
+                                &Matrix_GPU::cuda->zero,
+                                forwardOutputDesc,
+                                result->GetData()));
 #else
     Matrix::AveragePool(input, result, filterSize, stride);
+#endif
 
     return result;
-#endif
 }
 
 MAT* AveragePoolLayer::BackPropagate(const MAT* delta, const MAT* previousActivation)
 {
 #if USE_GPU
-    throw std::runtime_error("AveragePoolLayer::BackPropagatenot implemented for GPU");
+    cudnnPoolingBackward(Matrix_GPU::cuda->cudnnHandle,
+                         poolingDescriptor,
+                         &Matrix_GPU::cuda->one,
+                         forwardOutputDesc,
+                         result->GetData(),
+                         forwardOutputDesc,
+                         delta->GetData(),
+                         forwardInputDesc,
+                         previousActivation->GetData(),
+                         &Matrix_GPU::cuda->zero,
+                         forwardInputDesc,
+                         newDelta->GetData());
 #else
     // All elements in the pooling window have the same delta which is delta / (filterSize * filterSize)
     for (int d = 0; d < layerShape->dimensions[2]; ++d)
@@ -47,9 +66,9 @@ MAT* AveragePoolLayer::BackPropagate(const MAT* delta, const MAT* previousActiva
     result->ResetOffset();
     newDelta->ResetOffset();
     delta->ResetOffset();
+#endif
 
     return newDelta;
-#endif
 }
 
 
@@ -91,3 +110,20 @@ void AveragePoolLayer::SpecificSave(std::ofstream& writer)
     writer.write(reinterpret_cast<char*>(&tempFilterSize), sizeof(int));
     writer.write(reinterpret_cast<char*>(&tempStride), sizeof(int));
 }
+
+#if USE_GPU
+void AveragePoolLayer::Compile(LayerShape* previousActivation)
+{
+    PoolingLayer::Compile(previousActivation);
+    checkCUDNN(cudnnCreatePoolingDescriptor(&poolingDescriptor));
+    checkCUDNN(cudnnSetPooling2dDescriptor(poolingDescriptor,
+                                           CUDNN_POOLING_AVERAGE_COUNT_EXCLUDE_PADDING,
+                                           CUDNN_NOT_PROPAGATE_NAN,
+                                           filterSize,
+                                           filterSize,
+                                           0,
+                                           0,
+                                           stride,
+                                           stride));
+}
+#endif
