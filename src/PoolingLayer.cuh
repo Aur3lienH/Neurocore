@@ -7,6 +7,8 @@ class PoolingLayer : public Layer
 public:
     PoolingLayer(int filterSize, int stride);
 
+    ~PoolingLayer() override;
+
     void ClearDelta() override;
 
     void UpdateWeights(double learningRate, int batchSize) override;
@@ -25,6 +27,12 @@ public:
 protected:
     const int filterSize, stride;
 
+public:
     MAT* result;
     MAT* newDelta;
+
+#if USE_GPU
+    cudnnPoolingDescriptor_t poolingDescriptor;
+    cudnnTensorDescriptor_t forwardInputDesc, forwardOutputDesc;
+#endif
 };

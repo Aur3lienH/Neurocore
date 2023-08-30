@@ -159,7 +159,8 @@ public:
 class CloneMatrix : public Matrix
 {
 public:
-    ~CloneMatrix() override = default;
+    ~CloneMatrix() override
+    {};
 
     CloneMatrix() : Matrix()
     {};
@@ -242,13 +243,11 @@ public:
 
     Matrix_GPU* CopyWithSameData() const;
 
-    [[nodiscard]] cudnnTensorDescriptor_t* GetDescriptor() const;
-
-    [[nodiscard]] cudnnTensorDescriptor_t* GetDescriptor_1D() const;
-
     static inline CUDA* cuda = new CUDA();
 
     friend std::ostream& operator<<(std::ostream&, const Matrix_GPU&);
+
+    static void DisplayTensorInfo(const cudnnTensorDescriptor_t& desc);
 
 protected:
     float* data_d;

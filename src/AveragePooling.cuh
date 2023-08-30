@@ -26,6 +26,11 @@ public:
 
     void SpecificSave(std::ofstream& writer) override;
 
+#if USE_GPU
+
+    void Compile(LayerShape* previousActivation) override;
+
+#endif
 
 private:
     // Filter GetSize squared

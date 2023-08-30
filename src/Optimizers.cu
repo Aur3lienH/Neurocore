@@ -128,24 +128,6 @@ void Adam::Compute(MAT* _gradient, MAT* parameters, const int offset)
     adjBeta1 *= beta1;
     adjBeta2 *= beta2;
 
-/*#if USE_GPU
-    std::string path = "w.txt";
-    std::ofstream writer(path);
-    parametersCPU.Save(writer);
-#else
-    std::string path = "w.txt";
-    std::ifstream reader(path);
-    Matrix m = *Matrix::Read(reader);
-    for (int j = 0; j < parameters->GetSize(); j++)
-    {
-        // Float comparison
-        if (std::abs((*parameters)[j] - m[j]) > 0.0001)
-            std::cout << "Diff at " << j << ": " << (*parameters)[j] << "!=" << m[j]
-                      << std::endl;
-    }
-#endif
-    abort();*/
-
 #if USE_GPU
     checkCUDA(cudaMemcpy(parameters->GetData(), parametersCPU.GetData(), parametersCPU.GetSize() * sizeof(float),
                          cudaMemcpyHostToDevice));

@@ -40,6 +40,25 @@ void FCL::Compile(LayerShape* previousLayer)
 
     layerShape = new LayerShape(NeuronsCount);
     optimizer->Compile(NeuronsCount * previousNeuronsCount + NeuronsCount);
+
+#if USE_GPU
+    checkCUDNN(cudnnCreateTensorDescriptor(&forwardInputDesc));
+    checkCUDNN(cudnnSetTensor4dDescriptor(forwardInputDesc,
+                                          CUDNN_TENSOR_NCHW,
+                                          CUDNN_DATA_FLOAT,
+                                          1,
+                                          1,
+                                          previousNeuronsCount,
+                                          1));
+    checkCUDNN(cudnnCreateTensorDescriptor(&forwardOutputDesc));
+    checkCUDNN(cudnnSetTensor4dDescriptor(forwardOutputDesc,
+                                          CUDNN_TENSOR_NCHW,
+                                          CUDNN_DATA_FLOAT,
+                                          1,
+                                          1,
+                                          NeuronsCount,
+                                          1));
+#endif
 }
 
 #if USE_GPU
@@ -60,7 +79,7 @@ Matrix_GPU* FCL::FeedForward(const Matrix_GPU* input)
     input->Flatten();
     Matrix_GPU::Multiply(*Weights, *input, *Result);
     Result->Add(*Biases, *z);
-    activation->FeedForward(z, Result);
+    activation->FeedForward(z, forwardOutputDesc, Result, forwardOutputDesc);
 
     return Result;
 }
@@ -68,7 +87,8 @@ Matrix_GPU* FCL::FeedForward(const Matrix_GPU* input)
 const MAT* FCL::BackPropagate(const Matrix_GPU* lastDelta, const Matrix_GPU* PastActivation)
 {
     //newDelta->Flatten();
-    activation->Derivative(Result, lastDelta, z, deltaActivation);
+    activation->Derivative(Result, forwardOutputDesc, lastDelta, forwardOutputDesc, z, forwardOutputDesc,
+                           deltaActivation, forwardOutputDesc);
     //deltaActivation->operator*=(lastDelta); // This is done in the previous line
     DeltaBiases->Add(*deltaActivation, *DeltaBiases);
 
@@ -129,7 +149,7 @@ Matrix* FCL::FeedForward(const Matrix* input)
 
 const Matrix* FCL::BackPropagate(const Matrix* lastDelta, const Matrix* PastActivation)
 {
-    //newDelta->Flatten();
+    newDelta->Flatten();
     activation->Derivative(z, deltaActivation);
     deltaActivation->operator*=(lastDelta);
 
@@ -349,6 +369,11 @@ FCL::~FCL()
     delete Result;
     delete z;
     delete newDelta;
+
+#if USE_GPU
+    checkCUDNN(cudnnDestroyTensorDescriptor(forwardInputDesc));
+    checkCUDNN(cudnnDestroyTensorDescriptor(forwardOutputDesc));
+#endif
 }
 
 #if USE_GPU

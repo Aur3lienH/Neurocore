@@ -9,18 +9,39 @@ MaxPoolLayer::MaxPoolLayer(int filterSize, int stride) : PoolingLayer(filterSize
 const MAT* MaxPoolLayer::FeedForward(const MAT* input)
 {
 #if USE_GPU
-    throw std::runtime_error("MaxPoolLayer::FeedForward not implemented for GPU");
+    checkCUDNN(
+            cudnnPoolingForward(Matrix_GPU::cuda->cudnnHandle,
+                                poolingDescriptor,
+                                &Matrix_GPU::cuda->one,
+                                forwardInputDesc,
+                                input->GetData(),
+                                &Matrix_GPU::cuda->zero,
+                                forwardOutputDesc,
+                                result->GetData()));
 #else
     result->Reshape(layerShape->dimensions[0], layerShape->dimensions[1], layerShape->dimensions[2]);
     Matrix::MaxPool(input, result, filterSize, stride);
-    return result;
 #endif
+
+    return result;
 }
 
 MAT* MaxPoolLayer::BackPropagate(const MAT* delta, const MAT* previousActivation)
 {
 #if USE_GPU
-    throw std::runtime_error("MaxPoolLayer::BackPropagate not implemented for GPU");
+    checkCUDNN(
+            cudnnPoolingBackward(Matrix_GPU::cuda->cudnnHandle,
+                                 poolingDescriptor,
+                                 &Matrix_GPU::cuda->one,
+                                 forwardOutputDesc,
+                                 result->GetData(),
+                                 forwardOutputDesc,
+                                 delta->GetData(),
+                                 forwardInputDesc,
+                                 previousActivation->GetData(),
+                                 &Matrix_GPU::cuda->zero,
+                                 forwardInputDesc,
+                                 newDelta->GetData()));
 #else
     // The idea is that if an element is the maximum than maxPool has selected, then the delta is
     // the same as the previous delta, because the current element is the only one affecting the result.
@@ -71,10 +92,9 @@ MAT* MaxPoolLayer::BackPropagate(const MAT* delta, const MAT* previousActivation
     result->ResetOffset();
     newDelta->ResetOffset();
     delta->ResetOffset();
-
+#endif
 
     return newDelta;
-#endif
 }
 
 std::string MaxPoolLayer::getLayerTitle()
@@ -108,3 +128,22 @@ void MaxPoolLayer::SpecificSave(std::ofstream& writer)
     writer.write(reinterpret_cast<char*>(&tempFilterSize), sizeof(int));
     writer.write(reinterpret_cast<char*>(&tempStride), sizeof(int));
 }
+
+#if USE_GPU
+
+void MaxPoolLayer::Compile(LayerShape* previousActivation)
+{
+    PoolingLayer::Compile(previousActivation);
+    checkCUDNN(cudnnCreatePoolingDescriptor(&poolingDescriptor));
+    checkCUDNN(cudnnSetPooling2dDescriptor(poolingDescriptor,
+                                           CUDNN_POOLING_MAX,
+                                           CUDNN_NOT_PROPAGATE_NAN,
+                                           filterSize,
+                                           filterSize,
+                                           0,
+                                           0,
+                                           stride,
+                                           stride));
+}
+
+#endif

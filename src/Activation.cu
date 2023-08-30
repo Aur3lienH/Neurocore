@@ -28,7 +28,14 @@ MAT* Activation::InitBiases(const int outputSize)
     return Biases;
 }
 
+#if USE_GPU
+
+void Activation::FeedForward(const MAT* input, const cudnnTensorDescriptor_t& inputDesc, MAT* output,
+                             const cudnnTensorDescriptor_t& outputDesc)
+#else
+
 void Activation::FeedForward(const MAT* input, MAT* output)
+#endif
 {
 #if SAFE
     if (input->GetCols() != output->GetCols() || input->GetRows() != output->GetRows() ||
@@ -40,8 +47,8 @@ void Activation::FeedForward(const MAT* input, MAT* output)
 
 #if USE_GPU
     checkCUDNN(cudnnActivationForward(Matrix_GPU::cuda->cudnnHandle, activationDesc, &Matrix_GPU::cuda->one,
-                                      *input->GetDescriptor_1D(), input->GetData(), &Matrix_GPU::cuda->zero,
-                                      *output->GetDescriptor_1D(), output->GetData()));
+                                      inputDesc, input->GetData(), &Matrix_GPU::cuda->zero,
+                                      outputDesc, output->GetData()));
 #else
     for (int i = 0; i < input->GetSize(); i++)
     {
@@ -53,7 +60,10 @@ void Activation::FeedForward(const MAT* input, MAT* output)
 
 #if USE_GPU
 
-void Activation::Derivative(const MAT* input, const MAT* lastDelta, const MAT* z, MAT* output)
+void Activation::Derivative(const MAT* input, const cudnnTensorDescriptor_t& inputDesc, const MAT* lastDelta,
+                            const cudnnTensorDescriptor_t& lastDeltaDesc, const MAT* z,
+                            const cudnnTensorDescriptor_t& zDesc,
+                            MAT* output, const cudnnTensorDescriptor_t& outputDesc)
 #else
 
 void Activation::Derivative(const MAT* input, MAT* output)
@@ -61,10 +71,10 @@ void Activation::Derivative(const MAT* input, MAT* output)
 {
 #if USE_GPU
     checkCUDNN(cudnnActivationBackward(Matrix_GPU::cuda->cudnnHandle, activationDesc, &Matrix_GPU::cuda->one,
-                                       *input->GetDescriptor_1D(), input->GetData(),
-                                       *lastDelta->GetDescriptor_1D(),
-                                       lastDelta->GetData(), *z->GetDescriptor_1D(), z->GetData(),
-                                       &Matrix_GPU::cuda->zero, *output->GetDescriptor_1D(), output->GetData()));
+                                       inputDesc, input->GetData(),
+                                       lastDeltaDesc,
+                                       lastDelta->GetData(), zDesc, z->GetData(),
+                                       &Matrix_GPU::cuda->zero, outputDesc, output->GetData()));
 
 #else
 
@@ -124,11 +134,12 @@ Activation* Activation::Read(std::ifstream& reader)
 
 #if USE_GPU
 
-void Activation::Function(const MAT& input, MAT& output)
+void Activation::Function(const MAT& input, const cudnnTensorDescriptor_t& inputDesc, MAT& output,
+                          const cudnnTensorDescriptor_t& outputDesc)
 {
     checkCUDNN(cudnnActivationForward(Matrix_GPU::cuda->cudnnHandle, activationDesc, &Matrix_GPU::cuda->one,
-                                      *input.GetDescriptor_1D(), input.GetData(), &Matrix_GPU::cuda->zero,
-                                      *output.GetDescriptor_1D(), output.GetData()));
+                                      inputDesc, input.GetData(), &Matrix_GPU::cuda->zero,
+                                      outputDesc, output.GetData()));
 }
 
 #endif
@@ -344,12 +355,19 @@ Softmax::Softmax()
     ID = 4;
 }
 
+#if USE_GPU
+
+void Softmax::FeedForward(const MAT* input, const cudnnTensorDescriptor_t& inputDesc, MAT* output,
+                          const cudnnTensorDescriptor_t& outputDesc)
+#else
+
 void Softmax::FeedForward(const MAT* input, MAT* output)
+#endif
 {
 #if USE_GPU
     checkCUDNN(cudnnSoftmaxForward(Matrix_GPU::cuda->cudnnHandle, CUDNN_SOFTMAX_ACCURATE, CUDNN_SOFTMAX_MODE_INSTANCE,
-                                   &Matrix_GPU::cuda->one, *input->GetDescriptor_1D(), input->GetData(),
-                                   &Matrix_GPU::cuda->zero, *output->GetDescriptor_1D(), output->GetData()));
+                                   &Matrix_GPU::cuda->one, inputDesc, input->GetData(),
+                                   &Matrix_GPU::cuda->zero, outputDesc, output->GetData()));
 #else
     double sum = 0;
     double max = input[0][0];
@@ -381,7 +399,10 @@ MAT* Softmax::InitWeights(const int previousNeuronsCount, const int NeuronsCount
 
 #if USE_GPU
 
-void Softmax::Derivative(const MAT* input, const MAT* lastDelta, const MAT* z, MAT* output)
+void Softmax::Derivative(const MAT* input, const cudnnTensorDescriptor_t& inputDesc, const MAT* lastDelta,
+                         const cudnnTensorDescriptor_t& lastDeltaDesc, const MAT* z,
+                         const cudnnTensorDescriptor_t& zDesc,
+                         MAT* output, const cudnnTensorDescriptor_t& outputDesc)
 {
     /*checkCUDNN(cudnnSoftmaxBackward(Matrix_GPU::cuda->cudnnHandle, CUDNN_SOFTMAX_ACCURATE, CUDNN_SOFTMAX_MODE_INSTANCE,
                                     &Matrix_GPU::cuda->one, *input->GetDescriptor_1D(), input->GetData(),

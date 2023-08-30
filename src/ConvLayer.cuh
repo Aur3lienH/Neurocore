@@ -7,15 +7,6 @@
 
 #include "Matrix.cuh"
 
-
-enum Convolution
-{
-    Valid,
-    Same,
-    Full
-};
-
-
 class ConvLayer : public Layer
 {
 
@@ -28,10 +19,9 @@ public:
 
     MAT* FeedForward(const MAT* input) override;
 
-    MAT* BackPropagate(const MAT* delta, const MAT* lastWeights) override;
+    MAT* BackPropagate(const MAT* delta, const MAT* prevLayerOutput) override;
 
     [[nodiscard]] MAT* getResult() const override;
-
 
     void Compile(LayerShape* previousLayer) override;
 
@@ -52,37 +42,37 @@ public:
     Layer* Clone() override;
 
 private:
+    MAT* result = nullptr;
+    MAT* rotatedFilter = nullptr;
+    MAT* filters = nullptr;
+    //Delta for next layer
+    MAT* delta = nullptr;
+    MAT* preDelta = nullptr;
+    MAT* activationDelta;
+    MAT* z;
+    MAT* previousDeltaMultiplied;
+    MAT* bias;
+    MAT* deltaBias;
+
+    MAT* nextLayerDelta = nullptr;
+    MAT* nextLayerDeltaTemp = nullptr;
+
 #if USE_GPU
-    Matrix_GPU* result = nullptr;
-    Matrix_GPU* filters = nullptr;
-    //Delta for next layer
-    Matrix_GPU* delta = nullptr;
-    Matrix_GPU* preDelta = nullptr;
-    Matrix_GPU* activationDelta;
-    Matrix_GPU* z;
-    Matrix_GPU* previousDeltaMultiplied;
-    Matrix_GPU* bias;
-    Matrix_GPU* deltaBias;
+    cudnnFilterDescriptor_t filtersDesc;
+    cudnnConvolutionDescriptor_t convDesc;
+    cudnnConvolutionFwdAlgo_t forwardAlgo;
+    size_t forwardWorkspaceSize = 0;
+    float* forwardWorkspace = nullptr;
+    cudnnConvolutionBwdFilterAlgo_t backwardFilterAlgo;
+    cudnnConvolutionBwdDataAlgo_t backwardDataAlgo;
+    size_t backwardFilterWorkspaceSize = 0;
+    size_t backwardDataWorkspaceSize = 0;
+    float* backwardFilterWorkspace = nullptr;
+    float* backwardDataWorkspace = nullptr;
 
-    Matrix_GPU* nextLayerDelta = nullptr;
-    Matrix_GPU* nextLayerDeltaTemp = nullptr;
+    static inline const int numRequestedConvAlgos = 1;
 
-    cudnnFilterDescriptor_t filterDesc;
-#else
-    Matrix* result = nullptr;
-    Matrix* rotatedFilter = nullptr;
-    Matrix* filters = nullptr;
-    //Delta for next layer
-    Matrix* delta = nullptr;
-    Matrix* preDelta = nullptr;
-    Matrix* activationDelta;
-    Matrix* z;
-    Matrix* previousDeltaMultiplied;
-    Matrix* bias;
-    Matrix* deltaBias;
-
-    Matrix* nextLayerDelta = nullptr;
-    Matrix* nextLayerDeltaTemp = nullptr;
+    cudnnTensorDescriptor_t forwardInputDesc, forwardOutputDesc;
 #endif
 
     //Result from the previous layer (don't initialize when compiling the layer)

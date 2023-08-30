@@ -82,15 +82,12 @@ void QuickDraw1(const int numDrawingsPerCategory)
 void QuickDraw2(const int numDrawingsPerCategory)
 {
     std::cout << "quickdraw 1\n";
-    std::pair<int, int> dataInfo = GetDataLengthAndNumCategories("datasets/Quickdraw", numDrawingsPerCategory);
+    std::pair<int, int> dataInfo = GetDataLengthAndNumCategories("../datasets/Quickdraw", numDrawingsPerCategory);
     const int dataLength = dataInfo.first;
     const int numCategories = dataInfo.second;
-#if USE_GPU
-    Matrix_GPU*** data = GetQuickdrawDataset("datasets/Quickdraw", dataLength, numCategories, numDrawingsPerCategory,
-                                             true);
-#else
-    Matrix*** data = GetQuickdrawDataset("datasets/Quickdraw", dataLength, numCategories, numDrawingsPerCategory, true);
-#endif
+
+    MAT*** data = GetQuickdrawDataset("../datasets/Quickdraw", dataLength, numCategories, numDrawingsPerCategory,
+                                      true);
     std::cout << "loaded" << std::endl;
 
     auto* network = new Network();
