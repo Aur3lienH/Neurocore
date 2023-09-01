@@ -10,14 +10,14 @@
 
 #define SAFE false
 
-#define AVX2 true
-#define SSE2 true
+#define AVX2 false
+#define SSE2 false
 
 //MATRIX
 
 Matrix::Matrix()
 {
-
+    
 }
 
 void Matrix::Init(const int rows,const int cols,const int dim,const float value, bool aligned)
@@ -106,6 +106,11 @@ int Matrix::getCols() const
 int Matrix::getDim() const
 {
     return this->dim;
+}
+
+bool Matrix::IsColumnMajor() const 
+{
+    return columnMajor;
 }
 
 
@@ -271,18 +276,39 @@ void Matrix::Zero()
 std::ostream& operator<<(std::ostream& os, const Matrix& matrix)
 {
     std::cout << "Matrix: " << matrix.rows << "x" << matrix.cols << std::endl;
-    for (int i = 0; i < matrix.rows; i++)
+
+
+    if(matrix.columnMajor)
     {
-        os << "[";
-        for (int j = 0; j < matrix.cols; j++)
+        for (int i = 0; i < matrix.cols; i++)
         {
-            os << matrix.data[i * matrix.cols + j];
-            if (j != matrix.cols - 1)
+            os << "[";
+            for (int j = 0; j < matrix.rows; j++)
             {
-                os << " ";
+                os << matrix.data[i + j * matrix.rows];
+                if (j != matrix.cols - 1)
+                {
+                    os << " ";
+                }
             }
+            os << "]\n";
         }
-        os << "]\n";
+    }
+    else
+    {
+        for (int i = 0; i < matrix.rows; i++)
+        {
+            os << "[";
+            for (int j = 0; j < matrix.cols; j++)
+            {
+                os << matrix.data[i * matrix.cols + j];
+                if (j != matrix.cols - 1)
+                {
+                    os << " ";
+                }
+            }
+            os << "]\n";
+        }
     }
     return os;
 }
@@ -472,7 +498,7 @@ Matrix* Matrix::operator-=(const Matrix& other)
     return this;
 }
 
-void Matrix::CrossProduct(const Matrix* other, Matrix* output) const
+void Matrix::CrossProduct(const Matrix* a,const Matrix* other, Matrix* output)
 {
 #if SAFE
 
@@ -502,7 +528,47 @@ void Matrix::CrossProduct(const Matrix* other, Matrix* output) const
     */
 
 
-    for (int i = 0; i < this->rows; i++)
+
+    for (int i = 0; i < a->rows; i++)
+    {
+        for (int j = 0; j < other->cols; j++)
+        {
+            output->data[i * other->cols + j] = 0;
+            int k = 0;
+
+            // Handle the remaining elements if cols is not a multiple of 4
+            for (; k < a->cols; ++k)
+            {
+                output->data[i * output->cols + j] += a->data[i * a->cols + k] * other->data[k * other->rows + j];
+            }
+
+        }
+    }
+
+
+
+}
+
+
+void Matrix::OptimizedCrossProduct(const Matrix* a, const Matrix* other, Matrix* output)
+{
+
+#if SAFE
+
+    if (other->rows != this->cols)
+    {
+        throw std::runtime_error("Matrice have not the shape to be cross producted !");
+    }
+    if (output->rows != this->rows || output->cols != other->cols)
+    {
+        throw std::runtime_error("Output matrix has not the right shape !");
+    }
+
+#endif
+
+
+
+    for (int i = 0; i < a->rows; i++)
     {
         for (int j = 0; j < other->cols; j++)
         {
@@ -510,11 +576,13 @@ void Matrix::CrossProduct(const Matrix* other, Matrix* output) const
             int k = 0;
 #if AVX2
             __m256 sum256 = _mm256_setzero_ps();
-            for (; k <= this->cols - 8; k += 8)
+            for (; k <= a->cols - 8; k += 8)
             {
-                __m256 a = _mm256_loadu_ps(&this->data[i * this->cols + k]);
-                __m256 b = _mm256_loadu_ps(&other->data[k * other->cols + j]);
-                sum256 = _mm256_add_ps(sum256, _mm256_mul_ps(a, b));
+                __m256 m_a = _mm256_load_ps(&a->data[i * a->cols + k]);
+
+                
+                __m256 b = _mm256_loadu_ps(&a->data[k * other->cols + j]);
+                sum256 = _mm256_add_ps(sum256, _mm256_mul_ps(m_a, b));
             }
             float temp256[8];
             //sum256 = _mm256_hadd_ps(sum256,sum256);
@@ -528,11 +596,11 @@ void Matrix::CrossProduct(const Matrix* other, Matrix* output) const
 
 #if SSE2
             __m128 sum = _mm_setzero_ps();
-            for (; k <= this->cols - 4; k += 4)
+            for (; k <= a->cols - 4; k += 4)
             {
-                __m128 a = _mm_loadu_ps(&this->data[i * this->cols + k]);
+                __m128 m_a = _mm_loadu_ps(&a->data[i * a->cols + k]);
                 __m128 b = _mm_loadu_ps(&other->data[k * other->cols + j]);
-                sum = _mm_add_ps(sum, _mm_mul_ps(a, b));
+                sum = _mm_add_ps(sum, _mm_mul_ps(m_a, b));
             }
             float temp[4];
             sum = _mm_hadd_ps(sum,sum);
@@ -544,16 +612,13 @@ void Matrix::CrossProduct(const Matrix* other, Matrix* output) const
 
 
             // Handle the remaining elements if cols is not a multiple of 4
-            for (; k < this->cols; ++k)
+            for (; k < a->cols; ++k)
             {
-                output->data[i * output->cols + j] += this->data[i * this->cols + k] * other->data[k * other->cols + j];
+                output->data[i * output->cols + j] += a->data[i * a->cols + k] * other->data[k * other->rows + j];
             }
 
         }
     }
-
-
-
 }
 
 
@@ -868,6 +933,25 @@ float& Matrix::operator()(int _rows, int _cols)
         throw std::out_of_range("Matrix : Index out of bounds");
     }
     return data[_rows * this->cols + _cols];
+}
+
+bool Matrix::operator==(const Matrix other)
+{
+    if(other.getRows() != this->getRows() || other.cols != this->getCols() || other.dim != this->getDim())
+    {
+        return false;
+    }
+
+    for (int i = 0; i < this->size(); i++)
+    {
+        if(abs(other.data[i] - this->data[i]) > 0.0001f)
+        {
+            return false;
+        }
+    }
+
+    return true;
+    
 }
 
 void Matrix::Flatten() const
