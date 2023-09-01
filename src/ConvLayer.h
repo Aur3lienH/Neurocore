@@ -2,7 +2,9 @@
 
 #include "Layer.h"
 #include "LayerShape.h"
+#include "Matrix.h"
 #include "Activation.h"
+#include "Operations.h"
 
 
 #include "Matrix.h"
@@ -51,6 +53,10 @@ public:
     Layer* Clone() override;
 
 private:
+
+    void FlipAndCenterFilter();
+    void GetOperationsForFullConvolution();
+
     Matrix* result = nullptr;
     Matrix* rotatedFilter = nullptr;
     Matrix* filters = nullptr;
@@ -70,11 +76,15 @@ private:
     uint filterCount = 0;
     uint preivousDimCount = 0;
     uint dimCount = 0;
+    uint offset = 0;
 
 
     LayerShape* filterShape = nullptr;
 
     Activation* activation = nullptr;
+
+    std::vector<Operation*> FullConvOperations = std::vector<Operation*>();
+    
 
 
 };

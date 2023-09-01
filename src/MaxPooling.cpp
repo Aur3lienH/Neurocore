@@ -67,6 +67,9 @@ Matrix* MaxPoolLayer::BackPropagate(const Matrix* delta, const Matrix* previousA
     delta->ResetOffset();
 
 
+
+    //std::cout << *delta;
+
     return newDelta;
 }
 

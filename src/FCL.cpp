@@ -34,7 +34,7 @@ void FCL::ClearDelta()
 Matrix* FCL::FeedForward(const Matrix* input)
 {
     input->Flatten();
-    this->Weights->CrossProduct(input, Result);
+    Matrix::CrossProduct(Weights,input, Result);
     Result->Add(Biases, z);
     activation->FeedForward(z, Result);
     return Result;
@@ -64,6 +64,7 @@ void FCL::Compile(LayerShape* previousLayer)
         Result = new Matrix(NeuronsCount, 1);
     z = new Matrix(NeuronsCount, 1);
     newDelta = new Matrix(previousNeuronsCount, 1);
+    
 
     layerShape = new LayerShape(NeuronsCount);
     optimizer->Compile(NeuronsCount * previousNeuronsCount + NeuronsCount);
@@ -71,7 +72,24 @@ void FCL::Compile(LayerShape* previousLayer)
 
 const Matrix* FCL::BackPropagate(const Matrix* lastDelta, const Matrix* PastActivation)
 {
-    return BackPropagateSSE2(lastDelta,PastActivation);
+    //newDelta->Flatten();
+    activation->Derivative(z, deltaActivation);
+    deltaActivation->operator*=(lastDelta);
+
+    DeltaBiases->Add(deltaActivation, DeltaBiases);
+
+    Matrix* d2 = new Matrix(Delta->getRows(), Delta->getCols(), Delta->getDim());
+    Matrix* PastActivationT = PastActivation->Transpose();
+    Matrix::CrossProduct(deltaActivation,PastActivationT, d2);
+    Delta->Add(d2, Delta);
+    delete d2;
+    delete PastActivationT;
+
+    Matrix* weightsT = Weights->Transpose();
+    Matrix::CrossProduct(weightsT,deltaActivation, newDelta);
+    delete weightsT;
+
+    return newDelta;
 }
 
 
@@ -85,18 +103,21 @@ const Matrix* FCL::BackPropagateSSE2(const Matrix* lastDelta,const Matrix* PastA
     DeltaBiases->Add(deltaActivation, DeltaBiases);
     float* weigthsData = Weights->GetData();
     float* DeltaData = Delta->GetData();
+    float* deltaActivationData = deltaActivation->GetData();
+    float* newDeltaData = newDelta->GetData();
     
     for (int i = 0; i < previousNeuronsCount; i++)
     {
-        (*newDelta)[i] = 0;
+        int j = 0;
+        newDeltaData[i] = 0;
+
         __m128 m_newDelta = _mm_setzero_ps();
         __m128 m_PastActivation = _mm_set1_ps((*PastActivation)[i]);
         int columnSize = i * NeuronsCount;
-        int j;
-        for (j = 0; j + 4 < NeuronsCount; j+=4)
+        for (j; j + 4 < NeuronsCount; j+=4)
         {
             //
-            __m128 m_deltaActivation = _mm_load_ps(&((*deltaActivation)[j]));
+            __m128 m_deltaActivation = _mm_load_ps(deltaActivationData + j);
             __m128 m_Weigths = _mm_loadu_ps(weigthsData + columnSize);
 
 
@@ -109,19 +130,24 @@ const Matrix* FCL::BackPropagateSSE2(const Matrix* lastDelta,const Matrix* PastA
             _mm_storeu_ps(buffer,m_delta);
             for (int k = 0; k < 4; k++)
             {
-                Delta[0][i + (j + k) * previousNeuronsCount] = buffer[k];
+                DeltaData[i + (j + k) * previousNeuronsCount] = buffer[k];
             }
             
         }
+        m_newDelta = _mm_hadd_ps(m_newDelta,m_newDelta);
+        m_newDelta = _mm_hadd_ps(m_newDelta,m_newDelta);
         _mm_store_ps(buffer,m_newDelta);
-        newDelta[0][i] = buffer[0] + buffer[1] + buffer[2] + buffer[3] + newDelta[0][i];
+        newDeltaData[i] = buffer[0] + newDeltaData[i];
+
+
         for (; j < NeuronsCount; j++)
         {
-            newDelta[0][i] += deltaActivation[0][j] * Weights[0][j + i * NeuronsCount];
-            Delta[0][i + j * previousNeuronsCount] += PastActivation[0][i] * deltaActivation[0][j];
+            newDeltaData[i] += deltaActivationData[j] * weigthsData[j + i * NeuronsCount];
+            DeltaData[i + j * previousNeuronsCount] += PastActivation[0][i] * deltaActivationData[j];
         }
 
     }
+
 
     
     return newDelta;
@@ -140,14 +166,15 @@ const Matrix* FCL::BackPropagateAX2(const Matrix* lastDelta, const Matrix* PastA
     
     for (int i = 0; i < previousNeuronsCount; i++)
     {
+        int j = 0;
         (*newDelta)[i] = 0;
+
+        /*
         __m256 m_newDelta = _mm256_setzero_ps();
         __m256 m_PastActivation = _mm256_set1_ps((*PastActivation)[i]);
         int columnSize = i * NeuronsCount;
-        int j;
-        for (j = 0; j + 8 < NeuronsCount; j+=8)
+        for (j; j + 8 < NeuronsCount; j+=8)
         {
-            //
             __m256 m_deltaActivation = _mm256_load_ps(&((*deltaActivation)[j]));
             __m256 m_Weigths = _mm256_loadu_ps(weigthsData + columnSize);
 
@@ -165,8 +192,12 @@ const Matrix* FCL::BackPropagateAX2(const Matrix* lastDelta, const Matrix* PastA
             }
             
         }
+        m_newDelta = _mm256_hadd_ps(m_newDelta,m_newDelta);
+        m_newDelta = _mm256_hadd_ps(m_newDelta,m_newDelta);
         _mm256_storeu_ps(buffer,m_newDelta);
-        newDelta[0][i] = buffer[0] + buffer[1] + buffer[2] + buffer[3] + buffer[4] + buffer[5] + buffer[6] + buffer[7] + newDelta[0][i];
+        newDelta[0][i] = buffer[0] + buffer[1] + newDelta[0][i];
+
+        */
         for (; j < NeuronsCount; j++)
         {
             newDelta[0][i] += deltaActivation[0][j] * Weights[0][j + i * NeuronsCount];
@@ -174,10 +205,11 @@ const Matrix* FCL::BackPropagateAX2(const Matrix* lastDelta, const Matrix* PastA
         }
 
     }
-
     
     return newDelta;
 } 
+
+
 
 
 
