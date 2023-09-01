@@ -7,17 +7,16 @@
 #include "InputLayer.h"
 #include "Loss.h"
 #include "Examples/Mnist.h"
-#include "Examples/Tests.h"
+#include "Tests/Tests.h"
 #include <bits/stdc++.h>
 #include "./Examples/Quickdraw.h"
 
 
 int main()
 {
-   
 
-
-    Mnist1();
+    Tests::ExecuteTests();
+    //Mnist1();
     //QuickDraw2(10000);
     return 0;
     //LoadAndTest("./Models/MNIST_11.net",true);

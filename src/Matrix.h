@@ -1,6 +1,8 @@
 #pragma once
 
 #include <iostream>
+#include <vector>
+#include "Operations.h"
 #include <fstream>
 #include "Tools/Serializer.h"
 
@@ -9,11 +11,11 @@ class Matrix
 public:
     Matrix();
 
-    Matrix(int rows, int cols);
+    Matrix(int rows, int cols, bool aligned = false);
 
     Matrix(int rows, int cols, int size, bool aligned = false);
 
-    Matrix(int rows, int cols, float value);
+    Matrix(int rows, int cols, float value, bool aligned = false);
 
     Matrix(int rows, int cols, float* data);
 
@@ -25,6 +27,11 @@ public:
 
     static void FullConvolution(const Matrix* m, const Matrix* filter, Matrix* output);
 
+    static void FullConvolutionAVX2(const Matrix* m, const Matrix* filter, Matrix* output);
+
+    //FullConvolution FS4 = Filter Size 4
+    static void FullConvolutionFS4(const Matrix* m, const Matrix* filter, Matrix* output);
+
     static void Convolution(const Matrix* a, const Matrix* b, Matrix* output, int stride = 1);
 
     static void MaxPool(const Matrix* a, Matrix* output, int filterSize = 2, int stride = 2);
@@ -33,8 +40,10 @@ public:
 
     static Matrix Random(int rows, int cols);
 
+    Matrix* Transpose() const;
 
-    //Movement threw the matrix with the offset
+
+    //Movement threw the matrix with the offset, all the operations are done with matrix with this offset
     void GoToNextMatrix() const;
 
     void ResetOffset() const;
@@ -90,6 +99,8 @@ public:
 
     Matrix* operator*(const float& other);
 
+    bool operator==(const Matrix other);
+
     static Matrix* Read(std::ifstream& reader);
 
     void Save(std::ofstream& writer);
@@ -104,7 +115,9 @@ public:
 
     const float& operator()(int rows, int cols, int dim) const;
 
-    void CrossProduct(const Matrix* other, Matrix* output) const;
+    static void CrossProduct(const Matrix* a,const Matrix* b, Matrix* output);
+
+    static void OptimizedCrossProduct(const Matrix* a, const Matrix* b, Matrix* output);
 
 
     friend std::ostream& operator<<(std::ostream&, const Matrix&);
@@ -119,7 +132,16 @@ public:
 
     static Matrix* Copy(const Matrix* a);
 
-    //static void FullConvolutionAVX2(const Matrix* m, const Matrix* filter, Matrix* output);
+    static bool IsNull(const Matrix* a);
+
+    bool IsColumnMajor() const;
+
+
+    std::vector<Operation*> O_CrossProduct(Matrix* a, Matrix* b, Matrix* output);
+
+
+
+
 
 protected:
     mutable float* data;
@@ -128,6 +150,19 @@ protected:
     mutable int dim;
     mutable int matrixSize;
     mutable int offset = 0;
+    bool columnMajor = false;
+
+private:
+    void Init(const int rows,const int cols,const int dims, float value = 0, bool aligned = false);
+};
+
+
+class HorizontalMatrix : public Matrix
+{
+public:
+    HorizontalMatrix(const int rows, const int cols, const int dims, float value = 0.0f, bool aligned = false);
+private:
+    void Init(const int rows, const int cols, const int dims, float value = 0, bool aligned = false);
 };
 
 

@@ -10,29 +10,17 @@
 
 #define SAFE false
 
+#define AVX2 false
+#define SSE2 false
+
 //MATRIX
 
 Matrix::Matrix()
 {
-
+    
 }
 
-
-Matrix::Matrix(const int rows, const int cols)
-{
-    this->rows = rows;
-    this->cols = cols;
-    this->dim = 1;
-    matrixSize = rows * cols;
-    this->data = new float[rows * cols * dim];
-
-    for (int i = 0; i < rows * cols; i++)
-    {
-        this->data[i] = 0;
-    }
-}
-
-Matrix::Matrix(const int rows, int cols, int dim, bool aligned)
+void Matrix::Init(const int rows,const int cols,const int dim,const float value, bool aligned)
 {
     this->rows = rows;
     this->cols = cols;
@@ -40,6 +28,7 @@ Matrix::Matrix(const int rows, int cols, int dim, bool aligned)
     matrixSize = rows * cols;
     if(aligned)
     {
+        //Create a matrix aligned by 32
         if(posix_memalign((void**)&data,32,sizeof(float) * rows * cols * dim))
         {
             throw std::invalid_argument("Cannot create an aligned array ! ");
@@ -47,36 +36,38 @@ Matrix::Matrix(const int rows, int cols, int dim, bool aligned)
     }
     else
     {
+        //Create a simple array of size rows * cols * dim
         this->data = new float[rows * cols * dim];
     }
-    
+
+
+    //Make all the values = 0
     for (int i = 0; i < rows * cols * dim; i++)
     {
         data[i] = 0;
     }
-
-
-
-
-
-    
-    
 }
 
 
-Matrix::Matrix(const int rows, const int cols, float value)
+Matrix::Matrix(const int rows, const int cols, bool aligned)
 {
-    this->rows = rows;
-    this->cols = cols;
-    this->dim = 1;
-    matrixSize = rows * cols;
-    this->data = new float[rows * cols * dim];
-    for (int i = 0; i < rows * cols; i++)
-    {
-        this->data[i] = value;
-    }
+    Init(rows,cols,1,aligned);
 }
 
+
+Matrix::Matrix(const int rows, int cols, int dim, bool aligned)
+{
+    Init(rows,cols,dim,0,aligned);
+}
+
+//Initialize a matrix with a default value
+Matrix::Matrix(const int rows, const int cols, float value, bool aligned)
+{
+    Init(rows,cols,1,value,aligned);
+}
+
+
+//Initlize a matrix with an array already existing
 Matrix::Matrix(const int rows, const int cols, float* newArray)
 {
     this->rows = rows;
@@ -86,6 +77,7 @@ Matrix::Matrix(const int rows, const int cols, float* newArray)
     matrixSize = rows * cols;
 }
 
+//Initialize a 3D matrix with an already existing array
 Matrix::Matrix(const int rows, const int cols, const int dims, float* data)
 {
     this->rows = rows;
@@ -95,6 +87,7 @@ Matrix::Matrix(const int rows, const int cols, const int dims, float* data)
     matrixSize = rows * cols;
 }
 
+//Desallocating the matrix
 Matrix::~Matrix()
 {
     delete[] this->data;
@@ -115,6 +108,13 @@ int Matrix::getDim() const
     return this->dim;
 }
 
+bool Matrix::IsColumnMajor() const 
+{
+    return columnMajor;
+}
+
+
+//Add two matrix using SSE2 SMID instructions
 void Matrix::Add(Matrix* other, Matrix* result)
 {
 
@@ -195,6 +195,18 @@ void Matrix::Substract(const Matrix* other, Matrix* result) const
         result->data[i] = this->data[i] - other->data[i];
     }
 }
+Matrix* Matrix::Transpose() const
+{
+    auto* res = new Matrix(cols, rows, dim);
+    for (int i = 0; i < rows; i++)
+    {
+        for (int j = 0; j < cols * dim; j++)
+        {
+            res->data[j * rows + i] = data[i * cols * dim + j];
+        }
+    }
+    return res;
+}
 
 void Matrix::SubstractAllDims(const Matrix* other, Matrix* result) const
 {
@@ -255,7 +267,7 @@ void Matrix::DivideAllDims(float value)
 
 void Matrix::Zero()
 {
-    for (int i = 0; i < this->rows * this->cols; i++)
+    for (int i = 0; i < this->rows * this->cols * this->dim; i++)
     {
         this->data[i] = 0;
     }
@@ -264,18 +276,39 @@ void Matrix::Zero()
 std::ostream& operator<<(std::ostream& os, const Matrix& matrix)
 {
     std::cout << "Matrix: " << matrix.rows << "x" << matrix.cols << std::endl;
-    for (int i = 0; i < matrix.rows; i++)
+
+
+    if(matrix.columnMajor)
     {
-        os << "[";
-        for (int j = 0; j < matrix.cols; j++)
+        for (int i = 0; i < matrix.cols; i++)
         {
-            os << matrix.data[i * matrix.cols + j];
-            if (j != matrix.cols - 1)
+            os << "[";
+            for (int j = 0; j < matrix.rows; j++)
             {
-                os << " ";
+                os << matrix.data[i + j * matrix.rows];
+                if (j != matrix.cols - 1)
+                {
+                    os << " ";
+                }
             }
+            os << "]\n";
         }
-        os << "]\n";
+    }
+    else
+    {
+        for (int i = 0; i < matrix.rows; i++)
+        {
+            os << "[";
+            for (int j = 0; j < matrix.cols; j++)
+            {
+                os << matrix.data[i * matrix.cols + j];
+                if (j != matrix.cols - 1)
+                {
+                    os << " ";
+                }
+            }
+            os << "]\n";
+        }
     }
     return os;
 }
@@ -465,7 +498,7 @@ Matrix* Matrix::operator-=(const Matrix& other)
     return this;
 }
 
-void Matrix::CrossProduct(const Matrix* other, Matrix* output) const
+void Matrix::CrossProduct(const Matrix* a,const Matrix* other, Matrix* output)
 {
 #if SAFE
 
@@ -480,7 +513,7 @@ void Matrix::CrossProduct(const Matrix* other, Matrix* output) const
 
 #endif
 
-/*
+    /*
     for (int i = 0; i < this->rows; i++)
     {
         for (int j = 0; j < other->cols; j++)
@@ -492,35 +525,100 @@ void Matrix::CrossProduct(const Matrix* other, Matrix* output) const
             }
         }
     }
+    */
 
-*/
-    for (int i = 0; i < this->rows; i++)
+
+
+    for (int i = 0; i < a->rows; i++)
     {
         for (int j = 0; j < other->cols; j++)
         {
-            __m128 sum = _mm_setzero_ps();
-            int k;
-            for (k = 0; k <= this->cols - 4; k += 4)
-            {
-                __m128 a = _mm_loadu_ps(&this->data[i * this->cols + k]);
-                __m128 b = _mm_loadu_ps(&other->data[k * other->cols + j]);
-                sum = _mm_add_ps(sum, _mm_mul_ps(a, b));
-            }
-            
-            float temp[4];
-            _mm_storeu_ps(temp, sum);
-            output->data[i * output->cols + j] = temp[0] + temp[1] + temp[2] + temp[3];
+            output->data[i * other->cols + j] = 0;
+            int k = 0;
 
             // Handle the remaining elements if cols is not a multiple of 4
-            for (; k < this->cols; ++k)
+            for (; k < a->cols; ++k)
             {
-                output->data[i * output->cols + j] += this->data[i * this->cols + k] * other->data[k * other->cols + j];
+                output->data[i * output->cols + j] += a->data[i * a->cols + k] * other->data[k * other->rows + j];
             }
+
         }
     }
 
 
 
+}
+
+
+void Matrix::OptimizedCrossProduct(const Matrix* a, const Matrix* other, Matrix* output)
+{
+
+#if SAFE
+
+    if (other->rows != this->cols)
+    {
+        throw std::runtime_error("Matrice have not the shape to be cross producted !");
+    }
+    if (output->rows != this->rows || output->cols != other->cols)
+    {
+        throw std::runtime_error("Output matrix has not the right shape !");
+    }
+
+#endif
+
+
+
+    for (int i = 0; i < a->rows; i++)
+    {
+        for (int j = 0; j < other->cols; j++)
+        {
+            output->data[i * other->cols + j] = 0;
+            int k = 0;
+#if AVX2
+            __m256 sum256 = _mm256_setzero_ps();
+            for (; k <= a->cols - 8; k += 8)
+            {
+                __m256 m_a = _mm256_load_ps(&a->data[i * a->cols + k]);
+
+                
+                __m256 b = _mm256_loadu_ps(&a->data[k * other->cols + j]);
+                sum256 = _mm256_add_ps(sum256, _mm256_mul_ps(m_a, b));
+            }
+            float temp256[8];
+            //sum256 = _mm256_hadd_ps(sum256,sum256);
+            //sum256 = _mm256_hadd_ps(sum256,sum256);
+            _mm256_storeu_ps(temp256,sum256);
+            output->data[i * output->cols + j] += temp256[0] + temp256[1] + temp256[2] + temp256[3] + temp256[4] + temp256[5] + temp256[6] + temp256[7];
+#endif
+            
+
+
+
+#if SSE2
+            __m128 sum = _mm_setzero_ps();
+            for (; k <= a->cols - 4; k += 4)
+            {
+                __m128 m_a = _mm_loadu_ps(&a->data[i * a->cols + k]);
+                __m128 b = _mm_loadu_ps(&other->data[k * other->cols + j]);
+                sum = _mm_add_ps(sum, _mm_mul_ps(m_a, b));
+            }
+            float temp[4];
+            sum = _mm_hadd_ps(sum,sum);
+            sum = _mm_hadd_ps(sum,sum);
+            _mm_storeu_ps(temp, sum);
+            output->data[i * output->cols + j] += temp[0];
+#endif
+            
+
+
+            // Handle the remaining elements if cols is not a multiple of 4
+            for (; k < a->cols; ++k)
+            {
+                output->data[i * output->cols + j] += a->data[i * a->cols + k] * other->data[k * other->rows + j];
+            }
+
+        }
+    }
 }
 
 
@@ -586,12 +684,11 @@ Matrix* Matrix::CopyWithSameData()
 
 void Matrix::Flip180(const Matrix* input, Matrix* output)
 {
-    for (int i = 0; i < input->cols / 2; ++i)
+    for (int i = 0; i < input->rows; ++i)
     {
-        for (int j = 0; j < input->rows / 2; ++j)
+        for (int j = 0; j < input->cols; ++j)
         {
-            //UGLY
-            (*output)(i, j) = (*input)(input->rows - 1 - j, input->cols - 1 - i);
+            (*output)(i, j) = (*input)(input->rows - 1 - i, input->cols - 1 - j);
         }
     }
 }
@@ -626,13 +723,6 @@ void Matrix::FullConvolution(const Matrix* m, const Matrix* filter, Matrix* outp
     const int outputCols = m->getCols() + filter->getCols() - 1;
     const int outputRows = m->getRows() + filter->getRows() - 1;
 
-#if SAFE
-    if (output->cols != outputCols || outputRows != output->rows)
-    {
-        std::cout << "right shape is : " << "(" << outputRows << "," << outputCols << ")\n";
-        throw std::invalid_argument("FullConvolution : Output Matrix has not the right shape ! ");
-    }
-#endif
     const int filterCols = filter->getCols();
     const int filterRows = filter->getRows();
 
@@ -641,6 +731,16 @@ void Matrix::FullConvolution(const Matrix* m, const Matrix* filter, Matrix* outp
 
     const int r = filterRows - 1;
     const int c = filterCols - 1;
+
+#if SAFE
+    if (output->cols != outputCols || outputRows != output->rows)
+    {
+        std::cout << "right shape is : " << "(" << outputRows << "," << outputCols << ")\n";
+        throw std::invalid_argument("FullConvolution : Output Matrix has not the right shape ! ");
+    }
+#endif
+
+
     for (int i = 0; i < outputRows; i++)
     {
         for (int j = 0; j < outputCols; j++)
@@ -663,7 +763,7 @@ void Matrix::FullConvolution(const Matrix* m, const Matrix* filter, Matrix* outp
     }
 }
 
-/*
+
 void Matrix::FullConvolutionAVX2(const Matrix* m, const Matrix* filter, Matrix* output)
 {
 
@@ -735,7 +835,12 @@ void Matrix::FullConvolutionAVX2(const Matrix* m, const Matrix* filter, Matrix* 
 
 }
 
-*/
+
+void Matrix::FullConvolutionFS4(const Matrix* m, const Matrix* filter, Matrix* output)
+{
+
+}
+
 
 void Matrix::AveragePool(const Matrix* a, Matrix* output, int filterSize, int stride)
 {
@@ -810,6 +915,7 @@ void Matrix::Convolution(const Matrix* input, const Matrix* filter, Matrix* outp
     }
 }
 
+
 float Matrix::Sum()
 {
     float res = 0;
@@ -827,6 +933,25 @@ float& Matrix::operator()(int _rows, int _cols)
         throw std::out_of_range("Matrix : Index out of bounds");
     }
     return data[_rows * this->cols + _cols];
+}
+
+bool Matrix::operator==(const Matrix other)
+{
+    if(other.getRows() != this->getRows() || other.cols != this->getCols() || other.dim != this->getDim())
+    {
+        return false;
+    }
+
+    for (int i = 0; i < this->size(); i++)
+    {
+        if(abs(other.data[i] - this->data[i]) > 0.0001f)
+        {
+            return false;
+        }
+    }
+
+    return true;
+    
 }
 
 void Matrix::Flatten() const
@@ -925,6 +1050,21 @@ Matrix* Matrix::operator/=(const float other)
         data[i] /= other;
     }
     return this;
+}
+
+bool Matrix::IsNull(const Matrix* matrix)
+{
+    bool isNull = true;
+    for (int i = 0; i < matrix->size(); i++)
+    {
+        if((*matrix)[i] != 0)
+        {
+            isNull = false;
+            break;
+        }
+    }
+    return isNull;
+    
 }
 
 

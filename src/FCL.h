@@ -5,6 +5,7 @@
 #include "Layer.h"
 #include "./Tools/Serializer.h"
 #include "LayerShape.h"
+#include "Operations.h"
 
 class FCL : public Layer
 {
@@ -75,6 +76,7 @@ protected:
 //Result before passing through the activation function
     Matrix* z = nullptr;
 private:
+
 
     const Matrix* BackPropagateSSE2(const Matrix* delta, const Matrix* lastWeigths);
 

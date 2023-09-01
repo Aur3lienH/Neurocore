@@ -26,7 +26,7 @@ const std::string MNIST_FASHIOIN_LABEL_PATH = "./datasets/mnist_fashion/train-la
 
 Matrix* LabelToMatrix(int label)
 {
-    auto* matrix = new Matrix(10, 1, 0.0f);
+    Matrix* matrix = new Matrix(10, 1);
     matrix->operator[](label) = 1;
     return matrix;
 }
@@ -82,7 +82,6 @@ Matrix*** GetDataset(std::string path, int dataLength, bool format2D)
 
             while (getline(s, value, ','))
             {
-
                 if (i == -1)
                 {
                     dataset[j][1] = LabelToMatrix(std::stoi(value));
@@ -123,13 +122,15 @@ void Mnist1()
     Network* network = new Network();
     network->AddLayer(new InputLayer(784));
     network->AddLayer(new FCL(512, new ReLU()));
+    network->AddLayer(new FCL(512, new ReLU()));
+    network->AddLayer(new FCL(512, new ReLU()));
     network->AddLayer(new FCL(10, new Softmax()));
     std::cout << "before compiling !\n";
     network->Compile(Opti::Adam, new CrossEntropy());
     std::cout << "compiled ! \n";
     int trainLength = dataLength * 0.8;
     int testLength = dataLength - trainLength;
-    network->Learn(100, 0.01, new DataLoader(data, trainLength), 128, 16);
+    network->Learn(10, 0.01, new DataLoader(data, trainLength), 32, 16);
 
     double trainingAccuracy = TestAccuracy(network, data, 1000);
     std::cout << "Training Accuracy : " << trainingAccuracy * 100 << "% \n";
@@ -141,7 +142,6 @@ void Mnist1()
 
 void Mnist2()
 {
-
     int dataLength = CSVTools::CsvLength(MNIST_DATA_PATH);
     Matrix*** data = GetDataset(MNIST_DATA_PATH, dataLength, true);
 
@@ -155,10 +155,12 @@ void Mnist2()
 
     Network* network = new Network();
     network->AddLayer(new InputLayer(28, 28, 1));
-    network->AddLayer(new ConvLayer(new LayerShape(3, 3, 128), new ReLU()));
+    network->AddLayer(new ConvLayer(new LayerShape(5, 5, 16), new ReLU()));
+    network->AddLayer(new MaxPoolLayer(2, 2));
+    network->AddLayer(new ConvLayer(new LayerShape(3, 3, 16), new ReLU()));
     network->AddLayer(new MaxPoolLayer(2, 2));
     network->AddLayer(new Flatten());
-    network->AddLayer(new FCL(128, new ReLU()));
+    network->AddLayer(new FCL(64, new ReLU()));
     network->AddLayer(new FCL(10, new Softmax()));
 
     network->Compile(Opti::Adam, new CrossEntropy());
@@ -169,7 +171,7 @@ void Mnist2()
     int testLength = dataLength - trainLength;
 
     const int numThreads = static_cast<int>(std::thread::hardware_concurrency());
-    network->Learn(1, 0.1, new DataLoader(data, trainLength), 32, 16);
+    network->Learn(1, 0.1, new DataLoader(data, trainLength), 128, 1);
 
     network->Save("./Models/MNIST_11.net");
 
