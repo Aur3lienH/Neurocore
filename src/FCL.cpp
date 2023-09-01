@@ -34,7 +34,7 @@ void FCL::ClearDelta()
 Matrix* FCL::FeedForward(const Matrix* input)
 {
     input->Flatten();
-    this->Weights->CrossProduct(input, Result);
+    Matrix::CrossProduct(Weights,input, Result);
     Result->Add(Biases, z);
     activation->FeedForward(z, Result);
     return Result;
@@ -80,13 +80,13 @@ const Matrix* FCL::BackPropagate(const Matrix* lastDelta, const Matrix* PastActi
 
     Matrix* d2 = new Matrix(Delta->getRows(), Delta->getCols(), Delta->getDim());
     Matrix* PastActivationT = PastActivation->Transpose();
-    deltaActivation->CrossProduct(PastActivationT, d2);
+    Matrix::CrossProduct(deltaActivation,PastActivationT, d2);
     Delta->Add(d2, Delta);
     delete d2;
     delete PastActivationT;
 
     Matrix* weightsT = Weights->Transpose();
-    weightsT->CrossProduct(deltaActivation, newDelta);
+    Matrix::CrossProduct(weightsT,deltaActivation, newDelta);
     delete weightsT;
 
     return newDelta;

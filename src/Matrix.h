@@ -99,6 +99,8 @@ public:
 
     Matrix* operator*(const float& other);
 
+    bool operator==(const Matrix other);
+
     static Matrix* Read(std::ifstream& reader);
 
     void Save(std::ofstream& writer);
@@ -113,7 +115,9 @@ public:
 
     const float& operator()(int rows, int cols, int dim) const;
 
-    void CrossProduct(const Matrix* other, Matrix* output) const;
+    static void CrossProduct(const Matrix* a,const Matrix* b, Matrix* output);
+
+    static void OptimizedCrossProduct(const Matrix* a, const Matrix* b, Matrix* output);
 
 
     friend std::ostream& operator<<(std::ostream&, const Matrix&);
@@ -130,6 +134,8 @@ public:
 
     static bool IsNull(const Matrix* a);
 
+    bool IsColumnMajor() const;
+
 
     std::vector<Operation*> O_CrossProduct(Matrix* a, Matrix* b, Matrix* output);
 
@@ -144,6 +150,7 @@ protected:
     mutable int dim;
     mutable int matrixSize;
     mutable int offset = 0;
+    bool columnMajor = false;
 
 private:
     void Init(const int rows,const int cols,const int dims, float value = 0, bool aligned = false);
