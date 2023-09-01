@@ -94,6 +94,16 @@ CrossEntropy::CrossEntropy()
     ID = 1;
 }
 
+__global__
+void CrossEntropyCostKernel(double* cost, double* output, double* target, const int size)
+{
+    const int i = blockIdx.x * blockDim.x + threadIdx.x;
+    if (i < size)
+    {
+        cost[i] = target[i] * log(output[i] + 1e-15) + (1 - target[i]) * log(1 - output[i] + 1e-15);
+    }
+}
+
 double CrossEntropy::Cost(const MAT* output, const MAT* target)
 {
 #if USE_GPU
