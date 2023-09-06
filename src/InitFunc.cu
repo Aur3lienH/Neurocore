@@ -1,7 +1,10 @@
 #include "InitFunc.cuh"
 #include <cmath>
 
-void XavierInit(const int inputSize, MAT* weights)
+std::mt19937 WeightsInit::rng = std::mt19937(std::random_device{}());
+
+
+void WeightsInit::XavierInit(const int inputSize, MAT* weights)
 {
     float upper = 1.0 / sqrt((float) inputSize);
     float lower = -upper;
@@ -24,7 +27,7 @@ void XavierInit(const int inputSize, MAT* weights)
 };
 
 
-void NormalizedXavierInit(const int inputSize, const int outputSize, MAT* weights)
+void WeightsInit::NormalizedXavierInit(const int inputSize, const int outputSize, MAT* weights)
 {
     float upper = (sqrt(6.0) / sqrt((float) inputSize + (float) outputSize));
     float lower = -upper;
@@ -46,9 +49,10 @@ void NormalizedXavierInit(const int inputSize, const int outputSize, MAT* weight
 #endif
 };
 
-void HeInit(const int inputSize, MAT* weights)
+void WeightsInit::HeUniform(const int inputSize, MAT* weights)
 {
-    float range = sqrt(2.0 / (float) inputSize);
+    double limit = std::sqrt(6.0 / inputSize);
+    std::uniform_real_distribution<double> distribution(-limit, limit);
 #if USE_GPU
     Matrix m(weights->GetRows(), weights->GetCols(), weights->GetDims());
 #endif
@@ -56,9 +60,9 @@ void HeInit(const int inputSize, MAT* weights)
     for (int i = 0; i < weights->GetSize(); i++)
     {
 #if USE_GPU
-        m[i] = (rand() / ((float) RAND_MAX) - 0.5) * 2 * range;
+        m[i] = distribution(rng);
 #else
-        weights[0][i] = (rand() / ((float) RAND_MAX) - 0.5) * 2 * range;
+        (*weights)[i] = distribution(rng);
 #endif
     }
 

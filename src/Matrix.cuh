@@ -6,7 +6,7 @@
 #include <fstream>
 #include "Tools/Serializer.cuh"
 
-#define USE_GPU 1
+//#define USE_GPU 0
 
 class Matrix
 {
@@ -22,8 +22,6 @@ public:
     Matrix(int rows, int cols, float* data);
 
     Matrix(int rows, int cols, int dims, float* data);
-
-    Matrix* Transpose() const;
 
     virtual ~Matrix();
 
@@ -119,7 +117,7 @@ public:
 
     const float& operator()(int rows, int cols, int dim) const;
 
-    static void CrossProduct(const Matrix* a,const Matrix* b, Matrix* output);
+    void CrossProduct(const Matrix* other, Matrix* output) const;
 
     static void OptimizedCrossProduct(const Matrix* a, const Matrix* b, Matrix* output);
 
@@ -144,9 +142,6 @@ public:
     std::vector<Operation*> O_CrossProduct(Matrix* a, Matrix* b, Matrix* output);
 
 
-
-
-
 protected:
     mutable float* data;
     mutable int rows;
@@ -157,7 +152,7 @@ protected:
     bool columnMajor = false;
 
 private:
-    void Init(const int rows,const int cols,const int dims, float value = 0, bool aligned = false);
+    void Init(const int rows, const int cols, const int dims, float value = 0, bool aligned = false);
 };
 
 
@@ -165,6 +160,7 @@ class HorizontalMatrix : public Matrix
 {
 public:
     HorizontalMatrix(const int rows, const int cols, const int dims, float value = 0.0f, bool aligned = false);
+
 private:
     void Init(const int rows, const int cols, const int dims, float value = 0, bool aligned = false);
 };

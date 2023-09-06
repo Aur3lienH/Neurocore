@@ -17,15 +17,7 @@ std::string Activation::getName() const
 
 MAT* Activation::InitBiases(const int outputSize)
 {
-    auto* Biases = new MAT(outputSize, 1);
-
-    // For me it's useless as it is done in the matrix constructor
-    /*for (int i = 0; i < outputSize; i++)
-    {
-        Biases[0][i] = 0;
-    }*/
-
-    return Biases;
+    return new MAT(outputSize, 1, 1);
 }
 
 #if USE_GPU
@@ -176,7 +168,7 @@ MAT* Sigmoid::InitWeights(const int previousNeuronsCount, const int NeuronsCount
 #else
     auto* weights = new MAT(NeuronsCount, previousNeuronsCount, 1, true);
 #endif
-    XavierInit(previousNeuronsCount, weights);
+    WeightsInit::XavierInit(previousNeuronsCount, weights);
     return weights;
 }
 
@@ -210,7 +202,7 @@ MAT* SigmoidPrime::InitWeights(const int previousNeuronsCount, const int Neurons
 #else
     auto* weights = new Matrix(NeuronsCount, previousNeuronsCount, 1, true);
 #endif
-    XavierInit(previousNeuronsCount, weights);
+    WeightsInit::XavierInit(previousNeuronsCount, weights);
     return weights;
 }
 
@@ -305,8 +297,25 @@ MAT* ReLU::InitWeights(const int previousNeuronsCount, const int NeuronsCount)
 #else
     auto* weights = new Matrix(NeuronsCount, previousNeuronsCount, 1, true);
 #endif
-    HeInit(previousNeuronsCount, weights);
+    WeightsInit::HeUniform(previousNeuronsCount, weights);
     return weights;
+}
+
+MAT* ReLU::InitBiases(const int outputSize)
+{
+#if USE_GPU
+    float* biases = new float[outputSize];
+    for (int i = 0; i < outputSize; i++)
+        biases[i] = 0.01f;
+
+    Matrix_GPU* res = new Matrix_GPU(outputSize, 1);
+    checkCUDA(cudaMemcpy(res->GetData(), biases, outputSize * sizeof(float), cudaMemcpyHostToDevice));
+    delete[] biases;
+
+    return res;
+#else
+    return new MAT(outputSize, 1, 0.01f);
+#endif
 }
 
 LeakyReLU::LeakyReLU(const double _alpha)
@@ -345,7 +354,7 @@ MAT* LeakyReLU::InitWeights(const int previousNeuronsCount, const int NeuronsCou
 #else
     auto* weights = new Matrix(NeuronsCount, previousNeuronsCount, 1, true);
 #endif
-    HeInit(previousNeuronsCount, weights);
+    WeightsInit::HeUniform(previousNeuronsCount, weights);
     return weights;
 }
 
@@ -393,7 +402,7 @@ void Softmax::FeedForward(const MAT* input, MAT* output)
 MAT* Softmax::InitWeights(const int previousNeuronsCount, const int NeuronsCount)
 {
     MAT* weights = new MAT(NeuronsCount, previousNeuronsCount);
-    XavierInit(previousNeuronsCount, weights);
+    WeightsInit::XavierInit(previousNeuronsCount, weights);
     return weights;
 }
 
@@ -459,7 +468,7 @@ MAT* Tanh::InitWeights(const int previousNeuronsCount, const int NeuronsCount)
 #else
     auto* weights = new Matrix(NeuronsCount, previousNeuronsCount, 1, true);
 #endif
-    XavierInit(previousNeuronsCount, weights);
+    WeightsInit::XavierInit(previousNeuronsCount, weights);
     return weights;
 }
 

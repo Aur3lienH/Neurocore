@@ -13,47 +13,23 @@ public:
 
     ~FCL() override;
 
-#if USE_GPU
-
-    FCL(int NeuronsCount, Activation* activation, Matrix_GPU* weights, Matrix_GPU* bias, Matrix_GPU* delta,
-        Matrix_GPU* deltaActivation);
+    FCL(int NeuronsCount, Activation* activation, MAT* weights, MAT* bias, MAT* delta,
+        MAT* deltaActivation);
 
     //Compute the input threw the layer
-    Matrix_GPU* FeedForward(const Matrix_GPU* input) override;
+    MAT* FeedForward(const MAT* input) override;
 
     //Compute partial derivative (named delta)
-    const Matrix_GPU* BackPropagate(const Matrix_GPU* delta, const Matrix_GPU* lastWeights) override;
+    const MAT* BackPropagate(const MAT* delta, const MAT* lastWeights) override;
 
     //Getter for delta
-    const Matrix_GPU* getDelta();
+    const MAT* getDelta();
 
     //Getter for deltaBiases (delta to update biases)
-    const Matrix_GPU* getDeltaBiases();
+    const MAT* getDeltaBiases();
 
     //Getter for the result of the layer
-    [[nodiscard]] const Matrix_GPU* getResult() const override;
-
-#else
-
-    FCL(int NeuronsCount, Activation* activation, Matrix* weights, Matrix* bias, Matrix* delta,
-        Matrix* deltaActivation);
-
-    //Compute the input threw the layer
-    Matrix* FeedForward(const Matrix* input) override;
-
-    //Compute partial derivative (named delta)
-    const Matrix* BackPropagate(const Matrix* delta, const Matrix* lastWeights) override;
-
-    //Getter for delta
-    const Matrix* getDelta();
-
-    //Getter for deltaBiases (delta to update biases)
-    const Matrix* getDeltaBiases();
-
-    //Getter for the result of the layer
-    [[nodiscard]] const Matrix* getResult() const override;
-
-#endif
+    [[nodiscard]] const MAT* getResult() const override;
 
     //Clear partial derivative (named delta)
     void ClearDelta() override;

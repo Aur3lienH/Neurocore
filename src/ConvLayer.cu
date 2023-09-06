@@ -24,11 +24,13 @@ ConvLayer::ConvLayer(MAT* filters, LayerShape* filterShape, Activation* activati
 
 void ConvLayer::Compile(LayerShape* previousLayer)
 {
+    //Check if the previous layer has 3 dimensions, if not throw an error
     if (previousLayer->size < 3)
     {
         throw std::invalid_argument("Input of a CNN network must have 3 dimensions");
     }
 
+    //If there is no activation function, throw an error
     if (activation == nullptr)
     {
         throw std::invalid_argument("ConvLayer : Must have an activation function !");
@@ -37,16 +39,20 @@ void ConvLayer::Compile(LayerShape* previousLayer)
     //const int outputRow = previousLayer->dimensions[0] - filterShape->dimensions[0] + 1;
     //const int outputCol = previousLayer->dimensions[1] - filterShape->dimensions[1] + 1;
 
-
+    //Number of filter per channel
     filterCount = filterShape->dimensions[2];
+    //Number of channel in the previous layer
     preivousDimCount = previousLayer->dimensions[2];
+
+    //Number of dimCount
     dimCount = filterCount * preivousDimCount;
 
-
+    //If the filters has no been initialized, create it and initialize it with random values
     if (filters == nullptr)
     {
         filters = new MAT(filterShape->dimensions[0], filterShape->dimensions[1], (int) dimCount);
-        HeInit(1, filters);
+        //Function to init the filters with random values
+        WeightsInit::HeUniform(filterShape->dimensions[0] * filterShape->dimensions[1], filters);
     }
 
     nextLayerDelta = new MAT(previousLayer->dimensions[0], previousLayer->dimensions[1],
@@ -56,6 +62,7 @@ void ConvLayer::Compile(LayerShape* previousLayer)
 
 
     delta = filters->Copy();
+    delta->Zero();
     preDelta = new MAT(filters->GetRows(), filters->GetCols());
 
 
@@ -68,10 +75,24 @@ void ConvLayer::Compile(LayerShape* previousLayer)
     z = result->Copy();
 
     previousDeltaMultiplied = result->Copy();
+    offset = previousDeltaMultiplied->GetRows() - 1;
     activationDelta = result->Copy();
 
-    bias = new MAT(layerShape->dimensions[0], layerShape->dimensions[1], layerShape->dimensions[2]);
-    deltaBias = new MAT(layerShape->dimensions[0], layerShape->dimensions[1], layerShape->dimensions[2]);
+    bias = new MAT(1, 1, (int) dimCount);
+#if USE_GPU
+    float* biasValues = new float[bias->GetSize()];
+    for (int i = 0; i < bias->GetSize(); i++)
+        biasValues[i] = 0.01;
+
+    checkCUDA(cudaMemcpy(bias->GetData(), biasValues, bias->GetSize() * sizeof(float), cudaMemcpyHostToDevice));
+    delete[] biasValues;
+#else
+    for (int i = 0; i < bias->GetSize(); i++)
+    {
+        (*bias)[i] = 0.01;
+    }
+#endif
+    deltaBias = new MAT(1, 1, (int) dimCount);
 
     optimizer->Compile(filters->GetSize() + bias->GetSize());
 
@@ -114,6 +135,16 @@ void ConvLayer::Compile(LayerShape* previousLayer)
                                           filterShape->dimensions[2],
                                           layerShape->dimensions[0],
                                           layerShape->dimensions[1]));
+
+    checkCUDNN(cudnnCreateTensorDescriptor(&biasDesc));
+    checkCUDNN(cudnnSetTensor4dDescriptor(biasDesc,
+                                          CUDNN_TENSOR_NCHW,
+                                          CUDNN_DATA_FLOAT,
+                                          1,
+                                          filterShape->dimensions[2],
+                                          1,
+                                          1));
+
     int returnedAlgoCount;
     cudnnConvolutionFwdAlgoPerfStruct* perfResults = new cudnnConvolutionFwdAlgoPerfStruct[numRequestedConvAlgos];
     checkCUDNN(cudnnGetConvolutionForwardAlgorithm_v7(Matrix_GPU::cuda->cudnnHandle,
@@ -188,6 +219,25 @@ void ConvLayer::Compile(LayerShape* previousLayer)
     {checkCUDA(cudaMalloc(&backwardDataWorkspace, backwardDataWorkspaceSize)); }
 #else
     rotatedFilter = filters->Copy();
+    for (int j = 0; j < preivousDimCount; j++)
+    {
+        for (int i = 0; i < filterCount; i++)
+        {
+            GetOperationsForFullConvolution();
+            filters->GoToNextMatrix();
+            previousDeltaMultiplied->GoToNextMatrix();
+        }
+        nextLayerDelta->GoToNextMatrix();
+    }
+    filters->ResetOffset();
+    previousDeltaMultiplied->ResetOffset();
+    nextLayerDelta->ResetOffset();
+
+
+    std::cout << "number of operations : " << FullConvOperations.size() << " \n";
+
+    std::cout << "compiled !\n";
+
 #endif
 }
 
@@ -208,52 +258,96 @@ MAT* ConvLayer::FeedForward(const MAT* input)
                                        forwardOutputDesc,
                                        z->GetData()));
 
-    /*checkCUDNN(cudnnAddTensor(Matrix_GPU::cuda->cudnnHandle,
+    checkCUDNN(cudnnAddTensor(Matrix_GPU::cuda->cudnnHandle,
                               &Matrix_GPU::cuda->one,
-                              *z->GetDescriptor(),
+                              biasDesc,
                               bias->GetData(),
                               &Matrix_GPU::cuda->one,
-                              *z->GetDescriptor(),
-                              z->GetData()));*/
+                              forwardOutputDesc,
+                              z->GetData()))
 #else
+    //Reshape the layer in case it does not have the right shape
     result->Reshape(layerShape->dimensions[0], layerShape->dimensions[1], layerShape->dimensions[2]);
     //result->PrintSize();
+    //Loop through all the dimensions of the previous layer
     for (uint j = 0; j < preivousDimCount; j++)
     {
+        //Loop through all the dimensions of the actual layer
         for (int i = 0; i < filterCount; i++)
         {
+            //Apply convolution between input and filters and output it in z
             Matrix::Convolution(input, filters, z);
+
+            //Add the bias to the result
+            for (int k = 0; k < z->GetRows() * z->GetCols(); k++)
+            {
+                (*z)[k] = bias[0][0] + (*z)[k];
+            }
+
+            //Filters and bias are moved to the next matrix
             filters->GoToNextMatrix();
+            bias->GoToNextMatrix();
+            z->GoToNextMatrix();
         }
+        //Input is moved to the next matrix
         input->GoToNextMatrix();
     }
-    z->AddAllDims(bias, z);
+    //All the matrix offset are reset
     filters->ResetOffset();
     input->ResetOffset();
+    bias->ResetOffset();
+    z->ResetOffset();
 
 #endif
 
+    //Apply activation function on all the matrix
 #if USE_GPU
     activation->FeedForward(z, forwardOutputDesc, result, forwardOutputDesc);
 #else
     activation->FeedForward(z, result);
 #endif
+
     return result;
+}
+
+#if not USE_GPU
+
+void ConvLayer::FlipAndCenterFilter()
+{
+    for (int d = 0; d < filters->GetDims(); d++)
+    {
+        for (int i = 0; i < filters->GetCols(); ++i)
+        {
+            for (int j = 0; j < filters->GetRows(); ++j)
+            {
+                (*rotatedFilter)(i + offset, j + offset) = (*filters)(filters->GetRows() - 1 - j,
+                                                                      filters->GetCols() - 1 - i);
+            }
+        }
+        rotatedFilter->GoToNextMatrix();
+        filters->GoToNextMatrix();
+    }
+
+    rotatedFilter->ResetOffset();
+    filters->ResetOffset();
 
 }
 
+#endif
 
 //May be optimized by not rotating the matrix
 MAT* ConvLayer::BackPropagate(const MAT* lastDelta, const MAT* prevLayerOutput)
 {
+    //Set to zero the delta of the next layer
+    nextLayerDelta->Zero();
 #if USE_GPU
-    /*checkCUDNN(cudnnConvolutionBackwardBias(Matrix_GPU::cuda->cudnnHandle,
+    checkCUDNN(cudnnConvolutionBackwardBias(Matrix_GPU::cuda->cudnnHandle,
                                             &Matrix_GPU::cuda->one,
-                                            *lastDelta->GetDescriptor(),
+                                            forwardOutputDesc,
                                             lastDelta->GetData(),
                                             &Matrix_GPU::cuda->one,
-                                            *deltaBias->GetDescriptor(),
-                                            deltaBias->GetData()));*/
+                                            biasDesc,
+                                            deltaBias->GetData()));
 
     checkCUDNN(cudnnConvolutionBackwardFilter(Matrix_GPU::cuda->cudnnHandle,
                                               &Matrix_GPU::cuda->one,
@@ -283,36 +377,60 @@ MAT* ConvLayer::BackPropagate(const MAT* lastDelta, const MAT* prevLayerOutput)
                                             forwardInputDesc,
                                             nextLayerDelta->GetData()));
 #else
+    //Calculate the partial derivative of the activation function
     activation->Derivative(z, activationDelta);
+
+    //Multiply the partial derivative of the activation function with the partial derivative of the previous layer
     lastDelta->MultiplyAllDims(activationDelta, previousDeltaMultiplied);
 
-    deltaBias->AddAllDims(previousDeltaMultiplied, deltaBias);
+    for (int k = 0; k < FullConvOperations.size(); k++)
+    {
+        FullConvOperations[k]->Compute();
+    }
 
-    nextLayerDelta->Zero();
-
+    //Loop through all the dimensions of the previous layer
     for (uint i = 0; i < preivousDimCount; i++)
     {
+        //Loop through all the dimensions of the actual layer
         for (uint j = 0; j < filterCount; j++)
         {
+            //Flip the filter
             Matrix::Flip180(filters, rotatedFilter);
-            Matrix::FullConvolution(rotatedFilter, previousDeltaMultiplied, nextLayerDeltaTemp);
-            nextLayerDelta->Add(nextLayerDeltaTemp, nextLayerDelta);
+
+            //Calculate the partial derivative for the previous layer
+            //Matrix::FullConvolution(rotatedFilter,previousDeltaMultiplied,nextLayerDeltaTemp);
+
+            //Accumulate the result of the partial derivative
+            //nextLayerDelta->Add(nextLayerDeltaTemp,nextLayerDelta);
+
+
+
+            //Calculate the partial derivative of the weights
             Matrix::Convolution(prevLayerOutput, previousDeltaMultiplied, preDelta);
+
+            //Accumulate the result
             delta->Add(preDelta, delta);
+
+            //Filters, rotatedFilter, previousDeltaMultiplied and delta are moved to the next matrix
             filters->GoToNextMatrix();
             rotatedFilter->GoToNextMatrix();
             previousDeltaMultiplied->GoToNextMatrix();
+            delta->GoToNextMatrix();
         }
+        // Input and nextLayerDelta are moved to the next matrix
         prevLayerOutput->GoToNextMatrix();
         nextLayerDelta->GoToNextMatrix();
     }
-
+    //Resetting all the matrix offset
+    nextLayerDelta->ResetOffset();
+    delta->ResetOffset();
     filters->ResetOffset();
     rotatedFilter->ResetOffset();
     previousDeltaMultiplied->ResetOffset();
     prevLayerOutput->ResetOffset();
-    nextLayerDelta->ResetOffset();
 #endif
+
+    //Return the partial derivative for the previous layer
     return nextLayerDelta;
 }
 
@@ -320,7 +438,42 @@ MAT* ConvLayer::BackPropagate(const MAT* lastDelta, const MAT* prevLayerOutput)
 void ConvLayer::UpdateWeights(const double learningRate, const int batchSize)
 {
     optimizer->Compute(delta, filters);
-    optimizer->Compute(deltaBias, bias, filters->GetSize());
+
+#if USE_GPU
+    //ToDo: Make this run on GPU
+    Matrix deltaBiasCPU(delta->GetRows(), deltaBias->GetCols(), deltaBias->GetDims(), deltaBias->GetData_CPU());
+    Matrix deltaCPU(delta->GetRows(), delta->GetCols(), delta->GetDims(), delta->GetData_CPU());
+    for (int i = 0; i < deltaBias->GetDims(); i++)
+    {
+        for (int j = 0; j < delta->GetRows() * delta->GetCols(); j++)
+        {
+            deltaBiasCPU[0] += deltaCPU[j];
+        }
+        deltaBiasCPU.GoToNextMatrix();
+        deltaCPU.GoToNextMatrix();
+    }
+
+    deltaBiasCPU.ResetOffset();
+    deltaCPU.ResetOffset();
+
+    checkCUDA(cudaMemcpy(deltaBias->GetData(), deltaBiasCPU.GetData(), deltaBias->GetSize() * sizeof(float),
+                         cudaMemcpyHostToDevice));
+#else
+    for (int i = 0; i < deltaBias->GetDims(); i++)
+    {
+        for (int j = 0; j < delta->GetRows() * delta->GetCols(); j++)
+        {
+            (*deltaBias)[0] += (*delta)[j];
+        }
+        deltaBias->GoToNextMatrix();
+        delta->GoToNextMatrix();
+    }
+
+    deltaBias->ResetOffset();
+    delta->ResetOffset();
+#endif
+
+    optimizer->Compute(deltaBias, bias, bias->GetSize());
 }
 
 MAT* ConvLayer::getResult() const
@@ -365,7 +518,7 @@ std::string ConvLayer::getLayerTitle()
     buf += "Convolutional layer\n";
     buf += "Filter count per channel : " + std::to_string(filterShape->dimensions[2]) + "\n";
     buf += "Feature map count : " + std::to_string(layerShape->dimensions[2]) + "\n";
-    buf += "Output GetSize : " + layerShape->GetDimensions() + "\n";
+    buf += "Output size : " + layerShape->GetDimensions() + "\n";
     return buf;
 }
 
@@ -377,6 +530,52 @@ void ConvLayer::SpecificSave(std::ofstream& writer)
     activation->Save(writer);
 }
 
+#if not USE_GPU
+
+void ConvLayer::GetOperationsForFullConvolution()
+{
+    const int outputCols = previousDeltaMultiplied->GetCols() + filters->GetCols() - 1;
+    const int outputRows = previousDeltaMultiplied->GetRows() + filters->GetRows() - 1;
+
+    const int filterCols = filters->GetCols();
+    const int filterRows = filters->GetRows();
+
+    const int inputCols = previousDeltaMultiplied->GetCols();
+    const int inputRows = previousDeltaMultiplied->GetRows();
+
+    const int r = filterRows - 1;
+    const int c = filterCols - 1;
+
+
+    for (int i = 0; i < outputRows; i++)
+    {
+        for (int j = 0; j < outputCols; j++)
+        {
+            for (int k = 0; k < filterCols; k++)
+            {
+                float* filterPointer = nullptr;
+                float* matrixPointer = nullptr;
+                int operationNumber = 0;
+                for (int l = 0; l < filterRows; l++)
+                {
+                    const int inputRow = i - k;
+                    const int inputCol = j - l;
+                    if (inputRow >= 0 && inputRow < inputRows && inputCol >= 0 && inputCol < inputCols)
+                    {
+                        float* filterPointer = &((*rotatedFilter)(k, l));
+                        float* matrixPointer = &((*previousDeltaMultiplied)(inputRow, inputCol));
+                        FullConvOperations.push_back(
+                                new MulAddTo1(filterPointer, matrixPointer, &((*nextLayerDelta)(i, j)), 1));
+                    }
+                }
+
+            }
+        }
+    }
+}
+
+#endif
+
 Layer* ConvLayer::Clone()
 {
     auto* filterCopy = filters->CopyWithSameData();
@@ -384,9 +583,10 @@ Layer* ConvLayer::Clone()
                                                     filterShape->dimensions[2]), activation);
 }
 
-void ConvLayer::AverageGradients(int batchSize)
+void ConvLayer::AverageGradients(const int batchSize)
 {
     delta->DivideAllDims(batchSize);
+    deltaBias->DivideAllDims(batchSize);
 }
 
 ConvLayer::~ConvLayer()
@@ -404,6 +604,7 @@ ConvLayer::~ConvLayer()
 #if USE_GPU
     checkCUDNN(cudnnDestroyTensorDescriptor(forwardInputDesc));
     checkCUDNN(cudnnDestroyTensorDescriptor(forwardOutputDesc));
+    checkCUDNN(cudnnDestroyTensorDescriptor(biasDesc));
     checkCUDNN(cudnnDestroyFilterDescriptor(filtersDesc));
     checkCUDNN(cudnnDestroyConvolutionDescriptor(convDesc));
     checkCUDA(cudaFree(forwardWorkspace));
