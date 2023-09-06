@@ -26,10 +26,10 @@ Matrix_GPU* LabelToMatrix(const int label)
     matrix->SetAt(label, 1);
 #else
 
-    Matrix* LabelToMatrix(int label)
-    {
-        auto* matrix = new Matrix(10, 1, 0.0f);
-        matrix->operator[](label) = 1;
+Matrix* LabelToMatrix(int label)
+{
+    auto* matrix = new Matrix(10, 1, 0.0f);
+    matrix->operator[](label) = 1;
 #endif
     return matrix;
 }
@@ -40,7 +40,7 @@ int MatrixToLabel(const Matrix_GPU* matrix)
 {
     int label;
     checkCUBLAS(cublasIsamax_v2(Matrix_GPU::cuda->cublasHandle, matrix->GetMatrixSize(), matrix->GetData(), 1, &label));
-    return label;
+    return label - 1;
 }
 
 #else

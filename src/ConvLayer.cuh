@@ -3,6 +3,7 @@
 #include "Layer.cuh"
 #include "LayerShape.cuh"
 #include "Activation.cuh"
+#include "Operations.h"
 
 
 #include "Matrix.cuh"
@@ -42,8 +43,13 @@ public:
     Layer* Clone() override;
 
 private:
+
+#if not USE_GPU
+    void FlipAndCenterFilter();
+    void GetOperationsForFullConvolution();
+#endif
+
     MAT* result = nullptr;
-    MAT* rotatedFilter = nullptr;
     MAT* filters = nullptr;
     //Delta for next layer
     MAT* delta = nullptr;
@@ -72,18 +78,21 @@ private:
 
     static inline const int numRequestedConvAlgos = 1;
 
-    cudnnTensorDescriptor_t forwardInputDesc, forwardOutputDesc;
+    cudnnTensorDescriptor_t forwardInputDesc, forwardOutputDesc, biasDesc;
+#else
+    MAT* rotatedFilter = nullptr;
 #endif
 
     //Result from the previous layer (don't initialize when compiling the layer)
     uint filterCount = 0;
     uint preivousDimCount = 0;
     uint dimCount = 0;
+    uint offset = 0;
 
 
     LayerShape* filterShape = nullptr;
 
     Activation* activation = nullptr;
 
-
+    std::vector<Operation*> FullConvOperations = std::vector<Operation*>();
 };

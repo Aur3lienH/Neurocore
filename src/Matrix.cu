@@ -291,7 +291,7 @@ Matrix::Matrix()
 
 }
 
-void Matrix::Init(const int rows,const int cols,const int dim,const float value, bool aligned)
+void Matrix::Init(const int rows, const int cols, const int dim, const float value, bool aligned)
 {
     this->rows = rows;
     this->cols = cols;
@@ -322,23 +322,23 @@ void Matrix::Init(const int rows,const int cols,const int dim,const float value,
 
 Matrix::Matrix(const int rows, const int cols, bool aligned)
 {
-    Init(rows,cols,1,aligned);
+    Init(rows, cols, 1, aligned);
 }
 
 
 Matrix::Matrix(const int rows, int cols, int dim, bool aligned)
 {
-    Init(rows,cols,dim,0,aligned);
+    Init(rows, cols, dim, 0, aligned);
 }
 
 //Initialize a matrix with a default value
 Matrix::Matrix(const int rows, const int cols, float value, bool aligned)
 {
-    Init(rows,cols,1,value,aligned);
+    Init(rows, cols, 1, value, aligned);
 }
 
 
-//Initlize a matrix with an array already existing
+//Initialize a matrix with an array already existing
 Matrix::Matrix(const int rows, const int cols, float* newArray)
 {
     this->rows = rows;
@@ -358,7 +358,7 @@ Matrix::Matrix(const int rows, const int cols, const int dims, float* data)
     matrixSize = rows * cols;
 }
 
-//Desallocating the matrix
+//Deallocating the matrix
 Matrix::~Matrix()
 {
     delete[] this->data;
@@ -466,6 +466,7 @@ void Matrix::Substract(const Matrix* other, Matrix* result) const
         result->data[i] = this->data[i] - other->data[i];
     }
 }
+
 Matrix* Matrix::Transpose() const
 {
     auto* res = new Matrix(cols, rows, dim);
@@ -549,7 +550,7 @@ std::ostream& operator<<(std::ostream& os, const Matrix& matrix)
     std::cout << "Matrix: " << matrix.rows << "x" << matrix.cols << std::endl;
 
 
-    if(matrix.columnMajor)
+    if (matrix.columnMajor)
     {
         for (int i = 0; i < matrix.cols; i++)
         {
@@ -799,24 +800,30 @@ void Matrix::CrossProduct(const Matrix* other, Matrix* output) const
 */
 
 
-    for (int i = 0; i < a->rows; i++)
+    for (int i = 0; i < this->rows; i++)
     {
         for (int j = 0; j < other->cols; j++)
         {
-            output->data[i * other->cols + j] = 0;
-            int k = 0;
-
-            // Handle the remaining elements if cols is not a multiple of 4
-            for (; k < a->cols; ++k)
+            __m128 sum = _mm_setzero_ps();
+            int k;
+            for (k = 0; k <= this->cols - 4; k += 4)
             {
-                output->data[i * output->cols + j] += a->data[i * a->cols + k] * other->data[k * other->rows + j];
+                __m128 a = _mm_loadu_ps(&this->data[i * this->cols + k]);
+                __m128 b = _mm_loadu_ps(&other->data[k * other->cols + j]);
+                sum = _mm_add_ps(sum, _mm_mul_ps(a, b));
             }
 
+            float temp[4];
+            _mm_storeu_ps(temp, sum);
+            output->data[i * output->cols + j] = temp[0] + temp[1] + temp[2] + temp[3];
+
+            // Handle the remaining elements if cols is not a multiple of 4
+            for (; k < this->cols; ++k)
+            {
+                output->data[i * output->cols + j] += this->data[i * this->cols + k] * other->data[k * other->cols + j];
+            }
         }
     }
-
-
-
 }
 
 
@@ -835,7 +842,6 @@ void Matrix::OptimizedCrossProduct(const Matrix* a, const Matrix* other, Matrix*
     }
 
 #endif
-
 
 
     for (int i = 0; i < a->rows; i++)
@@ -860,8 +866,6 @@ void Matrix::OptimizedCrossProduct(const Matrix* a, const Matrix* other, Matrix*
             _mm256_storeu_ps(temp256,sum256);
             output->data[i * output->cols + j] += temp256[0] + temp256[1] + temp256[2] + temp256[3] + temp256[4] + temp256[5] + temp256[6] + temp256[7];
 #endif
-
-
 
 
 #if SSE2
@@ -1206,14 +1210,14 @@ float& Matrix::operator()(int _rows, int _cols)
 
 bool Matrix::operator==(const Matrix other)
 {
-    if(other.getRows() != this->getRows() || other.cols != this->getCols() || other.dim != this->getDim())
+    if (other.GetRows() != this->GetRows() || other.cols != this->GetCols() || other.dim != this->GetDims())
     {
         return false;
     }
 
-    for (int i = 0; i < this->size(); i++)
+    for (int i = 0; i < this->GetSize(); i++)
     {
-        if(abs(other.data[i] - this->data[i]) > 0.0001f)
+        if (abs(other.data[i] - this->data[i]) > 0.0001f)
         {
             return false;
         }
@@ -1323,9 +1327,9 @@ Matrix* Matrix::operator/=(const float other)
 bool Matrix::IsNull(const Matrix* matrix)
 {
     bool isNull = true;
-    for (int i = 0; i < matrix->size(); i++)
+    for (int i = 0; i < matrix->GetSize(); i++)
     {
-        if((*matrix)[i] != 0)
+        if ((*matrix)[i] != 0)
         {
             isNull = false;
             break;

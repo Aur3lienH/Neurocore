@@ -1,12 +1,17 @@
 cmake_minimum_required(VERSION 3.26)
 project(DeepLearning CXX CUDA)
-
 set(CMAKE_CXX_STANDARD 17)
 
+#add_compile_definitions(USE_GPU)
+if (USE_GPU)
+    message("Using GPU")
+else ()
+    message("Using CPU")
+endif ()
 
-#add_compile_options(-std=c++17 -pthread -O3 -mavx)
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17 -pthread -O3 -mavx -mavx512bw")
 
-#set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17 -pthreadnimportequoi -O3 -mavx")
+find_package(OpenCV REQUIRED)
 
 include_directories(src)
 include_directories(src/Examples)
@@ -22,7 +27,7 @@ add_executable(DeepLearning
         src/Examples/Tools.cu
         src/Examples/Tools.cuh
         src/Tools/Bytes.cu
-        src/Tools/Bytes.cuh
+        ssumrc/Tools/Bytes.cuh
         src/Tools/ManagerIO.cu
         src/Tools/ManagerIO.cuh
         src/Tools/ProgressBar.cu
@@ -71,7 +76,11 @@ add_executable(DeepLearning
         src/ThreadArg.cu
         src/ThreadArg.cuh
         src/vector.cuh
-        src/CUDA.cuh)
+        src/CUDA.cuh
+        src/Operations.cpp
+        src/GUI.cuh
+        src/GUI.cu)
+
 
 set_target_properties(
         DeepLearning
@@ -80,3 +89,5 @@ set_target_properties(
 
 target_link_libraries(DeepLearning ${CUDA_LIBRARIES} cudnn)
 target_link_libraries(DeepLearning -lcublas)
+target_link_libraries(DeepLearning sfml-graphics sfml-window sfml-system)
+target_link_libraries(DeepLearning ${OpenCV_LIBS})

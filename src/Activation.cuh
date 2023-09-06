@@ -29,7 +29,7 @@ public:
 
     virtual MAT* InitWeights(int inputSize, int outputSize) = 0;
 
-    static MAT* InitBiases(int outputSize);
+    virtual MAT* InitBiases(int outputSize);
 
     static Activation* Read(std::ifstream& reader);
 
@@ -112,6 +112,8 @@ public:
     double Derive(double input) override;
 
     MAT* InitWeights(int inputSize, int outputSize) override;
+
+    MAT* InitBiases(int outputSize) override;
 };
 
 class LeakyReLU : public Activation
