@@ -3,5 +3,6 @@
 class MatrixTests
 {
 public:
-    static bool CrossProductTest1();
+    static bool SMIDMatrixTest();
+    static bool BlockMatrixTest();
 };

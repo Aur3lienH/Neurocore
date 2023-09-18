@@ -7,6 +7,84 @@
 #include "Matrix.cuh"
 
 #define SAFE 0
+#define AVX2 false
+#define SSE2 false
+
+
+
+//MATRIX
+
+Matrix::Matrix()
+{
+
+}
+
+void Matrix::Init(const int rows, const int cols, const int dim, const float value, bool aligned)
+{
+    this->rows = rows;
+    this->cols = cols;
+    this->dim = dim;
+    matrixSize = rows * cols;
+    if (aligned)
+    {
+        //Create a matrix aligned by 32
+        if (posix_memalign((void**) &data, 32, sizeof(float) * rows * cols * dim))
+        {
+            throw std::invalid_argument("Cannot create an aligned array ! ");
+        }
+    }
+    else
+    {
+        //Create a simple array of size rows * cols * dim
+        this->data = new float[rows * cols * dim];
+    }
+
+
+    //Make all the values = 0
+    for (int i = 0; i < rows * cols * dim; i++)
+    {
+        data[i] = 0;
+    }
+}
+
+
+Matrix::Matrix(const int rows, const int cols, bool aligned)
+{
+    Init(rows, cols, 1, aligned);
+}
+
+
+Matrix::Matrix(const int rows, int cols, int dim, bool aligned)
+{
+    Init(rows, cols, dim, 0, aligned);
+}
+
+//Initialize a matrix with a default value
+Matrix::Matrix(const int rows, const int cols, float value, bool aligned)
+{
+    Init(rows, cols, 1, value, aligned);
+}
+
+
+//Initialize a matrix with an array already existing
+Matrix::Matrix(const int rows, const int cols, float* newArray)
+{
+    this->rows = rows;
+    this->cols = cols;
+    this->dim = 1;
+    this->data = newArray;
+    matrixSize = rows * cols;
+}
+
+//Initialize a 3D matrix with an already existing array
+Matrix::Matrix(const int rows, const int cols, const int dims, float* data)
+{
+    this->rows = rows;
+    this->cols = cols;
+    this->dim = dims;
+    this->data = data;
+    matrixSize = rows * cols;
+}
 
 #if USE_GPU
 
@@ -281,83 +359,6 @@ void Matrix_GPU::DisplayTensorInfo(cudnnTensorDescriptor_t const& desc)
 
 #endif
 
-#define AVX2 false
-#define SSE2 false
-
-//MATRIX
-
-Matrix::Matrix()
-{
-
-}
-
-void Matrix::Init(const int rows, const int cols, const int dim, const float value, bool aligned)
-{
-    this->rows = rows;
-    this->cols = cols;
-    this->dim = dim;
-    matrixSize = rows * cols;
-    if (aligned)
-    {
-        //Create a matrix aligned by 32
-        if (posix_memalign((void**) &data, 32, sizeof(float) * rows * cols * dim))
-        {
-            throw std::invalid_argument("Cannot create an aligned array ! ");
-        }
-    }
-    else
-    {
-        //Create a simple array of size rows * cols * dim
-        this->data = new float[rows * cols * dim];
-    }
-
-
-    //Make all the values = 0
-    for (int i = 0; i < rows * cols * dim; i++)
-    {
-        data[i] = 0;
-    }
-}
-
-
-Matrix::Matrix(const int rows, const int cols, bool aligned)
-{
-    Init(rows, cols, 1, aligned);
-}
-
-
-Matrix::Matrix(const int rows, int cols, int dim, bool aligned)
-{
-    Init(rows, cols, dim, 0, aligned);
-}
-
-//Initialize a matrix with a default value
-Matrix::Matrix(const int rows, const int cols, float value, bool aligned)
-{
-    Init(rows, cols, 1, value, aligned);
-}
-
-
-//Initialize a matrix with an array already existing
-Matrix::Matrix(const int rows, const int cols, float* newArray)
-{
-    this->rows = rows;
-    this->cols = cols;
-    this->dim = 1;
-    this->data = newArray;
-    matrixSize = rows * cols;
-}
-
-//Initialize a 3D matrix with an already existing array
-Matrix::Matrix(const int rows, const int cols, const int dims, float* data)
-{
-    this->rows = rows;
-    this->cols = cols;
-    this->dim = dims;
-    this->data = data;
-    matrixSize = rows * cols;
-}
-
 //Deallocating the matrix
 Matrix::~Matrix()
 {
@@ -545,44 +546,44 @@ void Matrix::Zero()
     }
 }
 
-std::ostream& operator<<(std::ostream& os, const Matrix& matrix)
+void Matrix::Print() const 
 {
+    Matrix matrix = *this;
     std::cout << "Matrix: " << matrix.rows << "x" << matrix.cols << std::endl;
 
 
-    if (matrix.columnMajor)
+    if(matrix.columnMajor)
     {
         for (int i = 0; i < matrix.cols; i++)
         {
-            os << "[";
+            std::cout << "[";
             for (int j = 0; j < matrix.rows; j++)
             {
-                os << matrix.data[i + j * matrix.rows];
+                std::cout << matrix.data[i + j * matrix.rows];
                 if (j != matrix.cols - 1)
                 {
-                    os << " ";
+                    std::cout << " ";
                 }
             }
-            os << "]\n";
+            std::cout << "]\n";
         }
     }
     else
     {
         for (int i = 0; i < matrix.rows; i++)
         {
-            os << "[";
+            std::cout << "[";
             for (int j = 0; j < matrix.cols; j++)
             {
-                os << matrix.data[i * matrix.cols + j];
+                std::cout << matrix.data[i * matrix.cols + j];
                 if (j != matrix.cols - 1)
                 {
-                    os << " ";
+                    std::cout << " ";
                 }
             }
-            os << "]\n";
+            std::cout << "]\n";
         }
     }
-    return os;
 }
 
 void Matrix::PrintSize() const
@@ -770,7 +771,7 @@ Matrix* Matrix::operator-=(const Matrix& other)
     return this;
 }
 
-void Matrix::CrossProduct(const Matrix* other, Matrix* output) const
+void Matrix::MatrixMultiplication(const Matrix* other, Matrix* output) const
 {
 #if SAFE
 
@@ -827,16 +828,112 @@ void Matrix::CrossProduct(const Matrix* other, Matrix* output) const
 }
 
 
+void Matrix::CrossProductWithSelfTranspose(const Matrix* other, Matrix* output) const
+{
+#if SAFE
+
+    if (other->rows != this->rows)
+    {
+        throw std::runtime_error("Matrix have not the shape to be cross producted !");
+    }
+    if (output->rows != this->cols || output->cols != other->cols)
+    {
+        throw std::runtime_error("Output matrix has not the right shape !");
+    }
+#endif
+
+    /*for (int i = 0; i < this->cols; i++)
+    {
+        for (int j = 0; j < other->cols; j++)
+        {
+            output->data[i * other->cols + j] = 0;
+            for (int k = 0; k < this->rows; k++)
+            {
+                output->data[i * output->cols + j] += this->data[k * this->cols + i] * other->data[k * other->cols + j];
+            }
+        }
+    }*/
+
+    //sse2 version
+    for (int i = 0; i < this->cols; i++)
+    {
+        for (int j = 0; j < other->cols; j++)
+        {
+            __m128 sum = _mm_setzero_ps();
+            int k;
+            for (k = 0; k <= this->rows - 4; k += 4)
+            {
+                __m128 a = _mm_loadu_ps(&this->data[k * this->cols + i]);
+                __m128 b = _mm_loadu_ps(&other->data[k * other->cols + j]);
+                sum = _mm_add_ps(sum, _mm_mul_ps(a, b));
+            }
+
+            float temp[4];
+            _mm_storeu_ps(temp, sum);
+            output->data[i * output->cols + j] = temp[0] + temp[1] + temp[2] + temp[3];
+
+            // Handle the remaining elements if rows is not a multiple of 4
+            for (; k < this->rows; ++k)
+            {
+                output->data[i * output->cols + j] += this->data[k * this->cols + i] * other->data[k * other->cols + j];
+            }
+        }
+    }
+}
+
+void Matrix::CrossProductWithTranspose(const Matrix* other, Matrix* output) const
+{
+    /*for (int i = 0; i < this->rows; i++)
+    {
+        for (int j = 0; j < other->rows; j++)
+        {
+            output->data[i * other->rows + j] = 0;
+            for (int k = 0; k < this->cols; k++)
+            {
+                output->data[i * output->cols + j] += this->data[i * this->cols + k] * other->data[j * other->cols + k];
+            }
+        }
+    }*/
+
+    for (int i = 0; i < this->rows; i++)
+    {
+        for (int j = 0; j < other->rows; j++)
+        {
+            __m128 sum = _mm_setzero_ps();
+            int k;
+            for (k = 0; k <= this->cols - 4; k += 4)
+            {
+                __m128 a = _mm_loadu_ps(&this->data[i * this->cols + k]);
+                __m128 b = _mm_loadu_ps(&other->data[j * other->cols + k]);
+                sum = _mm_add_ps(sum, _mm_mul_ps(a, b));
+            }
+
+            float temp[4];
+            _mm_storeu_ps(temp, sum);
+            output->data[i * output->cols + j] = temp[0] + temp[1] + temp[2] + temp[3];
+
+            // Handle the remaining elements if cols is not a multiple of 4
+            for (; k < this->cols; ++k)
+            {
+                output->data[i * output->cols + j] += this->data[i * this->cols + k] * other->data[j * other->cols + k];
+            }
+        }
+    }
+}
+
+
+
+
 void Matrix::OptimizedCrossProduct(const Matrix* a, const Matrix* other, Matrix* output)
 {
 
 #if SAFE
 
-    if (other->rows != this->cols)
+    if (a->rows != a->cols)
     {
         throw std::runtime_error("Matrice have not the shape to be cross producted !");
     }
-    if (output->rows != this->rows || output->cols != other->cols)
+    if (a->rows != a->rows || output->cols != other->cols)
     {
         throw std::runtime_error("Output matrix has not the right shape !");
     }

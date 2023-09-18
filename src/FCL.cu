@@ -1,7 +1,5 @@
 #include "FCL.cuh"
 #include <iostream>
-#include <emmintrin.h>
-#include <immintrin.h>
 #include <fstream>
 #include "Matrix.cuh"
 #include "LayerShape.cuh"
@@ -145,7 +143,7 @@ FCL::FCL(int NeuronsCount, Activation* _activation, Matrix* weights, Matrix* bia
 Matrix* FCL::FeedForward(const Matrix* input)
 {
     input->Flatten();
-    this->Weights->CrossProduct(input, Result);
+    this->Weights->MatrixMultiplication(input, Result);
     Result->Add(Biases, z);
     activation->FeedForward(z, Result);
 
@@ -162,13 +160,13 @@ const Matrix* FCL::BackPropagate(const Matrix* lastDelta, const Matrix* PastActi
 
     Matrix* d2 = new Matrix(Delta->GetRows(), Delta->GetCols(), Delta->GetDims());
     Matrix* PastActivationT = PastActivation->Transpose();
-    deltaActivation->CrossProduct(PastActivationT, d2);
+    deltaActivation->MatrixMultiplication(PastActivationT, d2);
     Delta->Add(d2, Delta);
     delete d2;
     delete PastActivationT;
 
     Matrix* weightsT = Weights->Transpose();
-    weightsT->CrossProduct(deltaActivation, newDelta);
+    weightsT->MatrixMultiplication(deltaActivation, newDelta);
     delete weightsT;
 
     return newDelta;

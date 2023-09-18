@@ -185,7 +185,7 @@ public:
 
     MAT* InitWeights(int inputSize, int outputSize) override;
 };
-
+/*
 class None : public Activation
 {
 public:
@@ -201,3 +201,4 @@ public:
 
     MAT* InitWeigths(int inputSize, int outputSize);
 };
+*/

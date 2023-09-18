@@ -1,0 +1,1 @@
+  -L"/usr/lib/x86_64-linux-gnu/stubs"  -L"/usr/lib/gcc/x86_64-linux-gnu/11"  -lcudnn -lcublas -lsfml-graphics -lsfml-window -lsfml-system -lcudadevrt -lcudart_static -lrt -lpthread -ldl 

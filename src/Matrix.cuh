@@ -2,9 +2,8 @@
 
 #include <iostream>
 #include <vector>
-#include "Operations.h"
 #include <fstream>
-#include "Tools/Serializer.cuh"
+#include "Tools/Serializer.h"
 
 //#define USE_GPU 0
 
@@ -117,12 +116,18 @@ public:
 
     const float& operator()(int rows, int cols, int dim) const;
 
-    void CrossProduct(const Matrix* other, Matrix* output) const;
+    virtual void MatrixMultiplication(const Matrix* b, Matrix* output) const;
+
+    void CrossProductWithTranspose(const Matrix* other, Matrix* output) const;
+
+    void CrossProductWithSelfTranspose(const Matrix* other, Matrix* output) const;
+
+
 
     static void OptimizedCrossProduct(const Matrix* a, const Matrix* b, Matrix* output);
 
 
-    friend std::ostream& operator<<(std::ostream&, const Matrix&);
+    virtual void Print() const;
 
     void PrintSize() const;
 
@@ -139,7 +144,7 @@ public:
     bool IsColumnMajor() const;
 
 
-    std::vector<Operation*> O_CrossProduct(Matrix* a, Matrix* b, Matrix* output);
+    //std::vector<Operation*> O_CrossProduct(Matrix* a, Matrix* b, Matrix* output);
 
 
 protected:
@@ -154,6 +159,22 @@ protected:
 private:
     void Init(const int rows, const int cols, const int dims, float value = 0, bool aligned = false);
 };
+
+
+//Optimized matrix, cache optimization
+class OptimizedMatrix : public Matrix
+{
+public:
+    OptimizedMatrix(const int rows, const int cols, const int dims, float value = 0.0f, bool aligned = false);
+    void MatrixMultiplication(const Matrix* b, Matrix* output) const override;
+    static OptimizedMatrix* Copy(const Matrix* a);
+    bool operator==(const Matrix& other);
+    void Print() const override;
+private:
+    void Init(const int rows, const int cols, const int dims, float value = 0, bool aligned = false);
+    int ConvertIndex(int index);
+};
+
 
 
 class HorizontalMatrix : public Matrix
@@ -308,7 +329,6 @@ public:
 };
 
 #endif
-
 
 #if USE_GPU
 typedef Matrix_GPU MAT;

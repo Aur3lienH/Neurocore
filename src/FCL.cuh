@@ -3,7 +3,7 @@
 #include "Matrix.cuh"
 #include "Activation.cuh"
 #include "Layer.cuh"
-#include "./Tools/Serializer.cuh"
+#include "./Tools/Serializer.h"
 #include "LayerShape.cuh"
 
 class FCL : public Layer

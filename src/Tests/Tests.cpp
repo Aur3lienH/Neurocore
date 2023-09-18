@@ -1,11 +1,11 @@
 #include "Tests.h"
 #include <iostream>
-#include "../Network.h"
-#include "../InputLayer.h"
-#include "../Activation.h"
-#include "../ConvLayer.h"
-#include "../Flatten.h"
-#include "../FCL.h"
+#include "../Network.cuh"
+#include "../InputLayer.cuh"
+#include "../Activation.cuh"
+#include "../ConvLayer.cuh"
+#include "../Flatten.cuh"
+#include "../FCL.cuh"
 #include "MatrixTests.h"
 #include <limits>
 #include <tuple>
@@ -16,7 +16,8 @@
 void Tests::ExecuteTests()
 {
     std::vector<std::tuple<void*,std::string>> functions;
-    functions.push_back(std::tuple((void*)MatrixTests::CrossProductTest1,std::string("Cross Product")));
+    //functions.push_back(std::tuple((void*)MatrixTests::SMIDMatrixTest,std::string("SMID Cross Product")));
+    functions.push_back(std::tuple((void*)MatrixTests::BlockMatrixTest,std::string("Block Cross Product")));
     bool* array = new bool[functions.size()];
 
     
