@@ -1,5 +1,5 @@
 #include <iostream>
-#include "Unit.cuh"
+#include "Unit.h"
 
 namespace Tools
 {

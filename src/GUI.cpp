@@ -1,14 +1,15 @@
 //
 // Created by mat on 04/09/23.
 //
+#include "GUI.h"
 #include <SFML/Graphics.hpp>
 #include <vector>
 #include "Network.cuh"
 #include "InputLayer.cuh"
 #include "FCL.cuh"
-#include "Tools.cuh"
-#include "Mnist.cuh"
-#include "Quickdraw.cuh"
+#include "Examples/Tools.h"
+#include "Examples/Mnist.h"
+#include "Examples/Quickdraw.h"
 #include "MaxPooling.cuh"
 #include "ConvLayer.cuh"
 #include "Flatten.cuh"

@@ -2,7 +2,7 @@
 
 #include "../Matrix.cuh"
 #include "../Network.cuh"
-#include "Mnist.cuh"
+#include "Mnist.h"
 
 void QuickDraw1(int numDrawingsPerCategory = 20000);
 

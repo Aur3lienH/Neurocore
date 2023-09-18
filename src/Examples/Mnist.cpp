@@ -1,10 +1,10 @@
-#include "Mnist.cuh"
+#include "Mnist.h"
 #include "../InputLayer.cuh"
 #include "../FCL.cuh"
 #include "../ConvLayer.cuh"
 #include "../Flatten.cuh"
 #include "../MaxPooling.cuh"
-#include "Tools.cuh"
+#include "Tools.h"
 #include <iostream>
 #include <fstream>
 #include <string>

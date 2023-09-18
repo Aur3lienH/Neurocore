@@ -1,4 +1,4 @@
-#include "Tools.cuh"
+#include "Tools.h"
 #include <iostream>
 #include <fstream>
 

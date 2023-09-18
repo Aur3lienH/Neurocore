@@ -472,7 +472,7 @@ MAT* Tanh::InitWeights(const int previousNeuronsCount, const int NeuronsCount)
     return weights;
 }
 
-
+/*
 None::None() : Activation()
 {
 
@@ -486,7 +486,7 @@ double None::Function(const double input)
 }
 
 #endif
-
+*/
 
 
 

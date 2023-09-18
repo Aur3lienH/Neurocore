@@ -1,9 +1,9 @@
-#include "Matrix.h"
+#include "Matrix.cuh"
 #include "Operations.h"
 #include <iostream>
 #include <vector>
 
-
+/*
 std::vector<Operation*> Matrix::O_CrossProduct(Matrix* a, Matrix* b, Matrix* output)
 {
     std::vector<Operation*> res;
@@ -25,3 +25,4 @@ std::vector<Operation*> Matrix::O_CrossProduct(Matrix* a, Matrix* b, Matrix* out
 
     return res;
 }
+*/

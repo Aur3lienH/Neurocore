@@ -1,5 +1,5 @@
 #include <iostream>
-#include "Bytes.cuh"
+#include "Bytes.h"
 
 namespace Tools
 {

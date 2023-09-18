@@ -1,4 +1,4 @@
-#include "Serializer.cuh"
+#include "Serializer.h"
 #include <fstream>
 #include <cstdarg>
 

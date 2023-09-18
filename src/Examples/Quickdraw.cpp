@@ -1,6 +1,6 @@
-#include "Quickdraw.cuh"
+#include "Quickdraw.h"
 #include <filesystem>
-#include "Mnist.cuh"
+#include "Mnist.h"
 #include "../InputLayer.cuh"
 #include "../FCL.cuh"
 #include "../ConvLayer.cuh"

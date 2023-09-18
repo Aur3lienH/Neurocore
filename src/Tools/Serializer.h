@@ -5,7 +5,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <fstream>
-#include "ManagerIO.cuh"
+#include "ManagerIO.h"
 
 
 typedef unsigned long ulong;

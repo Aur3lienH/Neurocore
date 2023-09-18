@@ -1,6 +1,5 @@
 #pragma once
-
-#include "Bytes.cuh"
+#include "Bytes.h"
 #include <vector>
 #include <iostream>
 

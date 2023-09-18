@@ -2,7 +2,7 @@
 
 #include <iostream>
 #include <vector>
-#include "Tools/Serializer.cuh"
+#include "Tools/Serializer.h"
 #include "Matrix.cuh"
 #include "LayerShape.cuh"
 #include "Optimizers.cuh"

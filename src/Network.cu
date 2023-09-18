@@ -1,7 +1,7 @@
 #include "Network.cuh"
 #include "InputLayer.cuh"
 #include "Loss.cuh"
-#include "Tools/ProgressBar.cuh"
+#include "Tools/ProgressBar.h"
 #include "DataLoader.cuh"
 #include <fstream>
 #include <iostream>

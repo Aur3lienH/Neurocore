@@ -1,9 +1,8 @@
-#include "Examples/Mnist.cuh"
-#include "Examples/Quickdraw.cuh"
+#include <iostream>
 
-int main()
+int main(int argc, char** argv)
 {
-    Mnist2();
+    //Mnist2();
     //QuickDraw2(10000);
 
 #if USE_GPU
