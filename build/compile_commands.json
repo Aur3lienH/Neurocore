@@ -1,8 +1,0 @@
-[
-{
-  "directory": "/home/aure/Projects/AI/DeepLearning/build",
-  "command": "/usr/bin/c++ -DUSE_GPU -I/home/aure/Projects/AI/DeepLearning/src -I/home/aure/Projects/AI/DeepLearning/src/Examples -I/home/aure/Projects/AI/DeepLearning/src/Tools  -std=c++17 -pthread -O3 -mavx -mavx512bw -g -std=gnu++17 -o CMakeFiles/DeepLearning.dir/src/Operations.cpp.o -c /home/aure/Projects/AI/DeepLearning/src/Operations.cpp",
-  "file": "/home/aure/Projects/AI/DeepLearning/src/Operations.cpp",
-  "output": "CMakeFiles/DeepLearning.dir/src/Operations.cpp.o"
-}
-]

@@ -1,1 +1,0 @@
-/usr/bin/c++  -std=c++17 -pthread -O3 -mavx -mavx512bw -g CMakeFiles/DeepLearning.dir/src/Operations.cpp.o -o DeepLearning  -lcudnn 

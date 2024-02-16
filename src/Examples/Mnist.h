@@ -1,7 +1,7 @@
 #pragma once
 
 #include "../Matrix.cuh"
-#include "../Network.cuh"
+#include "../Network.h"
 
 int MatrixToLabel(const MAT* matrix);
 
