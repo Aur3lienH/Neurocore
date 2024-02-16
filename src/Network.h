@@ -5,7 +5,7 @@
 #include "Matrix.cuh"
 #include "Loss.cuh"
 #include "Optimizers.cuh"
-#include "DataLoader.cuh"
+#include "DataLoader.h"
 #include <mutex>
 
 class Network

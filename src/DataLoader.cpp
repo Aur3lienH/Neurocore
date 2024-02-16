@@ -1,4 +1,4 @@
-#include "DataLoader.cuh"
+#include "DataLoader.h"
 #include <algorithm>
 #include <random>
 

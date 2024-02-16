@@ -1,8 +1,8 @@
-#include "Network.cuh"
+#include "Network.h"
 #include "InputLayer.cuh"
 #include "Loss.cuh"
 #include "Tools/ProgressBar.h"
-#include "DataLoader.cuh"
+#include "DataLoader.h"
 #include <fstream>
 #include <iostream>
 #include <cmath>
