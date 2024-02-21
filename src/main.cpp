@@ -1,9 +1,9 @@
 #include <iostream>
-#include "Examples/Mnist.h"
+#include "examples/Mnist.h"
 
 int main(int argc, char** argv)
 {
-    Mnist2();
+    //Mnist2();
     //QuickDraw2(10000);
 
 #if USE_GPU
