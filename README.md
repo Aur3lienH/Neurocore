@@ -65,3 +65,43 @@ How to train the neural network.
 
 ```c++
 #include "DataLoader"
+
+// Load the data.
+//dataset : dataset[0] = input, dataset[1] = output
+DataLoader* data = new DataLoader(dataset, size);
+
+// Train the network.
+//epochs : number of epochs (int)
+//learningRate : learning rate (float)
+//batchSize : size of the batch (int)
+//threadCount : number of threads (int)
+
+network->Learn(epochs, learningRate, data, batchSize, threadCount);
+
+```
+
+### 3.3 Predict with the neural network
+
+How to predict with the neural network.
+
+```c++
+//input : Matrix of input (MAT)
+//out : Matrix of output (MAT)
+MAT out = network->Process(input);
+```
+
+look at matrix source file for more details [here](./include/matrix/Matrix.cuh) 
+
+
+### 3.4. Save and load the neural network
+
+
+```c++
+// Save the network.
+
+network->Save("path/to/save");
+
+// Load the network.
+Network* network = Network::Load("path/to/load");
+
+```
