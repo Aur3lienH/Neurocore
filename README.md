@@ -40,7 +40,7 @@ make
 
 ### 3.1. Create a neural network
 
-Some examples of how to create a neural network: 
+How to create a neural network.
 
 ```c++
 #include "Network.h"
@@ -57,5 +57,11 @@ network->AddLayer(new FCL(128, new ReLU()));
 network->AddLayer(new FCL(10, new Softmax()));
 //Compilte the network, with the optimizer and the loss function.
 network->Compile(Opti::Adam, new CrossEntropy());
-
 ```
+
+### 3.2. Train the neural network
+
+How to train the neural network.
+
+```c++
+#include "DataLoader"
