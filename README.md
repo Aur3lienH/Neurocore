@@ -31,10 +31,6 @@ cd DeepLearning
 make
 ```
 
-- Run the tests:
-```bash
- make test
-```
 
 ## 3. Usage
 
