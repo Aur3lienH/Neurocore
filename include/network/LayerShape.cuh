@@ -6,6 +6,7 @@
 class LayerShape
 {
 public:
+    LayerShape();
     //Constructor for 1D neurons layer
     explicit LayerShape(int neuronsCount);
 

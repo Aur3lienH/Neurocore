@@ -1,3 +1,0 @@
-/home/aure/Projects/AI/DeepLearning/CMakeFiles/DeepLearning.dir
-/home/aure/Projects/AI/DeepLearning/CMakeFiles/edit_cache.dir
-/home/aure/Projects/AI/DeepLearning/CMakeFiles/rebuild_cache.dir

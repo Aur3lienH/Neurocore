@@ -3,7 +3,13 @@
 #include <iostream>
 #include <vector>
 #include <fstream>
+
+#include <pybind11/pybind11.h>
+#include <pybind11/numpy.h>
+
 #include "tools/Serializer.h"
+
+namespace py = pybind11;
 
 //#define USE_GPU 0
 
@@ -21,6 +27,8 @@ public:
     Matrix(int rows, int cols, float* data);
 
     Matrix(int rows, int cols, int dims, float* data);
+
+    Matrix(py::array_t<float> input);
 
     virtual ~Matrix();
 

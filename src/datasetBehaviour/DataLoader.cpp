@@ -15,4 +15,7 @@ void DataLoader::Shuffle()
     std::shuffle(data, data + dataLength, rng);
 }
 
-
+size_t DataLoader::GetSize()
+{
+	return dataLength;
+}

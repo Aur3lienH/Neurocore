@@ -2,6 +2,11 @@
 #include "matrix/Matrix.cuh"
 #include <iostream>
 
+LayerShape::LayerShape()
+{
+	size = 0;
+}
+
 LayerShape::LayerShape(const int neuronsCount)
 {
     dimensions = new int[3]{neuronsCount, 1, 1};
