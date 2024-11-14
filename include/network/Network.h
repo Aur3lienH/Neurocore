@@ -66,12 +66,12 @@ private:
     const MAT* output = nullptr;
 
     //The partial derivative of the cost
-    MAT* costDerivative;
+    MAT* costDerivative = nullptr;
 
-    Layer** Layers;
+    Layer** Layers = nullptr;
 
     //Loss function
-    Loss* loss;
+    Loss* loss = nullptr;
 
     //Is Compiled ?
     bool compiled = false;

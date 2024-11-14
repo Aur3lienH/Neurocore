@@ -42,7 +42,7 @@ void InputLayer::ClearDelta()
 
 void InputLayer::Compile(LayerShape* layerShape)
 {
-
+	std::cout << "compiling Input layer\n";
 }
 
 void InputLayer::UpdateWeights(const double learningRate, const int batchSize)

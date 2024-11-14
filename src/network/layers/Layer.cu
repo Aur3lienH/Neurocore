@@ -27,8 +27,9 @@ void Layer::Compile(LayerShape* previousLayer, Opti opti)
         default:
             throw std::invalid_argument("Layer Constructor : Invalid Optimizer ! ");
     }
-
+    std::cout << "here here \n";
     Compile(previousLayer);
+    std::cout << "bruh bruh \n";
 }
 
 LayerShape* Layer::GetLayerShape()

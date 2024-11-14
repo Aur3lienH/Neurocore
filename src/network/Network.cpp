@@ -12,7 +12,7 @@
 
 Network::Network()
 {
-
+	this->Layers = nullptr;
 }
 
 Network::Network(Network* network)
@@ -23,6 +23,8 @@ Network::Network(Network* network)
         this->Layers[i] = network->Layers[i]->Clone();
 
 }
+
+
 
 void
 #if USE_GPU
@@ -100,7 +102,6 @@ double Network::FeedForward(MAT* input, MAT* desiredOutput)
 void Network::Compile(Opti _opti, Loss* _loss)
 {
     opti = _opti;
-
     if (_loss != nullptr)
         loss = _loss;
 
@@ -112,27 +113,32 @@ void Network::Compile(Opti _opti, Loss* _loss)
     //All network need to have more than 2 layers
     if (layersCount < 2)
         throw std::invalid_argument("Network must have at least 2 layers");
+    std::cout << "verifications done \n";
 
+    std::cout << layersCount << " this is the layers Count\n";
 
     //Compile each layer
     for (int i = 0; i < layersCount; i++)
     {
+	std::cout << i << "\n";
         if (i == 0)
             Layers[i]->Compile(nullptr, opti);
         else
             Layers[i]->Compile(Layers[i - 1]->GetLayerShape(), opti);
     }
 
+    std::cout << "loop done \n";
+
     //Initialize the matrix which holds the values of the cost derivative.
     costDerivative = Layers[layersCount - 1]->GetLayerShape()->ToMatrix();
 
-
+    std::cout << "Getting cost derivative matrix done \n";
     auto* inputLayer = (InputLayer*) Layers[0];
     if (inputLayer == nullptr)
         throw std::invalid_argument("First layer must be an input layer");
-
+	
+    std::cout << "finished compiling \n";
     compiled = true;
-
 }
 
 #include "network/layers/FCL.cuh"
@@ -206,7 +212,7 @@ void Network::Learn(const int epochs, const double learningRate, DataLoader* dat
     //Number of data per thread
     const int numberPerThread = batchSize / threadNumber;
     //Number of batch per epoch
-    const int numberOfBatches = dataLoader->dataLength / batchSize;
+    const int numberOfBatches = dataLoader->GetSize() / batchSize;
 
     std::thread* threads;
     Network** auxiliaryNetworks;
@@ -313,6 +319,7 @@ void Network::UpdateWeights(const double learningRate, const int batchSize)
 
 void Network::PrintNetwork()
 {
+    std::cout << " ---- Network ---- \n";
     for (int i = 0; i < layersCount; i++)
         std::cout << Layers[i]->getLayerTitle() << std::endl;
 }
@@ -358,9 +365,11 @@ Network::~Network()
 {
     for (int i = 0; i < layersCount; i++)
         delete Layers[i];
-
-    delete[] Layers;
-    delete loss;
+    if(Layers != nullptr) 
+    	delete[] Layers;
+    if(loss != NULL)
+    	delete loss;
     //delete output; // It is already deleted when deleting the last layer
-    delete costDerivative;
+    if(costDerivative != nullptr)
+    	delete costDerivative;
 }

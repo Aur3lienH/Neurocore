@@ -1,7 +1,7 @@
 #pragma once
 
 #include <iostream>
-
+#include <cstdint>
 namespace Tools
 {
     class Bytes
