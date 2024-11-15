@@ -1,0 +1,7 @@
+- [ ] Optimizations : 
+  - [ ] Using FFT for Convolution
+  - [ ] Removing virtual function using CRTP
+  - [ ] Implement Strassen algorithm for matrix
+- [ ] Python library : 
+  - [ ] Manage the ownership between python and C++
+  - [ ] Modify the README for python usage : Installation and usage
