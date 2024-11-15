@@ -17,12 +17,12 @@ void AddLayers(py::module_& m)
 py::class_<Layer>(m,"Layer");
 
 py::class_<ConvLayer,Layer>(m,"ConvLayer")
-	.def(py::init<LayerShape*,Activation*>());
+	.def(py::init<LayerShape*,Activation*>(), py::return_value_policy::copy);
 
 py::class_<FCL,Layer>(m,"FullLayer")
-	.def(py::init<int,Activation*>());
+	.def(py::init<int,Activation*>(), py::return_value_policy::copy);
 
 py::class_<InputLayer,Layer>(m,"InputLayer")
-	.def(py::init<int>());
+	.def(py::init<int>(), py::return_value_policy::copy);
 }
 
