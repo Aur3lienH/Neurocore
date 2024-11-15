@@ -2,11 +2,12 @@ import numpy as np
 from libdeep import *
 a = np.array([0,1,2,3,4])
 b = np.array([0,1,2,3,4])
-
+c = InputLayer(1)
+rel = ReLU()
+d = FullLayer(1,rel)
 n = Network()
-a = InputLayer(1)
-n.AddLayer(a)
-n.AddLayer(FullLayer(1,ReLU()))
+n.AddLayer(c)
+n.AddLayer(d)
 
 print("compiling ... !")
 n.Compile(Constant,MSE())
