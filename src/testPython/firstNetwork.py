@@ -8,10 +8,7 @@ a = InputLayer(1)
 n.AddLayer(a)
 n.AddLayer(FullLayer(1,ReLU()))
 
-print("compiling ... !");
+print("compiling ... !")
 n.Compile(Constant,MSE())
-print("finished compiling !");
-a = a
+print("finished compiling !")
 n.Print()
-
-
