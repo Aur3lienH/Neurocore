@@ -7,6 +7,7 @@
 #include "network/LayerShape.cuh"
 #include "network/Optimizers.cuh"
 
+template<typename Derived>
 class Layer
 {
 public:
@@ -14,34 +15,67 @@ public:
 
     virtual ~Layer();
 
-    virtual const MAT* FeedForward(const MAT* input) = 0;
+    const MAT* FeedForward(const MAT* input)
+    {
+	    return static_cast<Derived*>(this)-><FeedForwardImpl(input);
+    }
 
-    virtual const MAT* BackPropagate(const MAT* delta, const MAT* previousActivation) = 0;
+    const MAT* BackPropagate(const MAT* delta, const MAT* previousActivation)
+    {
+	    return static_cast<Derived*>(this)->BackPropagateImpl(delta,previousActivation);
+    }
 
-    [[nodiscard]] virtual const MAT* getResult() const = 0;
+    [[nodiscard]] const MAT* getResult() const
+    {
+	    return static_cast<Derived*>(this)->getResultImpl();
+    }
 
-    virtual void ClearDelta() = 0;
+    void ClearDelta()
+    {
+	    static_cast<Derived*>(this)->ClearDeltaImpl();
+    }
 
-    virtual void UpdateWeights(double learningRate, int batchSize) = 0;
+    void UpdateWeights(double learningRate, int batchSize)
+    {
+	    static_cast<Derived*>(this)->UpdateWeightsImpl(learningRate, batchSize);	    
+    }
 
-    virtual void AddDeltaFrom(Layer* layer) = 0;
+    void AddDeltaFrom(Layer* layer)
+    {
+	    static_cast<Derived*>(this)->AddDeltaFromImpl(layer);
+    }
 
-    virtual void AverageGradients(int batchSize) = 0;
+    void AverageGradients(int batchSize)
+    {
+	    static_cast<Derived*>(this)->AverageGradientsImpl(batchSize);
+    }
 
     //Must define the layerShape !
-    void Compile(LayerShape* previousOutput, Opti opti);
+    void Compile(LayerShape* previousOutput, Opti opti)
+    {
+	    static_cast<Derived*>(this)->CompileImpl(previousOutput,opti);
+    }
 
-    virtual void Compile(LayerShape* previousOutput) = 0;
+    void Compile(LayerShape* previousOutput)
+    {
+	    static_cast<Derived*>(this)->CompileImpl(previousOutput);
+    }
 
-    LayerShape* GetLayerShape();
+    LayerShape* GetLayerShape()
+    {
+	    return static_cast<Derived*>(this)->GetLayerShapeImpl();
+    }
 
-    virtual std::string getLayerTitle() = 0;
+    std::string getLayerTitle();
 
-    virtual Layer* Clone() = 0;
+    Layer* Clone()
+    {
+	    return static_cast<Derived*>(this)->CloneImpl();
+    }
 
     static Layer* Load(std::ifstream& reader);
 
-    virtual void SpecificSave(std::ofstream& writer) = 0;
+    void SpecificSave(std::ofstream& writer);
 
     void Save(std::ofstream& writer);
 

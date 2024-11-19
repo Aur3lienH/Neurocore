@@ -6,7 +6,7 @@
 #include "tools/Serializer.h"
 #include "network/LayerShape.cuh"
 
-class FCL : public Layer
+class FCL : public Layer<FCL>
 {
 public:
     FCL(int NeuronsCount, Activation* activation);
@@ -17,50 +17,50 @@ public:
         MAT* deltaActivation);
 
     //Compute the input threw the layer
-    MAT* FeedForward(const MAT* input) override;
+    MAT* FeedForwardImpl(const MAT* input);
 
     //Compute partial derivative (named delta)
-    const MAT* BackPropagate(const MAT* delta, const MAT* lastWeights) override;
+    const MAT* BackPropagateImpl(const MAT* delta, const MAT* lastWeights);
 
     //Getter for delta
-    const MAT* getDelta();
+    const MAT* getDeltaImpl();
 
     //Getter for deltaBiases (delta to update biases)
-    const MAT* getDeltaBiases();
+    const MAT* getDeltaBiasesImpl();
 
     //Getter for the result of the layer
-    [[nodiscard]] const MAT* getResult() const override;
+    [[nodiscard]] const MAT* getResultImpl() const;
 
     //Clear partial derivative (named delta)
-    void ClearDelta() override;
+    void ClearDeltaImpl();
 
     //Update the current weights thanks to partial derivative (named delta)
-    void UpdateWeights(double learningRate, int batchSize) override;
+    void UpdateWeightsImpl(double learningRate, int batchSize);
 
     //Add Delta from another identical layer
-    void AddDeltaFrom(Layer* otherLayer) override;
+    void AddDeltaFromImpl(Layer* otherLayer);
 
     //Initialize variable and check for network architecture
-    void Compile(LayerShape* previousLayer) override;
+    void CompileImpl(LayerShape* previousLayer);
 
     //Return information on the layer (neurons count)
-    std::string getLayerTitle() override;
+    std::string getLayerTitleImpl();
 
     //Clone layer
-    Layer* Clone() override;
+    Layer* CloneImpl();
 
-    static FCL* Load(std::ifstream& ifstream);
+    static FCL* LoadImpl(std::ifstream& ifstream);
 
-    void SpecificSave(std::ofstream& filename) override;
+    void SpecificSaveImpl(std::ofstream& filename);
 
-    void AverageGradients(int batchSize) override;
+    void AverageGradientsImpl(int batchSize);
 
 #if USE_GPU
 
-    void Save(const std::string& folderPath, int n);
+    void SaveImpl(const std::string& folderPath, int n);
 
 #else
-    void Compare(const std::string& folderPath, int n);
+    void CompareImpl(const std::string& folderPath, int n);
 #endif
 
 protected:
