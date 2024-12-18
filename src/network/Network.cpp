@@ -76,7 +76,7 @@ MAT* Network::Process(MAT* input)
 const MAT* Network::FeedForward(MAT* input)
 {
     output = input;
-    for (int i = 0; i < layersCount; i++)
+    constexpr for (int i = 0; i < sizeof...(); i++)
     {
         output = Layers[i]->FeedForward(output);
     }
@@ -86,6 +86,7 @@ const MAT* Network::FeedForward(MAT* input)
 
 double Network::FeedForward(MAT* input, MAT* desiredOutput)
 {
+
     output = input;
     for (int i = 0; i < layersCount; i++)
     {

@@ -26,31 +26,31 @@ public:
 
     ConvLayer(LayerShape* filterShape, Activation* activation);
 
-    ~ConvLayer() override;
+    ~ConvLayer();
 
-    void Compile(LayerShape* previousLayer) override;
+    void Compile(LayerShape* previousLayer);
 
-    Matrix* FeedForward(const Matrix* input) override;
+    Matrix* FeedForward(const Matrix* input);
 
-    Matrix* BackPropagate(const Matrix* delta, const Matrix* lastWeights) override;
+    Matrix* BackPropagate(const Matrix* delta, const Matrix* lastWeights);
 
-    void AddDeltaFrom(Layer* ConvLayer) override;
+    void AddDeltaFrom(Layer* ConvLayer);
 
-    void AverageGradients(int batchSize) override;
+    void AverageGradients(int batchSize);
 
-    void ClearDelta() override;
+    void ClearDelta();
 
-    void UpdateWeights(double learningRate, int batchSize) override;
+    void UpdateWeights(double learningRate, int batchSize);
 
-    void SpecificSave(std::ofstream& writer) override;
+    void SpecificSave(std::ofstream& writer);
 
     static Layer* Load(std::ifstream& reader);
 
-    [[nodiscard]] Matrix* getResult() const override;
+    [[nodiscard]] Matrix* getResult() const;
 
-    std::string getLayerTitle() override;
+    std::string getLayerTitle();
 
-    Layer* Clone() override;
+    Layer* Clone();
 
 private:
 

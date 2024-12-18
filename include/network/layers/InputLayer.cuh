@@ -13,32 +13,35 @@ public:
 
     explicit InputLayer(LayerShape* layerShape);
 
-    const MAT* FeedForward(const MAT* input) override;
+    const MAT* FeedForward(const MAT* input);
 
-    const MAT* BackPropagate(const MAT* delta, const MAT* lastWeights) override;
+    const MAT* BackPropagate(const MAT* delta, const MAT* lastWeights);
 
-    [[nodiscard]] const MAT* getResult() const override;
+    [[nodiscard]] const MAT* getResult() const;
 
-    void AverageGradients(int batchSize) override;
+    void AverageGradients(int batchSize);
 
-    void ClearDelta() override;
+    void ClearDelta();
 
-    void UpdateWeights(double learningRate, int batchSize) override;
+    void UpdateWeights(double learningRate, int batchSize);
 
-    void AddDeltaFrom(Layer* otherLayer) override;
+    void AddDeltaFrom(Layer* otherLayer);
 
-    void Compile(LayerShape* layerShape) override;
+    void Compile(LayerShape* layerShape);
 
-    std::string getLayerTitle() override;
+    std::string getLayerTitle();
 
-    Layer* Clone() override;
+    Layer* Clone();
 
     static InputLayer* Load(std::ifstream& reader);
 
-    void SpecificSave(std::ofstream& writer) override;
+    void SpecificSave(std::ofstream& writer);
 
 private:
     const MAT* input = nullptr;
 
     void (* FeedFunc)(const MAT*, Matrix*, int);
 };
+
+
+
