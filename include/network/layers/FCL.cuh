@@ -69,7 +69,7 @@ protected:
 
     //Partial derivative of the biases
     MAT* DeltaBiases = nullptr;
-
+z
     //Results of the layer
     MAT* Result = nullptr;
 
