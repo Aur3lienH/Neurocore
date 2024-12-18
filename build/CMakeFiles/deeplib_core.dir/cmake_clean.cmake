@@ -1,4 +1,5 @@
 file(REMOVE_RECURSE
+  "CMakeFiles/deeplib_core.dir/link.d"
   "CMakeFiles/deeplib_core.dir/src/datasetBehaviour/DataLoader.cpp.o"
   "CMakeFiles/deeplib_core.dir/src/datasetBehaviour/DataLoader.cpp.o.d"
   "CMakeFiles/deeplib_core.dir/src/datasetBehaviour/ImagePreProcessing.cu.o"
@@ -13,8 +14,10 @@ file(REMOVE_RECURSE
   "CMakeFiles/deeplib_core.dir/src/examples/Tools.cpp.o.d"
   "CMakeFiles/deeplib_core.dir/src/main.cpp.o"
   "CMakeFiles/deeplib_core.dir/src/main.cpp.o.d"
-  "CMakeFiles/deeplib_core.dir/src/matrix/Matrix.cu.o"
-  "CMakeFiles/deeplib_core.dir/src/matrix/Matrix.cu.o.d"
+  "CMakeFiles/deeplib_core.dir/src/matrix/Matrix.cpp.o"
+  "CMakeFiles/deeplib_core.dir/src/matrix/Matrix.cpp.o.d"
+  "CMakeFiles/deeplib_core.dir/src/matrix/MatrixGPU.cu.o"
+  "CMakeFiles/deeplib_core.dir/src/matrix/MatrixGPU.cu.o.d"
   "CMakeFiles/deeplib_core.dir/src/matrix/MatrixOperationsOriented.cpp.o"
   "CMakeFiles/deeplib_core.dir/src/matrix/MatrixOperationsOriented.cpp.o.d"
   "CMakeFiles/deeplib_core.dir/src/matrix/OptimizedMatrix.cpp.o"

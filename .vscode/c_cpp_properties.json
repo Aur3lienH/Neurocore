@@ -1,0 +1,21 @@
+{
+    "configurations": [
+        {
+            "name": "Linux",
+            "includePath": [
+                "${workspaceFolder}/include/**",
+                "/opt/cuda/targets/x86_64-linux/include/**",
+                "/usr/include/**"
+            ],
+            "defines": [
+                "__CUDACC__",
+                "USE_GPU"
+            ],
+            "compilerPath": "/opt/cuda/bin/nvcc",
+            "cStandard": "c17",
+            "cppStandard": "c++20",
+            "intelliSenseMode": "linux-gcc-x64"
+        }
+    ],
+    "version": 4
+}

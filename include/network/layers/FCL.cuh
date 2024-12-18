@@ -17,50 +17,50 @@ public:
         MAT* deltaActivation);
 
     //Compute the input threw the layer
-    MAT* FeedForwardImpl(const MAT* input);
+    MAT* FeedForward(const MAT* input);
 
     //Compute partial derivative (named delta)
-    const MAT* BackPropagateImpl(const MAT* delta, const MAT* lastWeights);
+    const MAT* BackPropagate(const MAT* delta, const MAT* lastWeights);
 
     //Getter for delta
-    const MAT* getDeltaImpl();
+    const MAT* getDelta();
 
     //Getter for deltaBiases (delta to update biases)
-    const MAT* getDeltaBiasesImpl();
+    const MAT* getDeltaBiases();
 
     //Getter for the result of the layer
-    [[nodiscard]] const MAT* getResultImpl() const;
+    [[nodiscard]] const MAT* getResult() const;
 
     //Clear partial derivative (named delta)
-    void ClearDeltaImpl();
+    void ClearDelta();
 
     //Update the current weights thanks to partial derivative (named delta)
-    void UpdateWeightsImpl(double learningRate, int batchSize);
+    void UpdateWeights(double learningRate, int batchSize);
 
     //Add Delta from another identical layer
-    void AddDeltaFromImpl(Layer* otherLayer);
+    void AddDeltaFrom(Layer* otherLayer);
 
     //Initialize variable and check for network architecture
-    void CompileImpl(LayerShape* previousLayer);
+    void Compile(LayerShape* previousLayer);
 
     //Return information on the layer (neurons count)
-    std::string getLayerTitleImpl();
+    std::string getLayerTitle();
 
     //Clone layer
-    Layer* CloneImpl();
+    Layer* Clone();
 
-    static FCL* LoadImpl(std::ifstream& ifstream);
+    static FCL* Load(std::ifstream& ifstream);
 
-    void SpecificSaveImpl(std::ofstream& filename);
+    void SpecificSave(std::ofstream& filename);
 
-    void AverageGradientsImpl(int batchSize);
+    void AverageGradients(int batchSize);
 
 #if USE_GPU
 
-    void SaveImpl(const std::string& folderPath, int n);
+    void Save(const std::string& folderPath, int n);
 
 #else
-    void CompareImpl(const std::string& folderPath, int n);
+    void Compare(const std::string& folderPath, int n);
 #endif
 
 protected:
