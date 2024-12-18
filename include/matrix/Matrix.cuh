@@ -11,7 +11,7 @@
 
 namespace py = pybind11;
 
-//#define USE_GPU 0
+#define USE_GPU 0
 
 class Matrix
 {

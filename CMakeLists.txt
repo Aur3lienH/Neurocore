@@ -2,6 +2,7 @@ cmake_minimum_required(VERSION 3.13)
 
 # Set the compilers BEFORE project()
 set(CMAKE_CXX_COMPILER "g++")
+#set(CMAKE_CUDA_HOST_COMPILER "/usr/bin/gcc-12" CACHE STRING "CUDA host compiler")
 project(deeplib VERSION 1.0 LANGUAGES CUDA CXX)
 
 # Language standards

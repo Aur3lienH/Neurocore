@@ -1,6 +1,6 @@
 #!/bin/bash
 
-cmake -S . -B build
+cmake -S . -B build -DCMAKE_CUDA_HOST_COMPILER=/usr/bin/gcc-12
 cmake --build build
 
 SITE_PACKAGES=$(python3 -c "import site; print(site.getsitepackages()[0])")
