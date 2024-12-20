@@ -2,17 +2,20 @@
 
 #include <iostream>
 #include "network/layers/Layer.cuh"
+#include "network/layers/InputLayer.cuh"
 #include "matrix/Matrix.cuh"
 #include "network/Loss.cuh"
 #include "network/Optimizers.cuh"
 #include "datasetsBehaviour/DataLoader.h"
 #include <mutex>
+#include <tools/ProgressBar.h>
 
-template<typename... Types>
+
+template<typename Loss,typename... Layers>
 class Network
 {
 public:
-    Network(Types... args);
+    explicit Network(Layers... args);
 
     ~Network();
 
@@ -40,7 +43,7 @@ public:
 
     /// @brief Multithreading learning
     /// @param epochs Number of times which the neural network will see the dataset
-    /// @param learningRate 
+    /// @param learningRate
     /// @param inputs The inputs of the dataset
     /// @param outputs The outputs of the dataset
     /// @param batchSize The number of turn before updating weights
@@ -74,7 +77,7 @@ private:
     //The partial derivative of the cost
     MAT* costDerivative = nullptr;
 
-    std::tuple<Types...> Layers;
+    std::tuple<Layers...> Layers;
 
     //Loss function
     Loss* loss = nullptr;
@@ -94,13 +97,14 @@ public:
 
 
 
-template<typename... Types>
-Network<Types...>::Network(Types... Args)
+template<typename Loss,typename... Types>
+Network<Loss,Types...>::Network(Types... Args)
 {
 	this->Layers = nullptr;
 }
 
-Network::Network(Network* network)
+template<typename Loss,typename... Types>
+Network<Loss,Types...>::Network(Network* network)
 {
     this->layersCount = network->layersCount;
     this->Layers = new Layer* [layersCount];
@@ -110,13 +114,13 @@ Network::Network(Network* network)
 }
 
 
-
+template<typename Loss,typename... Layers>
 void
 #if USE_GPU
 LearnThread2(Network* network, Matrix_GPU*** data, const int batchSize, const int batchIndex,
              const int numDataPerThread)
 #else
-LearnThread2(Network* network, Matrix*** data, const int batchSize, const int batchIndex, const int numDataPerThread)
+LearnThread2(Network<Loss,Layers>* network, Matrix*** data, const int batchSize, const int batchIndex, const int numDataPerThread)
 #endif
 {
     //std::cout<<j<<" " << threadArg->batchSize<<std::endl;
@@ -129,18 +133,18 @@ LearnThread2(Network* network, Matrix*** data, const int batchSize, const int ba
     }
     //std::cout<<"batch " << j << " finished\n";
 }
-
-MAT* Network::Process(MAT* input)
+template<typename Loss,typename... Layers>
+MAT* Network<Loss,Layers...>::Process(MAT* input)
 {
     const MAT* res = FeedForward(input);
     return const_cast<MAT*>(res);
 }
 
-template<typename... Types>
+template<typename Loss,typename... Layers>
 template<size_t I>
-constexpr const MAT* Network<Types...>::FeedForwardUnroll(const MAT* input)
+constexpr const MAT* Network<Loss,Layers...>::FeedForwardUnroll(const MAT* input)
 {
-    if constexpr (I == sizeof...(Types))
+    if constexpr (I == sizeof...(Layers))
     {
         return input;
     }
@@ -151,15 +155,15 @@ constexpr const MAT* Network<Types...>::FeedForwardUnroll(const MAT* input)
     }
 }
 
-template<typename... Types>
-constexpr const MAT* Network<Types...>::FeedForward(MAT* input)
+template<typename Loss,typename... Layers>
+constexpr const MAT* Network<Loss,Layers...>::FeedForward(MAT* input)
 {
     output = FeedForwardUnroll<0>(input);
     return output;
 }
 
-template<typename... Types>
-double Network<Types...>::FeedForward(MAT* input, MAT* desiredOutput)
+template<typename Loss,typename... Layers>
+double Network<Loss,Layers...>::FeedForward(MAT* input, MAT* desiredOutput)
 {
 
     output = input;
@@ -175,7 +179,8 @@ double Network<Types...>::FeedForward(MAT* input, MAT* desiredOutput)
 
 //Prepare all the elements of the network before using it.
 
-void Network::Compile(Opti _opti, Loss* _loss)
+template<typename Loss,typename... Layers>
+void Network<Loss,Layers...>::Compile(Opti _opti, Loss* _loss)
 {
     opti = _opti;
     if (_loss != nullptr)
@@ -212,14 +217,15 @@ void Network::Compile(Opti _opti, Loss* _loss)
     auto* inputLayer = (InputLayer*) Layers[0];
     if (inputLayer == nullptr)
         throw std::invalid_argument("First layer must be an input layer");
-	
+
     std::cout << "finished compiling \n";
     compiled = true;
 }
 
 #include "network/layers/FCL.cuh"
 
-double Network::BackPropagate(MAT* input, MAT* desiredOutput)
+template<typename Loss,typename... Layers>
+double Network<Loss,Layers...>::BackPropagate(MAT* input, MAT* desiredOutput)
 {
 /*    FCL* fcl = (FCL*) Layers[1];
 #if USE_GPU
@@ -242,16 +248,17 @@ double Network::BackPropagate(MAT* input, MAT* desiredOutput)
     return NetworkLoss;
 }
 
-void Network::ClearDelta()
+template<typename Loss,typename... Layers>
+void Network<Loss,Layers...>::ClearDelta()
 {
     for (int i = 0; i < layersCount; i++)
         Layers[i]->ClearDelta();
 
 }
 
+template<typename Loss,typename... Layers>
 void
-
-Network::Learn(const int epochs, const double learningRate, MAT** inputs, MAT** outputs,
+Network<Loss,Layers...>::Learn(const int epochs, const double learningRate, MAT** inputs, MAT** outputs,
                const int dataLength)
 {
     Tools::TrainBar Bar = Tools::TrainBar(epochs * dataLength);
@@ -268,8 +275,10 @@ Network::Learn(const int epochs, const double learningRate, MAT** inputs, MAT** 
     }
 }
 
-void Network::Learn(const int epochs, const double learningRate, DataLoader* dataLoader, const int batchSize,
-                    const int threadNumber)
+template<typename Loss,typename... Layers>
+const void Network<Loss, Layers...>::Learn(const int epochs, const double learningRate, DataLoader *dataLoader,
+                                           const int batchSize,
+                                           const int threadNumber)
 {
     //Check if the network is compiled
     if (!compiled)
@@ -385,23 +394,23 @@ void Network::Learn(const int epochs, const double learningRate, DataLoader* dat
     }
     delete dataLoader;
 }
-
-void Network::UpdateWeights(const double learningRate, const int batchSize)
+template<typename Loss,typename... Layers>
+void Network<Loss,Layers...>::UpdateWeights(const double learningRate, const int batchSize)
 {
     for (int i = 1; i < layersCount; i++)
         Layers[i]->UpdateWeights(learningRate, batchSize);
 }
 
-
-void Network::PrintNetwork()
+template<typename Loss,typename... Layers>
+void Network<Loss,Layers...>::PrintNetwork()
 {
     std::cout << " ---- Network ---- \n";
     for (int i = 0; i < layersCount; i++)
         std::cout << Layers[i]->getLayerTitle() << std::endl;
 }
 
-
-void Network::Save(const std::string& filename)
+template<typename Loss,typename... Layers>
+void Network<Loss,Layers...>::Save(const std::string& filename)
 {
     std::ofstream writer;
     writer.open(filename, std::ios::binary | std::ios::trunc);
@@ -415,8 +424,8 @@ void Network::Save(const std::string& filename)
 
     writer.close();
 }
-
-Network* Network::Load(const std::string& filename)
+template<typename Loss,typename... Layers>
+Network<Loss,Layers...>* Network<Loss,Layers...>::Load(const std::string& filename)
 {
     std::ifstream reader;
     reader.open(filename, std::ios::binary);
@@ -428,21 +437,26 @@ Network* Network::Load(const std::string& filename)
     reader.read(reinterpret_cast<char*>(&layersCount), sizeof(int));
 
     //Load each Layer
+    /* TODO : Need a proper Layer loader to handle the templates
     for (int i = 0; i < layersCount; i++)
         network->AddLayer(Layer::Load(reader));
-
+    */
     network->Compile(Opti::Constant, loss);
     reader.close();
 
     return network;
 }
 
-Network::~Network()
+
+template<typename Loss,typename... Layers>
+Network<Loss,Layers...>::~Network()
 {
     for (int i = 0; i < layersCount; i++)
         delete Layers[i];
-    if(Layers != nullptr) 
+    /*
+    if(Layers != nullptr)
     	delete[] Layers;
+    */
     if(loss != NULL)
     	delete loss;
     //delete output; // It is already deleted when deleting the last layer
