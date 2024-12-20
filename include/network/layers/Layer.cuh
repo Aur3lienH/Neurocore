@@ -79,9 +79,5 @@ public:
 
     void Save(std::ofstream& writer);
 
-protected:
-    int LayerID;
-    LayerShape* layerShape;
-    Optimizer* optimizer = nullptr;
 };
 
