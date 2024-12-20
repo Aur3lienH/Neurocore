@@ -3,33 +3,16 @@
 
 #pragma once
 
+template<int rows, int cols, int dims, int size>
 class LayerShape
 {
 public:
-    LayerShape();
-    //Constructor for 1D neurons layer
-    explicit LayerShape(int neuronsCount);
-
-    ~LayerShape();
-
-    //Constructor for 3D neurons layer (ConvLayer,Pooling, ect ...)
-    LayerShape(int rows, int cols, int dims);
-
-    LayerShape(int rows, int cols, int dims, int size);
-
-
     //Convert the format of the layer to an array of matrix.
-    [[nodiscard]] MAT* ToMatrix() const;
+    constexpr [[nodiscard]] MAT* ToMatrix() const;
 
-    //The GetSize of each dimensions
-    int* dimensions;
+    constexpr static LayerShape* Load(std::ifstream& reader);
 
-    //The number of dimensions
-    int size;
+    constexpr void Save(std::ofstream& save);
 
-    static LayerShape* Load(std::ifstream& reader);
-
-    void Save(std::ofstream& save);
-
-    [[nodiscard]] std::string GetDimensions() const;
+    constexpr [[nodiscard]] std::string GetDimensions() const;
 };

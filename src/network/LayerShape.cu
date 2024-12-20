@@ -2,40 +2,18 @@
 #include "matrix/Matrix.cuh"
 #include <iostream>
 
-LayerShape::LayerShape()
-{
-	size = 0;
-}
-
-LayerShape::LayerShape(const int neuronsCount)
-{
-    dimensions = new int[3]{neuronsCount, 1, 1};
-    size = 1;
-}
-
-LayerShape::LayerShape(const int rows, const int cols, const int _size)
-{
-    dimensions = new int[3]{rows, cols, _size};
-    size = 3;
-}
-
-LayerShape::LayerShape(const int rows, const int cols, const int dims, const int size)
-{
-    dimensions = new int[3]{rows, cols, dims};
-    this->size = size;
-}
-
 //Convert the format of the layer to an array of matrix.
-MAT* LayerShape::ToMatrix() const
+template<int rows, int cols, int dims, int size>
+MAT* LayerShape<rows, cols, dims, size>::ToMatrix() const
 {
-    if (dimensions[2] == 1)
+    if (dims == 1)
     {
-        return new MAT(dimensions[0], dimensions[1]);
+        return new MAT(rows, cols);
     }
-    auto* res = new MAT[dimensions[2]];
-    for (int i = 0; i < dimensions[2]; i++)
+    auto* res = new MAT[dims];
+    for (int i = 0; i < dims; i++)
     {
-        res[i] = MAT(dimensions[0], dimensions[1]);
+        res[i] = MAT(rows, cols);
     }
 
     return res;
@@ -43,7 +21,8 @@ MAT* LayerShape::ToMatrix() const
 }
 
 
-LayerShape* LayerShape::Load(std::ifstream& reader)
+template<int rows, int cols, int dims, int size>
+LayerShape<rows, cols, dims, size>* LayerShape<rows, cols, dims, size>::Load(std::ifstream& reader)
 {
     int rows;
     int cols;
@@ -56,22 +35,18 @@ LayerShape* LayerShape::Load(std::ifstream& reader)
     return new LayerShape(rows, cols, dims, size);
 }
 
-void LayerShape::Save(std::ofstream& writer)
+template<int rows, int cols, int dims, int size>
+void LayerShape<rows, cols, dims, size>::Save(std::ofstream& writer)
 {
-    writer.write(reinterpret_cast<char*>(dimensions), sizeof(int));
-    writer.write(reinterpret_cast<char*>(dimensions + 1), sizeof(int));
-    writer.write(reinterpret_cast<char*>(dimensions + 2), sizeof(int));
-    writer.write(reinterpret_cast<char*>(&size), sizeof(int));
+    writer.write(reinterpret_cast<char*>(rows), sizeof(int));
+    writer.write(reinterpret_cast<char*>(cols), sizeof(int));
+    writer.write(reinterpret_cast<char*>(dims), sizeof(int));
+    writer.write(reinterpret_cast<char*>(size), sizeof(int));
 }
 
-
-std::string LayerShape::GetDimensions() const
+template<int rows, int cols, int dims, int size>
+std::string LayerShape<rows, cols, dims, size>::GetDimensions() const
 {
-    return "(" + std::to_string(dimensions[0]) + "," + std::to_string(dimensions[1]) + "," +
-           std::to_string(dimensions[2]) + ")";
-}
-
-LayerShape::~LayerShape()
-{
-    delete[] dimensions;
+    return "(" + std::to_string(rows) + "," + std::to_string(cols) + "," +
+           std::to_string(dims) + ")";
 }
