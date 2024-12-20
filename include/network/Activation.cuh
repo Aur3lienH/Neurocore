@@ -6,26 +6,44 @@
 #include <emmintrin.h>
 #include <cmath>
 
+class Sigmoid;
+class SigmoidPrime;
+class Relu;
+class LeakyReLU;
+class SoftMax;
+class Tanh;
+
 template <typename... Args>
 struct ActivationID {
-    static constexpr uint value = 0; // Default ID
+    static constexpr uint value = -1; // Default ID
 };
 
 // Specializations for specific type combinations
 template <>
-struct ActivationID<int> {
+struct ActivationID<Sigmoid> {
+    static constexpr uint value = 0;
+};
+
+template <>
+struct ActivationID<SigmoidPrime> {
     static constexpr uint value = 1;
 };
 
 template <>
-struct ActivationID<float, int> {
+struct ActivationID<Relu> {
     static constexpr uint value = 2;
 };
 
 template <>
-struct ActivationID<double, double> {
+struct ActivationID<LeakyReLU> {
     static constexpr uint value = 3;
 };
+
+template <>
+struct ActivationID<Tanh> {
+    static constexpr uint value = 5;
+};
+
 template<typename... Args>
 class Activation
 {
