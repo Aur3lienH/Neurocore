@@ -8,42 +8,52 @@ enum class Opti
     Adam
 };
 
-
+template <typename OptiImpl>
 class Optimizer
 {
 public:
     virtual ~Optimizer() = default;
 
-    virtual void Compile(int size) = 0;
+    void Compile(int size);
 
-    virtual void Compute(MAT* gradient, MAT* parameters, int offset = 0) = 0;
+    void Compute(MAT* gradient, MAT* parameters, int offset = 0);
 };
 
+template <typename OptiImpl>
+void Optimizer<OptiImpl>::Compile(int size) {
+    static_cast<OptiImpl*>(this)->Compile(size);
+}
 
-class Constant : public Optimizer
+template <typename OptiImpl>
+void Optimizer<OptiImpl>::Compute(MAT* gradient, MAT* parameters, int offset) {
+    static_cast<OptiImpl*>(this)->Compute(gradient, parameters, offset);
+}
+
+
+class Constant
 {
 public:
     explicit Constant(double learningRate = 0.01);
 
-    void Compile(int size) override;
+    void Compile(int size);
 
-    void Compute(MAT* gradient, MAT* parameters, int offset) override;
+    void Compute(MAT* gradient, MAT* parameters, int offset);
 
 private:
     double learningRate;
 };
 
 
-class Adam : public Optimizer
+class Adam
 {
 public:
     explicit Adam(double alpha = 0.001, double beta1 = 0.9, double beta2 = 0.999, double gamma = 10e-7);
 
-    ~Adam() override;
+    ~Adam();
 
-    void Compile(int size) override;
+    void Compile(int size);
 
-    void Compute(MAT* gradient, MAT* parameters, int offset) override;
+    void Compute(MAT* gradient, MAT* parameters, int offset);
 
 private:
     double alpha;

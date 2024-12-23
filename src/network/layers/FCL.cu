@@ -348,7 +348,7 @@ std::string FCL::getLayerTitle()
 {
     std::string buf;
     buf += "Layer : Fully Connected Layer\n";
-    buf += "Activation Function : " + activation->getName() + "\n";
+    buf += "activation Function : " + activation->getName() + "\n";
     buf += "Neurons Count : " + std::to_string(NeuronsCount) + "\n";
     return buf;
 }

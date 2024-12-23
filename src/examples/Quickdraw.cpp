@@ -1,3 +1,4 @@
+/*
 #include "examples/Quickdraw.h"
 #include <filesystem>
 #include "examples/Mnist.h"
@@ -146,6 +147,7 @@ MAT*** GetQuickdrawDataset(const std::string& path, int dataLength, int numCateg
 
         for (int i = 0; i < numDrawingsInFile; i++)
         {
+        */
             /*if (inputIndex % (2500) == 0)
             {
                 const int pos = in.tellg();
@@ -162,7 +164,7 @@ MAT*** GetQuickdrawDataset(const std::string& path, int dataLength, int numCateg
                 }
                 in.seekg(pos);
             }*/
-
+/*
             dataset[inputIndex] = new MAT* [2];
             dataset[inputIndex][1] = LabelToMatrix(categoryIndex, numCategories);
 #if USE_GPU
@@ -221,3 +223,4 @@ MAT* LabelToMatrix(int label, int numLabels)
 }
 
 #endif
+*/

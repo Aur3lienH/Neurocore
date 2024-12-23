@@ -6,3 +6,4 @@ class Allocator
 public:
     static float* temp;
 };
+
