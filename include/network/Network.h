@@ -100,6 +100,7 @@ public:
 template<typename Loss,typename... Types>
 Network<Loss,Types...>::Network(Types... Args)
 {
+
 	this->Layers = nullptr;
 }
 

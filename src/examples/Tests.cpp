@@ -2,7 +2,7 @@
 #include <iostream>
 #include "../Network.cuh"
 #include "../InputLayer.cuh"
-#include "../Activation.cuh"
+#include "../activation.cuh"
 #include "../ConvLayer.cuh"
 #include "../Flatten.cuh"
 #include "../FCL.cuh"

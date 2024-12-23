@@ -1,6 +1,8 @@
 - [ ] Optimizations : 
   - [ ] Using FFT for Convolution
   - [ ] Removing virtual function using CRTP
+    - [ ] Optimizing the code made with CRTP
+      - [ ] In activation -> Check the best possible way to compute the function and the derivative
   - [ ] Implement Strassen algorithm for matrix
 - [ ] Python library : 
   - [ ] Manage the ownership between python and C++

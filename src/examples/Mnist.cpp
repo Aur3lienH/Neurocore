@@ -135,7 +135,7 @@ void Mnist1()
     for (int i = 0; i < dataLength; i++)
         *data[i][0] *= scale;
 
-    Network* network = new Network();
+    auto* network = new Network<MSE,InputLayer,FCL,>();
     network->AddLayer(new InputLayer(784));
     network->AddLayer(new FCL(512, new ReLU()));
     network->AddLayer(new FCL(10, new Softmax()));

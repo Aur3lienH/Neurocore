@@ -339,7 +339,7 @@ public:
 #endif
 
 #if USE_GPU
-typedef Matrix_GPU MAT;
+typedef < MAT;
 #else
 typedef Matrix MAT;
 #endif
