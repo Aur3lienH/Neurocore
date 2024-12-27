@@ -51,17 +51,20 @@ public:
     }
 
     //Must define the layerShape !
-    void Compile(LayerShape* previousOutput, Opti opti)
+	template<int x, int y, int z, int size>
+    void Compile(LayerShape<x,y,z,size>* previousOutput, Opti opti)
     {
 	    static_cast<Derived*>(this)->Compile(previousOutput,opti);
     }
 
-    void Compile(LayerShape* previousOutput)
+	template<int x, int y, int z, int size>
+    void Compile(LayerShape<x,y,z,size>* previousOutput)
     {
 	    static_cast<Derived*>(this)->Compile(previousOutput);
     }
 
-    LayerShape* GetLayerShape()
+	template<int x, int y, int z, int size>
+    LayerShape<x,y,z,size>* GetLayerShape()
     {
 	    return static_cast<Derived*>(this)->GetLayerShape();
     }

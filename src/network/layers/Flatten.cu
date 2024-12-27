@@ -6,14 +6,7 @@ Flatten::Flatten()
     LayerID = 3;
 }
 
-void Flatten::Compile(LayerShape* previous)
-{
-    layerShape = new LayerShape(previous->dimensions[0] * previous->dimensions[1] * previous->dimensions[2]);
-    rows = previous->dimensions[0];
-    cols = previous->dimensions[1];
-    dims = previous->dimensions[2];
-    LayerID = 3;
-}
+
 
 const MAT* Flatten::FeedForward(const MAT* _input)
 {

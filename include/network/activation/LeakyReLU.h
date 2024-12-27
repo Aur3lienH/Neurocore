@@ -1,7 +1,7 @@
 #pragma once
 #include <matrix/Matrix.cuh>
 #include <network/InitFunc.cuh>
-#include <network/Activation/Activation.cuh>
+#include "network/activation/Activation.cuh"
 class LeakyReLU
 {
 public:

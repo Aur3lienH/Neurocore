@@ -10,14 +10,16 @@ set(CMAKE_C_STANDARD 11)
 set(CMAKE_C_STANDARD_REQUIRED True)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
+set(CMAKE_CUDA_ARCHITECTURES "75;86")
 
 # Compiler flags
 set(CMAKE_C_FLAGS "-fPIC -O3 -ffast-math")
 set(CMAKE_CXX_FLAGS "-fPIC -O3 -mavx -march=native")
 
+
+
 # Find Python and setup pybind11
 find_package(Python3 REQUIRED COMPONENTS Interpreter Development)
-find_package(CUDA REQUIRED)
 add_subdirectory(dependencies/pybind11)
 
 # Find packages

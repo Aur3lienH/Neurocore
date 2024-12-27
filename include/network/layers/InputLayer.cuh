@@ -4,7 +4,7 @@
 #include "network/layers/Layer.cuh"
 #include "network/LayerShape.cuh"
 
-template<LayerShape l>
+template<int x, int y, int z>
 class InputLayer
 {
 public:
@@ -12,7 +12,7 @@ public:
 
     InputLayer(int rows, int cols, int size);
 
-    explicit InputLayer(LayerShape* layerShape);
+    explicit InputLayer(LayerShape<>* layerShape);
 
     const MAT* FeedForward(const MAT* input);
 
@@ -28,7 +28,8 @@ public:
 
     void AddDeltaFrom(Layer<InputLayer>* otherLayer);
 
-    void Compile(LayerShape* layerShape);
+    template<int x, int y, int z, int a>
+    void Compile(LayerShape<x,y,z,a>* layerShape);
 
     std::string getLayerTitle();
 
@@ -42,6 +43,7 @@ private:
     const MAT* input = nullptr;
 
     void (* FeedFunc)(const MAT*, Matrix*, int);
+
 
     LayerShape* layerShape;
     Optimizer* optimizer = nullptr;

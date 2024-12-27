@@ -1,7 +1,7 @@
 #pragma once
 
 #include "matrix/Matrix.cuh"
-#include "network/Activation.cuh"
+#include "network/activation/Activation.cuh"
 #include "network/layers/Layer.cuh"
 #include "tools/Serializer.h"
 #include "network/LayerShape.cuh"

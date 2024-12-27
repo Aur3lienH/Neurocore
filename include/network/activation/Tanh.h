@@ -13,11 +13,11 @@ public:
 
 #if not USE_GPU
 
-    double Function(double input);
+    static double Function(double input);
 
 #endif
 
-    double Derive(double input);
+    static double Derive(double input);
 
     MAT* InitWeights(int inputSize, int outputSize);
 

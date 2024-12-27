@@ -15,7 +15,7 @@ class Tanh;
 
 template <typename... Args>
 struct ActivationID {
-    static constexpr uint value = -1; // Default ID
+    static constexpr uint value = 255; // Default ID
 };
 
 // Specializations for specific type combinations
@@ -30,7 +30,7 @@ struct ActivationID<SigmoidPrime> {
 };
 
 template <>
-struct ActivationID<Relu> {
+struct ActivationID<ReLU> {
     static constexpr uint value = 2;
 };
 
@@ -217,7 +217,7 @@ template<typename Derived,typename ... Args>
 {
 }
 
-
+/*
 template<typename Derived,typename ... Args>
 Activation<Args>* Activation<Derived,Args...>::Read(std::ifstream& reader)
 {
@@ -254,6 +254,8 @@ Activation<Args>* Activation<Derived,Args...>::Read(std::ifstream& reader)
         throw std::invalid_argument("Invalid ID for loading activation function");
     }
 }
+*/
+
 
 #if USE_GPU
 
