@@ -2,24 +2,8 @@
 #include "matrix/Matrix.cuh"
 #include <iostream>
 
-//Convert the format of the layer to an array of matrix.
-template<int rows, int cols, int dims, int size>
-MAT* LayerShape<rows, cols, dims, size>::ToMatrix() const
-{
-    if (dims == 1)
-    {
-        return new MAT(rows, cols);
-    }
-    auto* res = new MAT[dims];
-    for (int i = 0; i < dims; i++)
-    {
-        res[i] = MAT(rows, cols);
-    }
 
-    return res;
-
-}
-
+/*
 
 template<int rows, int cols, int dims, int size>
 LayerShape<rows, cols, dims, size>* LayerShape<rows, cols, dims, size>::Load(std::ifstream& reader)
@@ -44,9 +28,5 @@ void LayerShape<rows, cols, dims, size>::Save(std::ofstream& writer)
     writer.write(reinterpret_cast<char*>(size), sizeof(int));
 }
 
-template<int rows, int cols, int dims, int size>
-std::string LayerShape<rows, cols, dims, size>::GetDimensions() const
-{
-    return "(" + std::to_string(rows) + "," + std::to_string(cols) + "," +
-           std::to_string(dims) + ")";
-}
+*/
+

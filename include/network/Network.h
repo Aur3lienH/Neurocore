@@ -215,7 +215,7 @@ void Network<Loss,Layers...>::Compile(Opti _opti, Loss* _loss)
     costDerivative = Layers[layersCount - 1]->GetLayerShape()->ToMatrix();
 
     std::cout << "Getting cost derivative matrix done \n";
-    auto* inputLayer = (InputLayer*) Layers[0];
+    auto* inputLayer = (Layer<InputLayer>*) Layers[0];
     if (inputLayer == nullptr)
         throw std::invalid_argument("First layer must be an input layer");
 

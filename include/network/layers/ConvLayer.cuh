@@ -2,7 +2,7 @@
 
 #include "network/layers/Layer.cuh"
 #include "network/LayerShape.cuh"
-#include "network/Activation.cuh"
+#include "network/activation/Activation.cuh"
 #include "network/Operations.h"
 
 
