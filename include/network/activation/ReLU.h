@@ -11,19 +11,19 @@ public:
 
 #if not USE_GPU
 
-    void Derivative(const MAT* input, MAT* output);
+    static void Derivative(const MAT* input, MAT* output);
 
-    double Function(double input);
+    static double Function(double input);
 
-    void FeedForward(const MAT* input, MAT* output);
+    static void FeedForward(const MAT* input, MAT* output);
 
 #endif
 
-    double Derive(double input);
+    static double Derive(double input);
 
-    MAT* InitWeights(int inputSize, int outputSize);
+    static MAT* InitWeights(int inputSize, int outputSize);
 
-    MAT* InitBiases(int outputSize);
+    static MAT* InitBiases(int outputSize);
 
 
 };

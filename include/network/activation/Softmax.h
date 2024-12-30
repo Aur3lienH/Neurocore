@@ -11,28 +11,22 @@ public:
 
 #if USE_GPU
 
-    void FeedForward(const MAT* input, const cudnnTensorDescriptor_t& inputDesc, MAT* output,
+    static void FeedForward(const MAT* input, const cudnnTensorDescriptor_t& inputDesc, MAT* output,
                      const cudnnTensorDescriptor_t& outputDesc) override;
 
-    void Derivative(const MAT* input, const cudnnTensorDescriptor_t& inputDesc, const MAT* lastDelta,
+    static void Derivative(const MAT* input, const cudnnTensorDescriptor_t& inputDesc, const MAT* lastDelta,
                     const cudnnTensorDescriptor_t& lastDeltaDesc, const MAT* z, const cudnnTensorDescriptor_t& zDesc,
                     MAT* output, const cudnnTensorDescriptor_t& outputDesc) override;
 
 #else
 
-    void FeedForward(const MAT* input, MAT* output);
+    static void FeedForward(const MAT* input, MAT* output);
 
-    void Derivative(const MAT* input, MAT* output);
-
-    double inline Function(double input)
-    { return 0; };
+    static void Derivative(const MAT* input, MAT* output);
 
 #endif
 
-    double inline Derive(double input)
-    { return 0; };
-
-    MAT* InitWeights(int inputSize, int outputSize);
+    static MAT* InitWeights(int inputSize, int outputSize);
 
 };
 

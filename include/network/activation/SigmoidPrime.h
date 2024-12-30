@@ -17,14 +17,14 @@ public:
 
     static double Derive(double input);
 
-    MAT* InitWeights(int inputSize, int outputSize);
+    static MAT* InitWeights(int inputSize, int outputSize);
 
-    void FeedForward(const MAT* input, MAT* output)
+    static void FeedForward(const MAT* input, MAT* output)
     {
         DefaultFeedForward(input, output, Function);
     }
 
-    void Derivative(const MAT* input, MAT* output)
+    static void Derivative(const MAT* input, MAT* output)
     {
         DefaultDerivative(input, output, Derive);
     }

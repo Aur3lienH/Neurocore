@@ -25,12 +25,12 @@ public:
         return exp(-input) / pow(1 + exp(-input), 2);
     }
 
-    void FeedForward(const MAT* input, MAT* output)
+    static void FeedForward(const MAT* input, MAT* output)
     {
         DefaultFeedForward(input, output, Function);
     }
 
-    void Derivative(const MAT* input, MAT* output)
+    static void Derivative(const MAT* input, MAT* output)
     {
         DefaultDerivative(input, output, Derive);
     }

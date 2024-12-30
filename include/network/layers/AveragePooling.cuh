@@ -16,15 +16,15 @@ public:
 
     static Layer* Load(std::ifstream& reader);
 
-    const MAT* FeedForward(const MAT* input) override;
+    const MAT* FeedForward(const MAT* input);
 
-    MAT* BackPropagate(const MAT* delta, const MAT* previousActivation) override;
+    MAT* BackPropagate(const MAT* delta, const MAT* previousActivation);
 
-    std::string getLayerTitle() override;
+    std::string getLayerTitle();
 
-    Layer* Clone() override;
+    Layer* Clone();
 
-    void SpecificSave(std::ofstream& writer) override;
+    void SpecificSave(std::ofstream& writer);
 
 #if USE_GPU
 

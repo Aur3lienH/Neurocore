@@ -75,19 +75,19 @@ public:
 
     void FeedForward(const MAT* input, MAT* output)
     {
-        static_cast<Derived*>(this)->FeedForward(input, output);
+        Derived::FeedForward(input, output);
     }
 
     void Derivative(const MAT* input, MAT* output)
     {
-        static_cast<Derived*>(this)->Derivative(input, output);
+        Derived::Derivative(input, output);
     }
 
 #endif
 
     MAT* InitWeights(int inputSize, int outputSize)
     {
-        return static_cast<Derived*>(this)->InitWeights(inputSize, outputSize);
+        return Derived::InitWeights(inputSize, outputSize);
     }
 
     MAT* InitBiases(int outputSize)
