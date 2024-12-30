@@ -4,8 +4,6 @@
 #include "network/layers/Layer.cuh"
 #include "network/layers/InputLayer.cuh"
 #include "matrix/Matrix.cuh"
-#include "network/Loss.cuh"
-#include "network/Optimizers.cuh"
 #include "datasetsBehaviour/DataLoader.h"
 #include <mutex>
 #include <tools/ProgressBar.h>

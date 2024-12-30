@@ -7,21 +7,21 @@ class PoolingLayer : public Layer
 public:
     PoolingLayer(int filterSize, int stride);
 
-    ~PoolingLayer() override;
+    ~PoolingLayer();
 
-    void ClearDelta() override;
+    void ClearDelta();
 
-    void UpdateWeights(double learningRate, int batchSize) override;
+    void UpdateWeights(double learningRate, int batchSize);
 
-    void AddDeltaFrom(Layer* layer) override;
+    void AddDeltaFrom(Layer* layer);
 
-    void Compile(LayerShape* previousActivation) override;
+    void Compile(LayerShape* previousActivation);
 
-    [[nodiscard]] const MAT* getResult() const override;
+    [[nodiscard]] const MAT* getResult() const;
 
-    void SpecificSave(std::ofstream& writer) override;
+    void SpecificSave(std::ofstream& writer);
 
-    void AverageGradients(int batchSize) override;
+    void AverageGradients(int batchSize);
 
 
 protected:
