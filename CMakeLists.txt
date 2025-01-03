@@ -60,6 +60,27 @@ target_link_libraries(${PROJECT_NAME}_core
     SDL2
 )
 
+# Create the main executable for testing
+enable_testing()
+
+file(GLOB_RECURSE TEST_SOURCES
+        "${CMAKE_SOURCE_DIR}/src/tests/*.cpp"
+        "${CMAKE_SOURCE_DIR}/src/tests/*.cu"
+        "${CMAKE_SOURCE_DIR}/src/main.cpp"
+)
+
+add_executable(${PROJECT_NAME}_tests ${TEST_SOURCES})
+
+target_include_directories(${PROJECT_NAME}_tests PRIVATE
+        ${CMAKE_SOURCE_DIR}/include
+)
+
+target_link_libraries(${PROJECT_NAME}_tests PRIVATE
+        ${PROJECT_NAME}_core
+)
+
+
+
 # Define version info for the Python module
 set(DEEP_VERSION_INFO "0.0.1")
 

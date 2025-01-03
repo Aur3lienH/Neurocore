@@ -16,8 +16,8 @@ void Tests::ExecuteTests()
     std::vector<std::tuple<void*,std::string>> functions;
     //functions.push_back(std::make_tuple((void*)BasicNetwork1,"Single Thread"));
     //functions.push_back(std::make_tuple((void*)SaveNetwork1,"Save and Load Network"));
-    //functions.push_back(std::make_tuple((void*)CNNNetwork1,"Basic convolution test"));
-    functions.push_back(std::make_tuple((void*)CNNSaveTest, "CNN save test"));
+    //functions.push_back(std::make_tuple((void*)CNNNetwork1,"Basic convolution tests"));
+    functions.push_back(std::make_tuple((void*)CNNSaveTest, "CNN save tests"));
 
     bool* array = new bool[functions.size()];
 
@@ -176,9 +176,9 @@ bool Tests::CNNSaveTest()
     network->AddLayer(new FCL(10, new Softmax()));
 
     network->Compile(Opti::Adam,new CrossEntropy());
-    network->Save("test.net");
+    network->Save("tests.net");
 
-    Network* secondNetwork = Network::Load("test.net");
+    Network* secondNetwork = Network::Load("tests.net");
 
     Matrix* input = new Matrix(28,28);
     const Matrix* output = secondNetwork->FeedForward(input);

@@ -1,3 +1,4 @@
+/*
 #include <pybind11/pybind11.h>
 
 #include "network/layers/ConvLayer.cuh"
@@ -26,3 +27,4 @@ py::class_<InputLayer,Layer>(m,"InputLayer")
 	.def(py::init<int>(), py::return_value_policy::copy);
 }
 
+*/

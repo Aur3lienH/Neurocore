@@ -4,8 +4,6 @@
 #include "network/LayerShape.cuh"
 #include "network/activation/Activation.cuh"
 #include "network/Operations.h"
-
-
 #include "matrix/Matrix.cuh"
 
 template<typename ...Args>

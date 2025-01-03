@@ -1,11 +1,9 @@
 #pragma once
 
-#include <iostream>
-#include <vector>
 #include "tools/Serializer.h"
 #include "matrix/Matrix.cuh"
 #include "network/LayerShape.cuh"
-#include "network/Optimizers.cuh"
+#include "network/optimizers/Optimizer.h"
 
 template<typename Derived>
 class Layer
@@ -15,17 +13,20 @@ public:
 
     virtual ~Layer();
 
-    const MAT* FeedForward(const MAT* input)
-    {
+	template<int rows_in, int cols_in, int dims_in, int rows_out, int cols_out, int dims_out>
+    const MAT<rows_out,cols_out,dims_out>* FeedForward(const MAT<rows_in,cols_in,dims_in>* input)
+	{
 	    return static_cast<Derived*>(this)->FeedForwardImpl(input);
-    }
+	}
 
-    const MAT* BackPropagate(const MAT* delta, const MAT* previousActivation)
+	template<int rows_in, int cols_in, int dims_in, int rows_out, int cols_out, int dims_out, int rows_in2, int cols_in2, int dims_in2>
+    const MAT<rows_out,cols_out,dims_out>* BackPropagate(const MAT<rows_in,cols_in,dims_in>* delta, const MAT<rows_in2,cols_in2,dims_in2>* previousActivation)
     {
 	    return static_cast<Derived*>(this)->BackPropagateImpl(delta,previousActivation);
     }
 
-    [[nodiscard]] const MAT* getResult() const
+	template<int rows, int cols, int dims>
+    [[nodiscard]] const MAT<rows,cols,dims>* getResult() const
     {
 	    return static_cast<Derived*>(this)->getResultImpl();
     }
@@ -76,11 +77,101 @@ public:
 	    return static_cast<Derived*>(this)->Clone();
     }
 
-    static Layer* Load(std::ifstream& reader);
+	//Disable because of templates
 
-    void SpecificSave(std::ofstream& writer);
+    //static Layer* Load(std::ifstream& reader);
 
-    void Save(std::ofstream& writer);
+    //void SpecificSave(std::ofstream& writer);
+
+    //void Save(std::ofstream& writer);
 
 };
+
+template<typename Derived>
+Layer<Derived>::Layer()
+{
+
+}
+/*
+template<typename Derived>
+void Layer<Derived>::Compile(LayerShape<>* previousLayer, Opti opti)
+{
+
+	switch (opti)
+	{
+	case Opti::Constant :
+		optimizer = new Constant();
+		break;
+	case Opti::Adam :
+		optimizer = new Adam();
+		break;
+	default:
+		throw std::invalid_argument("Layer Constructor : Invalid Optimizer ! ");
+	}
+
+	std::cout << "here here \n";
+	Compile(previousLayer);
+	std::cout << "bruh bruh \n";
+}
+*/
+
+
+/*
+template<typename Derived>
+Layer* Layer::Load(std::ifstream& reader)
+{
+	//Load layerID
+	int layerID;
+	reader.read(reinterpret_cast<char*>(&layerID), sizeof(int));
+	switch (layerID)
+	{
+	case 0:
+		{
+			return FCL::Load(reader);
+		}
+	case 1:
+		{
+			return InputLayer::Load(reader);
+		}
+	case 2:
+		{
+			return ConvLayer::Load(reader);
+		}
+	case 3:
+		{
+			return Flatten::Load(reader);
+		}
+	case 4:
+		{
+			return MaxPoolLayer::Load(reader);
+		}
+	case 5:
+		{
+			return AveragePoolLayer::Load(reader);
+		}
+
+	default:
+		throw std::invalid_argument("Invalid ID for loading layers !");
+	}
+
+}
+
+template<typename Derived>
+void Layer::Save(std::ofstream& writer)
+{
+	//Save layer ID
+	writer.write(reinterpret_cast<char*>(&LayerID), sizeof(int));
+	SpecificSave(writer);
+}
+*/
+
+template<typename Derived>
+Layer<Derived>::~Layer()
+{
+
+}
+
+
+
+
 

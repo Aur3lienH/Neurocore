@@ -73,28 +73,32 @@ public:
 
 #else
 
-    void FeedForward(const MAT* input, MAT* output)
+    template<int x=1, int y=1, int z=1>
+    static void FeedForward(const MAT<x,y,z>* input, MAT<x,y,z>* output)
     {
         Derived::FeedForward(input, output);
     }
 
-    void Derivative(const MAT* input, MAT* output)
+    template<int x=1, int y=1, int z=1>
+    static void Derivative(const MAT<x,y,z>* input, MAT<x,y,z>* output)
     {
         Derived::Derivative(input, output);
     }
 
 #endif
-
-    MAT* InitWeights(int inputSize, int outputSize)
+    template<int x=1, int y=1, int z=1>
+    static MAT<x,y,z>* InitWeights(int inputSize, int outputSize)
     {
         return Derived::InitWeights(inputSize, outputSize);
     }
 
-    MAT* InitBiases(int outputSize)
+    template<int x=1, int y=1, int z=1>
+    static MAT<x,y,z>* InitBiases(int outputSize)
     {
-        return new MAT(outputSize,1);
+        return new MAT<>();
     }
 
+    /*
     static Activation<Derived,Args...>* Read(std::ifstream& reader)
     {
         //int value = reader.read();
@@ -104,6 +108,7 @@ public:
     {
         write.write(reinterpret_cast<char*>(&id), sizeof(int));
     }
+    */
 
 
 
@@ -131,7 +136,8 @@ voidActivation<Args...>::FeedForward(const MAT* input, const cudnnTensorDescript
                              const cudnnTensorDescriptor_t& outputDesc)
 #else
 
-void DefaultFeedForward(const MAT* input, MAT* output, double (*Function)(double))
+template<int x=1, int y=1, int z=1>
+void DefaultFeedForward(const MAT<x,y,z>* input, MAT<x,y,z>* output, double (*Function)(double))
 #endif
 {
 #if SAFE
@@ -163,7 +169,8 @@ voidActivation<Args...>::Derivative(const MAT* input, const cudnnTensorDescripto
                             MAT* output, const cudnnTensorDescriptor_t& outputDesc)
 #else
 
-void DefaultDerivative(const MAT* input, MAT* output, double (*Derive)(double))
+template<int x=1, int y=1, int z=1>
+void DefaultDerivative(const MAT<x,y,z>* input, MAT<x,y,z>* output, double (*Derive)(double))
 #endif
 {
 #if USE_GPU

@@ -1,6 +1,12 @@
 #pragma once
 #include "matrix/Matrix.cuh"
 
+enum class Opti
+{
+    Constant,
+    Adam
+};
+
 template<typename Derived>
 class Optimizer {
 public:
@@ -9,7 +15,9 @@ public:
     {
         Derived::Compile(size);
     }
-    static void Compute(MAT* gradient, MAT* parameters, int offset = 0)
+
+    template<int rows, int cols, int dims>
+    static void Compute(MAT<rows,cols,dims>* gradient, MAT<rows,cols,dims>* parameters, int offset = 0)
     {
         Derived::Compute(gradient, parameters, offset);
     }

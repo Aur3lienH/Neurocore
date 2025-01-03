@@ -2,14 +2,11 @@
 #include <cfloat>
 #include <iostream>
 #include <vector>
-#include <fstream>
+#include <cmath>
 
-#include <pybind11/pybind11.h>
-#include <pybind11/numpy.h>
-#include "tools/Serializer.h"
+
 #include <emmintrin.h>
 
-namespace py = pybind11;
 
 #define USE_GPU 0
 #define SAFE 0
@@ -20,18 +17,29 @@ class Matrix final
 {
 public:
 
-    Matrix(bool aligned = false);
+    Matrix(std::initializer_list<float> values, bool aligned = false) {
+        Init(0, aligned);
+        int i = 0;
+        for (const float& value : values) {
+            if (i < GetMatrixSize()) {
+                data[i++] = value;
+            }
+        }
+    }
 
-    Matrix(float value, bool aligned = false);
+    explicit Matrix(bool aligned = false);
 
-    Matrix(float* data);
+    explicit Matrix(float value, bool aligned = false);
+
+    explicit Matrix(float* newArray);
 
     ~Matrix();
 
 public:
     static void Flip180(const Matrix* input, Matrix* output);
 
-    static void FullConvolution(const Matrix* m, const Matrix* filter, Matrix* output);
+    template<int filter_rows, int filter_cols>
+    static void FullConvolution(const Matrix<rows,cols>* m, const Matrix<filter_rows,filter_cols>* filter, Matrix<rows+filter_rows-1,cols+filter_cols-1,dim>* output);
 
     static void FullConvolutionAVX2(const Matrix* m, const Matrix* filter, Matrix* output);
 
@@ -40,7 +48,8 @@ public:
 
     static void Convolution(const Matrix* a, const Matrix* b, Matrix* output, int stride = 1);
 
-    static void MaxPool(const Matrix* a, Matrix* output, int filterSize = 2, int stride = 2);
+    template<int filterSize, int stride>
+    static void MaxPool(const Matrix<rows,cols,dim>* a, Matrix<(rows - filterSize) / stride + 1,(cols - filterSize) / stride + 1>* output);
 
     static void AveragePool(const Matrix* a, Matrix* output, int filterSize = 2, int stride = 2);
 
@@ -91,6 +100,8 @@ public:
     constexpr int GetDims() const;
 
     constexpr int GetSize() const;
+
+    constexpr int GetMatrixSize() const;
 
     Matrix* operator+=(const Matrix& other);
 
@@ -153,7 +164,6 @@ public:
 
 protected:
     mutable float* data;
-    mutable int matrixSize;
     mutable int offset = 0;
     bool columnMajor = false;
 
@@ -177,9 +187,9 @@ using MAT = Matrix<x,y,z>;
 
 //MATRIX
 template<int row, int column, int size>
-Matrix<row,column,size>::Matrix(bool value)
+Matrix<row,column,size>::Matrix(bool aligned)
 {
-
+    Init(0);
 }
 
 template<int row, int column, int size>
@@ -190,7 +200,7 @@ void Matrix<row,column,size>::Init(const float value, bool aligned)
         //Create a matrix aligned by 32
         if (posix_memalign((void**) &data, 32, sizeof(float) * row * column * size))
         {
-            throw std::invalid_argument("Cannot create an aligned array ! ");
+            throw std::`("Cannot create an aligned array ! ");
         }
     }
     else
@@ -242,6 +252,13 @@ constexpr int Matrix<rows,cols,size>::GetDims() const
 {
     return size;
 }
+
+template <int rows, int cols, int dim>
+constexpr int Matrix<rows, cols, dim>::GetMatrixSize() const
+{
+    return rows * cols;
+}
+
 
 template<int rows, int cols, int size>
 bool Matrix<rows,cols,size>::IsColumnMajor() const
@@ -338,12 +355,12 @@ void Matrix<rows,cols,dim>::Substract(const Matrix* other, Matrix* result) const
 template<int rows, int cols, int dim>
 Matrix<cols,rows,dim>* Matrix<rows,cols,dim>::Transpose() const
 {
-    auto* res = new Matrix(cols, rows, dim);
+    auto* res = new Matrix<cols,rows,dim>();
     for (int i = 0; i < rows; i++)
     {
         for (int j = 0; j < cols * dim; j++)
         {
-            res->data[j * rows + i] = data[i * cols * dim + j];
+            res[j * rows + i] = data[i * cols * dim + j];
         }
     }
     return res;
@@ -517,7 +534,7 @@ const float& Matrix<rows,cols,dim>::operator()(int _rows, int _cols, int _dims) 
         throw std::out_of_range("Matrix : Index out of bounds");
     }
 #endif
-    return data[_dims * matrixSize + _rows * cols + _cols];
+    return data[_dims * GetMatrixSize() + _rows * cols + _cols];
 }
 
 template<int rows, int cols, int dim>
@@ -968,8 +985,8 @@ void Matrix<rows,cols,dim>::Flip180(const Matrix* input, Matrix* output)
 template<int rows, int cols, int dim>
 void Matrix<rows,cols,dim>::GoToNextMatrix() const
 {
-    data += matrixSize;
-    offset += matrixSize;
+    data += GetMatrixSize();
+    offset += GetMatrixSize();
 }
 
 template<int rows, int cols, int dim>
@@ -993,8 +1010,10 @@ int Matrix<rows,cols,dim>::GetOffset() const
 }
 
 
+
 template<int rows, int cols, int dim>
-void Matrix<rows,cols,dim>::FullConvolution(const Matrix* m, const Matrix* filter, Matrix* output)
+template<int filter_rows, int filter_cols>
+void Matrix<rows,cols,dim>::FullConvolution(const Matrix<rows,cols>* m, const Matrix<filter_rows,filter_cols>* filter, Matrix<rows+filter_rows-1,cols+filter_cols-1,dim>* output)
 {
     const int outputCols = m->GetCols() + filter->GetCols() - 1;
     const int outputRows = m->GetRows() + filter->GetRows() - 1;
@@ -1263,7 +1282,7 @@ void Matrix<rows,cols,dim>::Reshape(const int rows_, const int cols_, const int 
 template<int rows, int cols, int dim>
 constexpr int Matrix<rows,cols,dim>::GetSize() const
 {
-    return matrixSize * dim;
+    return GetMatrixSize() * dim;
 }
 
 template<int rows, int cols, int dim>
@@ -1278,7 +1297,8 @@ Matrix<rows,cols,dim>* Matrix<rows,cols,dim>::Copy(const Matrix* a)
 }
 
 template<int rows, int cols, int dim>
-void Matrix<rows,cols,dim>::MaxPool(const Matrix* a, Matrix* output, const int filterSize, const int stride)
+template<int filterSize, int stride>
+void Matrix<rows,cols,dim>::MaxPool(const Matrix<rows,cols,dim>* a, Matrix<(rows - filterSize) / stride + 1,(cols - filterSize) / stride + 1>* output)
 {
     const int inputCols = a->GetCols();
     const int inputRows = a->GetRows();

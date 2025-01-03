@@ -1,3 +1,4 @@
+/*
 #include "matrix/Matrix.cuh"
 #include <emmintrin.h>
 #include <immintrin.h>
@@ -59,12 +60,14 @@ void OptimizedMatrix::MatrixMultiplication(const Matrix* b, Matrix* output) cons
         {
             for (int j = 0; j < colsRightBlockCount; j++)
             {
+            */
                 /*
                 std::cout << "left : " << left - this->GetData() << "\n";
                 std::cout << "rigth : " << right - b->GetData() << "\n";
                 std::cout << "out : " << out - output->GetData() << "\n";
                 std::cout << "\n";
                 */
+/*
                 for (int ii = 0; ii < BLOCK_SIZE; ii++)
                 {
                     //Go to the next row in this matrix and go to the next column in the other matrix
@@ -73,6 +76,7 @@ void OptimizedMatrix::MatrixMultiplication(const Matrix* b, Matrix* output) cons
                         float* res = (out + jj * BLOCK_SIZE + ii);
                         //Go to the next column in this matrix and go to the next rows in the other matrix
                         int kk = 0;
+                        */
                         /*
                         __m128 sum = _mm_setzero_ps();
                         for(;kk + 4 <= BLOCK_SIZE; kk+=4)
@@ -89,7 +93,7 @@ void OptimizedMatrix::MatrixMultiplication(const Matrix* b, Matrix* output) cons
 
                         }
                         */
-
+/*
                         
 
                         for (; kk < BLOCK_SIZE; kk++)
@@ -191,3 +195,4 @@ bool OptimizedMatrix::operator==(const Matrix& other)
     }
     return true;
 }
+*/

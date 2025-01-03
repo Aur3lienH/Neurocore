@@ -1,19 +1,14 @@
-#include "test/Tests.h"
+#include "tests/Tests.h"
 
 
 
 #include <iostream>
-#include "network/Network.h"
-#include "network/layers/InputLayer.cuh"
-#include "network/Activation.cuh"
-#include "network/layers/ConvLayer.cuh"
-#include "network/layers/Flatten.cuh"
-#include "network/layers/FCL.cuh"
-#include "test/MatrixTests.h"
+#include "tests/MatrixTests.h"
 #include <limits>
 #include <tuple>
 #include <vector>
 #include <iomanip>
+#include <chrono>
 
 
 void Tests::ExecuteTests()
