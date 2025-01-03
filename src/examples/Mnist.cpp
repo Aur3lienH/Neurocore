@@ -1,3 +1,5 @@
+/*
+
 #include "examples/Mnist.h"
 #include "network/layers/InputLayer.cuh"
 #include "network/layers/FCL.cuh"
@@ -424,4 +426,6 @@ int ReverseInt(int i)
     c4 = (i >> 24) & 255;
     return ((int) c1 << 24) + ((int) c2 << 16) + ((int) c3 << 8) + c4;
 }
+
+*/
 

@@ -1,4 +1,5 @@
-#include "network/Activation.cuh"
+/*
+#include "network/activation/Activation.cuh"
 
 #include <pybind11/pybind11.h>
 #include <pybind11/numpy.h>
@@ -11,3 +12,4 @@ void AddActivations(py::module_& m)
 	py::class_<ReLU,Activation>(m,"ReLU")
 		.def(py::init<>());
 }
+*/

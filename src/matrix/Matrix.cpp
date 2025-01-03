@@ -8,7 +8,7 @@
 
 
 
-
+/*
 //MATRIX CARRE
 
 MatrixCarre::MatrixCarre(int size) : Matrix(size, size)
@@ -38,6 +38,8 @@ MatrixDiagonale::~MatrixDiagonale()
 {
 
 }
+
+*/
 
 
 

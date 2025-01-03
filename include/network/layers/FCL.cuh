@@ -5,7 +5,6 @@
 #include "network/layers/Layer.cuh"
 #include "tools/Serializer.h"
 #include "network/LayerShape.cuh"
-#include "network/optimizers/Optimizer.h"
 #include "network/optimizers/Constant.h"
 
 template<typename activation,LayerShape prevLayerShape,LayerShape layershape,typename optimizer = Constant>
