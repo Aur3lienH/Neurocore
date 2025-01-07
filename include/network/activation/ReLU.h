@@ -1,9 +1,10 @@
 #pragma once
 #include <cmath>
-#include <matrix/Matrix.cuh>
-#include <network/InitFunc.cuh>
 #include <emmintrin.h>
+#include "matrix/Matrix.cuh"
+#include "network/InitFunc.cuh"
 
+template<int rows, int cols = 1, int dims = 1>
 class ReLU
 {
 public:
@@ -11,26 +12,26 @@ public:
 
 #if not USE_GPU
 
-    static void Derivative(const MAT* input, MAT* output);
+    static void Derivative(const MAT<rows,cols,dims>* input, MAT<rows,cols,dims>* output);
 
     static double Function(double input);
 
-    static void FeedForward(const MAT* input, MAT* output);
+    static void FeedForward(const MAT<rows,cols,dims>* input, MAT<rows,cols,dims>* output);
 
 #endif
 
     static double Derive(double input);
 
-    static MAT* InitWeights(int inputSize, int outputSize);
+    static MAT<rows,cols,dims>* InitWeights();
 
-    static MAT* InitBiases(int outputSize);
+    static MAT<rows,cols,dims>* InitBiases();
 
 
 };
 
 
-
-ReLU::ReLU()
+template<int rows, int cols, int dims>
+ReLU<rows,cols,dims>::ReLU()
 {
 #if USE_GPU
     checkCUDNN(cudnnCreateActivationDescriptor(&activationDesc));
@@ -41,7 +42,8 @@ ReLU::ReLU()
 
 #if not USE_GPU
 
-void ReLU::FeedForward(const MAT* input, MAT* output)
+template<int rows, int cols, int dims>
+void ReLU<rows,cols,dims>::FeedForward(const MAT<rows,cols,dims>* input, MAT<rows,cols,dims>* output)
 {
     __m128 zero = _mm_setzero_ps();
 
@@ -64,7 +66,8 @@ void ReLU::FeedForward(const MAT* input, MAT* output)
 
 #if not USE_GPU
 
-void ReLU::Derivative(const MAT* input, MAT* output)
+template<int rows, int cols, int dims>
+void ReLU<rows,cols,dims>::Derivative(const MAT<rows,cols,dims>* input, MAT<rows,cols,dims>* output)
 {
     __m128 zero = _mm_setzero_ps();
     __m128 one = _mm_set1_ps(1.0);
@@ -85,8 +88,8 @@ void ReLU::Derivative(const MAT* input, MAT* output)
         (*output)[i] = ((*input)[i] > 0) ? 1.0 : 0.0;
     }
 }
-
-double ReLU::Function(const double input)
+template<int rows, int cols, int dims>
+double ReLU<rows,cols,dims>::Function(const double input)
 {
     if (input > 0)
     {
@@ -99,8 +102,8 @@ double ReLU::Function(const double input)
 }
 
 #endif
-
-double ReLU::Derive(const double input)
+template<int rows, int cols, int dims>
+double ReLU<rows,cols,dims>::Derive(const double input)
 {
     if (input > 0)
     {
@@ -112,18 +115,16 @@ double ReLU::Derive(const double input)
     }
 }
 
-MAT* ReLU::InitWeights(const int previousNeuronsCount, const int NeuronsCount)
+template<int rows, int cols, int dims>
+MAT<rows,cols,dims>* ReLU<rows,cols,dims>::InitWeights()
 {
-#if USE_GPU
-    auto* weights = new Matrix_GPU(NeuronsCount, previousNeuronsCount);
-#else
-    auto* weights = new Matrix(NeuronsCount, previousNeuronsCount, 1, true);
-#endif
-    WeightsInit::HeUniform(previousNeuronsCount, weights);
+    auto* weights = new MAT<rows,cols,dims>();
+    WeightsInit::HeUniform<rows,cols,dims>(cols, weights);
     return weights;
 }
 
-MAT* ReLU::InitBiases(const int outputSize)
+template<int rows, int cols, int dims>
+MAT<rows,cols,dims>* ReLU<rows,cols,dims>::InitBiases()
 {
 #if USE_GPU
     float* biases = new float[outputSize];
@@ -136,6 +137,6 @@ MAT* ReLU::InitBiases(const int outputSize)
 
     return res;
 #else
-    return new MAT(outputSize, 1, 0.01f);
+    return new MAT<rows,cols,dims>(0.01f);
 #endif
 }

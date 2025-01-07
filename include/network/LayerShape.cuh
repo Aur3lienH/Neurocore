@@ -6,12 +6,27 @@
 
 
 
-template<int x = 1, int y = 1, int z = 1, int size = 1>
+template<int _x = 1, int _y = 1, int _z = 1, int _size = 1>
 class LayerShape
 {
 public:
+    static constexpr int x = _x;
+    static constexpr int y = _y;
+    static constexpr int z = _z;
     //Convert the format of the layer to an array of matrix.
-    [[nodiscard]] constexpr MAT<x,y,z>* ToMatrix() const;
+    [[nodiscard]] MAT<x,y,z>* ToMatrix() const {
+        if (z == 1)
+        {
+            return new MAT<x,y,1>();
+        }
+        auto* res = new MAT<x,y,z>();
+        for (int i = 0; i < z; i++)
+        {
+            res[i] = MAT();
+        }
+
+        return res;
+    }
 
 //    constexpr static LayerShape* Load(std::ifstream& reader);
 
@@ -22,24 +37,6 @@ public:
 
 
 
-
-
-//Convert the format of the layer to an array of matrix.
-template<int rows, int cols, int dims, int size>
-constexpr MAT<rows,cols,dims>* LayerShape<rows, cols, dims, size>::ToMatrix() const
-{
-    if (dims == 1)
-    {
-        return new MAT(rows, cols);
-    }
-    auto* res = new MAT<rows,cols>[dims];
-    for (int i = 0; i < dims; i++)
-    {
-        res[i] = MAT();
-    }
-
-    return res;
-}
 
 template<int rows, int cols, int dims, int size>
 constexpr std::string LayerShape<rows, cols, dims, size>::GetDimensions() const

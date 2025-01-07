@@ -17,8 +17,8 @@ class Matrix final
 {
 public:
 
-    Matrix(std::initializer_list<float> values, bool aligned = false) {
-        Init(0, aligned);
+    Matrix(std::initializer_list<float> values) {
+        Init(0);
         int i = 0;
         for (const float& value : values) {
             if (i < GetMatrixSize()) {
@@ -27,11 +27,11 @@ public:
         }
     }
 
-    explicit Matrix(bool aligned = false);
+    explicit Matrix();
 
-    explicit Matrix(float value, bool aligned = false);
+    explicit Matrix(float value);
 
-    explicit Matrix(float* newArray);
+    explicit Matrix(float* newArray, bool owner = false);
 
     ~Matrix();
 
@@ -41,17 +41,21 @@ public:
     template<int filter_rows, int filter_cols>
     static void FullConvolution(const Matrix<rows,cols>* m, const Matrix<filter_rows,filter_cols>* filter, Matrix<rows+filter_rows-1,cols+filter_cols-1,dim>* output);
 
-    static void FullConvolutionAVX2(const Matrix* m, const Matrix* filter, Matrix* output);
+    //static void FullConvolutionAVX2(const Matrix* m, const Matrix* filter, Matrix* output);
 
     //FullConvolution FS4 = Filter Size 4
-    static void FullConvolutionFS4(const Matrix* m, const Matrix* filter, Matrix* output);
+    //static void FullConvolutionFS4(const Matrix* m, const Matrix* filter, Matrix* output);
 
-    static void Convolution(const Matrix* a, const Matrix* b, Matrix* output, int stride = 1);
+    template<int filterSize, int stride>
+    static void Convolution(const Matrix<rows, cols, dim>* input,const Matrix<filterSize, filterSize, dim>* filter,Matrix<(rows - filterSize) / stride + 1, (cols - filterSize) / stride + 1, dim>* output);
+
+
 
     template<int filterSize, int stride>
     static void MaxPool(const Matrix<rows,cols,dim>* a, Matrix<(rows - filterSize) / stride + 1,(cols - filterSize) / stride + 1>* output);
 
-    static void AveragePool(const Matrix* a, Matrix* output, int filterSize = 2, int stride = 2);
+    template<int filterSize, int stride>
+    static void AveragePool(const Matrix<rows,cols,dim>* a, Matrix<(rows - filterSize) / stride + 1,(cols - filterSize) / stride + 1>* output);
 
     static Matrix Random();
 
@@ -109,6 +113,8 @@ public:
 
     Matrix* operator+(const Matrix& other) const;
 
+    Matrix* operator-(const Matrix& other) const;
+
     Matrix* operator*=(const Matrix* other);
 
     Matrix* operator*=(float other);
@@ -133,7 +139,8 @@ public:
 
     const float& operator()(int _rows, int _cols, int _dims) const;
 
-    void MatrixMultiplication(const Matrix* other, Matrix* output) const;
+    template<int other_rows, int other_cols>
+    void MatrixMultiplication(const Matrix<other_rows,other_cols>* other, Matrix<rows,other_cols>* output) const;
 
     void CrossProductWithTranspose(const Matrix* other, Matrix* output) const;
 
@@ -162,13 +169,14 @@ public:
     //std::vector<Operation*> O_CrossProduct(Matrix* a, Matrix* b, Matrix* output);
 
 
+    mutable float* data = nullptr;
 protected:
-    mutable float* data;
     mutable int offset = 0;
     bool columnMajor = false;
+    bool owner = true;
 
 private:
-    void Init(float value = 0, bool aligned = false);
+    void Init(float value = 0);
 };
 
 
@@ -187,33 +195,29 @@ using MAT = Matrix<x,y,z>;
 
 //MATRIX
 template<int row, int column, int size>
-Matrix<row,column,size>::Matrix(bool aligned)
+Matrix<row,column,size>::Matrix()
 {
     Init(0);
 }
 
-template<int row, int column, int size>
-void Matrix<row,column,size>::Init(const float value, bool aligned)
+template<int rows, int columns, int dims>
+Matrix<rows,columns,dims>::Matrix(float value)
 {
-    if (aligned)
-    {
-        //Create a matrix aligned by 32
-        if (posix_memalign((void**) &data, 32, sizeof(float) * row * column * size))
-        {
-            throw std::`("Cannot create an aligned array ! ");
-        }
-    }
-    else
-    {
-        //Create a simple array of size rows * cols * dim
-        this->data = new float[row * column * size];
-    }
+    Init(value);
+}
 
 
-    //Make all the values = 0
+template<int row, int column, int size>
+void Matrix<row,column,size>::Init(float value) {
+
+
+    //Create a simple array of size rows * cols * dim
+    this->data = new float[row * column * size];
+
+    //Make all the values = value
     for (int i = 0; i < row * column * size; i++)
     {
-        data[i] = 0;
+        data[i] = value;
     }
 }
 
@@ -223,16 +227,19 @@ void Matrix<row,column,size>::Init(const float value, bool aligned)
 
 //Initialize a matrix with an array already existing
 template<int rows, int cols, int size>
-Matrix<rows,cols,size>::Matrix(float* newArray)
+Matrix<rows,cols,size>::Matrix(float* newArray, bool _owner)
 {
     this->data = newArray;
+    owner = _owner;
 }
 
 //Deallocating the matrix
 template<int rows, int cols, int size>
 Matrix<rows,cols,size>::~Matrix()
 {
-    delete[] this->data;
+    if (owner) {
+        delete[] this->data;
+    }
 }
 
 template<int rows, int cols, int size>
@@ -360,7 +367,7 @@ Matrix<cols,rows,dim>* Matrix<rows,cols,dim>::Transpose() const
     {
         for (int j = 0; j < cols * dim; j++)
         {
-            res[j * rows + i] = data[i * cols * dim + j];
+            res->data[j * rows + i] = data[i * cols * dim + j];
         }
     }
     return res;
@@ -611,15 +618,36 @@ Matrix<rows,cols,dim>* Matrix<rows,cols,dim>::operator+(const Matrix& other) con
     }
 #endif
 
-    auto* result = new Matrix(this->GetRows(), this->GetCols());
+    auto* result = new Matrix<rows,cols,dim>();
     for (int i = 0; i < this->GetCols() * this->GetRows(); i++)
     {
 
-        result->operator[](i) += other.data[i];
+        result->operator[](i) = other.data[i] + this->data[i];
 
     }
     return result;
 }
+
+template<int rows, int cols, int dim>
+Matrix<rows,cols,dim>* Matrix<rows,cols,dim>::operator-(const Matrix& other) const
+{
+#if SAFE
+    if (this->rows != other.rows || this->cols != other.cols)
+    {
+        std::cout << "Matrices are not of the same size\n";
+        return nullptr;
+    }
+#endif
+
+    auto* result = new Matrix<rows,cols,dim>();
+    for (int i = 0; i < this->GetCols() * this->GetRows(); i++)
+    {
+        result->operator[](i) = this->data[i] - other.data[i];
+    }
+    return result;
+}
+
+
 template<int rows, int cols, int dim>
 Matrix<rows,cols,dim>* Matrix<rows,cols,dim>::operator+=(const Matrix& other)
 {
@@ -645,13 +673,12 @@ Matrix<rows,cols,dim>* Matrix<rows,cols,dim>::operator+=(const Matrix& other)
 template<int rows, int cols, int dim>
 Matrix<rows,cols,dim>* Matrix<rows,cols,dim>::operator*(const float& other)
 {
+    auto* result = new Matrix<rows,cols,dim>();
     for (int i = 0; i < this->GetCols() * this->GetRows(); i++)
     {
-
-        this->data[i] *= other;
-
+        result->data[i] = this->data[i] * other;
     }
-    return this;
+    return result;
 }
 
 
@@ -677,7 +704,8 @@ Matrix<rows,cols,dim>* Matrix<rows,cols,dim>::operator-=(const Matrix& other)
 
 
 template<int rows, int cols, int dim>
-void Matrix<rows,cols,dim>::MatrixMultiplication(const Matrix* other, Matrix* output) const
+template<int other_rows, int other_cols>
+void Matrix<rows,cols,dim>::MatrixMultiplication(const Matrix<other_rows,other_cols>* other, Matrix<rows,other_cols>* output) const
 {
 #if SAFE
 
@@ -1136,7 +1164,8 @@ void Matrix::FullConvolutionFS4(const Matrix* m, const Matrix* filter, Matrix* o
 
 
 template<int rows, int cols, int dim>
-void Matrix<rows,cols,dim>::AveragePool(const Matrix* a, Matrix* output, int filterSize, int stride)
+template<int filterSize, int stride>
+void Matrix<rows,cols,dim>::AveragePool(const Matrix<rows,cols,dim>* a, Matrix<(rows - filterSize) / stride + 1,(cols - filterSize) / stride + 1>* output)
 {
     const int inputCols = a->GetCols();
     const int inputRows = a->GetRows();
@@ -1175,9 +1204,12 @@ void Matrix<rows,cols,dim>::AveragePool(const Matrix* a, Matrix* output, int fil
 }
 
 template<int rows, int cols, int dim>
-void Matrix<rows,cols,dim>::Convolution(const Matrix* input, const Matrix* filter, Matrix* output, int stride)
+template<int filterSize, int stride>
+void Matrix<rows, cols, dim>::Convolution(
+    const Matrix<rows, cols, dim>* input,
+    const Matrix<filterSize, filterSize, dim>* filter,
+    Matrix<(rows - filterSize) / stride + 1, (cols - filterSize) / stride + 1, dim>* output)
 {
-
 
 #if SAFE
     int filterSize = filter->GetRows();
