@@ -18,7 +18,7 @@ void Tests::ExecuteTests()
     std::vector<std::tuple<void*,std::string>> functions;
     //functions.push_back(std::tuple((void*)MatrixTests::SMIDMatrixTest,std::string("SMID Cross Product")));
     functions.emplace_back((void*)MatrixTests::ExecuteTests,std::string("MATRIX TESTS"));
-    //functions.emplace_back((void*)LayerTests::ExecuteTests,std::string("LAYER TESTS"));
+    functions.emplace_back((void*)LayerTests::ExecuteTests,std::string("LAYER TESTS"));
 
     bool* array = new bool[functions.size()];
 

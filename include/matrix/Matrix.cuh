@@ -180,16 +180,11 @@ private:
 };
 
 
-
-
-
-
-
-
 template<int x = 1, int y = 1, int z = 1>
 using MAT = Matrix<x,y,z>;
 
-
+template<typename layershape>
+using LMAT = MAT<layershape::x, layershape::y, layershape::z>;
 
 
 

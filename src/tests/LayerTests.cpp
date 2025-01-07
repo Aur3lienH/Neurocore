@@ -1,5 +1,6 @@
 #include "tests/LayerTests.h"
 #include "network/layers/FCL.cuh"
+#include "network/layers/InputLayer.cuh"
 #include <functional>
 #include <iostream>
 
@@ -9,6 +10,7 @@ bool LayerTests::ExecuteTests()
     bool res = true;
     std::vector<std::tuple<void*,std::string>> functions;
     //functions.push_back(std::tuple((void*)MatrixTests::SMIDMatrixTest,std::string("SMID Cross Product")));
+    functions.push_back(std::tuple((void*)TestInputLayer, std::string("Layers")));
 
     bool* array = new bool[functions.size()];
 
@@ -58,4 +60,14 @@ bool LayerTests::TestFCLLayer()
     std::cout << out;
     */
     return true;
+}
+
+bool LayerTests::TestInputLayer()
+{
+    InputLayer<LayerShape<5>> inputlayer;
+    inputlayer.Compile();
+
+    const Matrix<5> input({1,1,1,1,1});
+    const Matrix<5>* out = inputlayer.FeedForward(&input);
+    return out->GetRows() == 5 && out->GetCols() == 1;
 }
