@@ -8,6 +8,7 @@
 
 class Sigmoid;
 class SigmoidPrime;
+template<int rows, int cols, int dims>
 class ReLU;
 class LeakyReLU;
 class SoftMax;
@@ -29,8 +30,8 @@ struct ActivationID<SigmoidPrime> {
     static constexpr uint value = 1;
 };
 
-template <>
-struct ActivationID<ReLU> {
+template <int rows, int cols, int dims>
+struct ActivationID<ReLU<rows, cols, dims>> {
     static constexpr uint value = 2;
 };
 

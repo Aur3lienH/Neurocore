@@ -4,21 +4,17 @@
 #include "network/layers/Layer.cuh"
 #include "network/LayerShape.cuh"
 
-template<int x, int y, int z>
+
+template<typename layershape>
 class InputLayer
 {
+  public:
 public:
-    explicit InputLayer(int inputSize);
+    const LMAT<layershape>* FeedForward(const LMAT<layershape>* input);
 
-    InputLayer(int rows, int cols, int size);
+    const LMAT<layershape>* BackPropagate(const LMAT<layershape>* delta, const LMAT<layershape>* lastWeights);
 
-    explicit InputLayer(LayerShape<>* layerShape);
-
-    const MAT* FeedForward(const MAT* input);
-
-    const MAT* BackPropagate(const MAT* delta, const MAT* lastWeights);
-
-    [[nodiscard]] const MAT* getResult() const;
+    [[nodiscard]] const LMAT<layershape>* getResult() const;
 
     void AverageGradients(int batchSize);
 
@@ -26,124 +22,96 @@ public:
 
     void UpdateWeights(double learningRate, int batchSize);
 
-    void AddDeltaFrom(Layer<InputLayer>* otherLayer);
-
-    template<int x, int y, int z, int a>
-    void Compile(LayerShape<x,y,z,a>* layerShape);
+    void AddDeltaFrom(InputLayer<layershape>* otherLayer);
+    
+    void Compile();
 
     std::string getLayerTitle();
 
-    Layer<InputLayer>* Clone();
+    InputLayer<layershape>* Clone();
 
-    static InputLayer* Load(std::ifstream& reader);
+    // static InputLayer* Load(std::ifstream& reader);
 
-    void SpecificSave(std::ofstream& writer);
+    // void SpecificSave(std::ofstream& writer);
 
 private:
-    const MAT* input = nullptr;
+    const LMAT<layershape>* input = nullptr;
 
-    void (* FeedFunc)(const MAT*, Matrix*, int);
-
-
-    LayerShape* layerShape;
-    Optimizer* optimizer = nullptr;
+    void (* FeedFunc)(const LMAT<layershape>*, LMAT<layershape>*, int);
 };
 
-template<LayerShape* layershape>
-Layer<InputLayer<LayerShape>>::InputLayer(const int inputSize)
-{
-    layerShape = new LayerShape(inputSize);
-}
-
-template<LayerShape* layershape>
-Layer<InputLayer<LayerShape>::InputLayer(const int rows, const int cols, const int size)
-{
-    layerShape = new LayerShape(rows, cols, size);
-}
-
-template<LayerShape* layershape>
-InputLayer<layershape>::InputLayer(LayerShape* LayerShape)
-{
-    this->layerShape = LayerShape;
-}
-
-template<LayerShape* layershape>
-const MAT* InputLayer<LayerShape*>::FeedForward(const MAT* _input)
+template<typename layershape>
+const LMAT<layershape>* InputLayer<layershape>::FeedForward(const LMAT<layershape>* _input)
 {
     input = _input;
     return _input;
 }
 
-template<LayerShape* layershape>
-const MAT* InputLayer<LayerShape*>::BackPropagate(const MAT* delta, const MAT* lastWeights)
+template<typename layershape>
+const LMAT<layershape>* InputLayer<layershape>::BackPropagate(const LMAT<layershape>* delta, const LMAT<layershape>* lastWeights)
 {
     return nullptr;
 }
 
-template<LayerShape* layershape>
-const MAT* InputLayer<LayerShape*>::getResult() const
+template<typename layershape>
+const LMAT<layershape>* InputLayer<layershape>::getResult() const
 {
     return input;
 }
 
-template<LayerShape* layershape>
-void InputLayer<LayerShape*>::ClearDelta()
+template<typename layershape>
+void InputLayer<layershape>::ClearDelta()
 {
 
 }
 
-template<LayerShape* layershape>
-void InputLayer<LayerShape*>::Compile(LayerShape* layerShape)
+template<typename layershape>
+void InputLayer<layershape>::Compile()
 {
-    std::cout << "compiling Input layer\n";
+    //std::cout << "compiling Input layer\n";
 }
 
-template<LayerShape* layershape>
-void InputLayer<LayerShape*>::UpdateWeights(const double learningRate, const int batchSize)
-{
-
-}
-
-template<LayerShape* layershape>
-void InputLayer<LayerShape*>::AddDeltaFrom(Layer* otherLayer)
+template<typename layershape>
+void InputLayer<layershape>::UpdateWeights(const double learningRate, const int batchSize)
 {
 
 }
 
-template<LayerShape* layershape>
-std::string Layer<InputLayer<LayerShape*>>::getLayerTitle()
+template<typename layershape>
+void InputLayer<layershape>::AddDeltaFrom(InputLayer<layershape>* otherLayer)
+{
+
+}
+
+template<typename layershape>
+std::string InputLayer<layershape>::getLayerTitle()
 {
     std::string buf = "InputLayer\n";
-    buf += layerShape->GetDimensions() + "\n";
+    buf += layershape::GetDimensions() + "\n";
     return buf;
 }
 
-template<LayerShape* layershape>
-Layer<InputLayer<LayerShape* layershape>> Layer<InputLayer<LayerShape*>>::Clone()
+template<typename layershape>
+InputLayer<layershape>* InputLayer<layershape>::Clone()
 {
-    if (layerShape->size == 1)
-    {
-        return new Layer<new InputLayer(layerShape->dimensions[0])>();
-    }
-    return new InputLayer(
-            new LayerShape(layerShape->dimensions[0], layerShape->dimensions[1], layerShape->dimensions[2]));
+    return new InputLayer<layershape>();
 }
 
 
-template<LayerShape* layershape>
-Layer<InputLayer<LayerShape*>>* InputLayer<LayerShape*>::Load(std::ifstream& reader)
-{
-    LayerShape* layerShape = LayerShape::Load(reader);
-    return new InputLayer(layerShape);
-}
+//template<typename layershape>
+//Layer<InputLayer<layershape>>* InputLayer<layershape>::Load(std::ifstream& reader)
+//{
+//    LayerShape* layerShape = LayerShape::Load(reader);
+//    return new InputLayer(layerShape);
+//}
 
-void Layer<InputLayer<LayerShape*>>::SpecificSave(std::ofstream& writer)
-{
-    layerShape->Save(writer);
-}
+//void Layer<InputLayer<layershape>>::SpecificSave(std::ofstream& writer)
+//{
+//    layerShape->Save(writer);
+//}
 
-template<LayerShape* layershape>
-void Layer<InputLayer<LayerShape*>>::AverageGradients(int batchSize)
+template<typename layershape>
+void InputLayer<layershape>::AverageGradients(int batchSize)
 {
 
 }

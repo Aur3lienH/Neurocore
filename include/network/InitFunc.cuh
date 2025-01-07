@@ -25,8 +25,6 @@ private:
 #include "network/InitFunc.cuh"
 #include <cmath>
 
-std::mt19937 WeightsInit::rng = std::mt19937(std::random_device{}());
-
 
 template<int x, int y, int z>
 void WeightsInit::XavierInit(const int inputSize, MAT<x,y,z>* weights)
