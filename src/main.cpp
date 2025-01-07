@@ -2,7 +2,6 @@
 #include "tests/Tests.h"
 int main(int argc, char** argv)
 {
-    std::cout << "Hello world !\n";
     Tests::ExecuteTests();
     //Mnist2();
     //QuickDraw2(10000);

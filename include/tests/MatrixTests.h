@@ -3,6 +3,8 @@
 
 class MatrixTests {
 public:
+    static bool ExecuteTests();
+private:
     static bool TestConstructors();
     static bool TestBasicOperations();
     static bool TestMatrixMultiplication();

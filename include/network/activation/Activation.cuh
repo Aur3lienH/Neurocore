@@ -87,15 +87,15 @@ public:
 
 #endif
     template<int x=1, int y=1, int z=1>
-    static MAT<x,y,z>* InitWeights(int inputSize, int outputSize)
+    static MAT<x,y,z>* InitWeights()
     {
-        return Derived::InitWeights(inputSize, outputSize);
+        return Derived::InitWeights();
     }
 
     template<int x=1, int y=1, int z=1>
-    static MAT<x,y,z>* InitBiases(int outputSize)
+    static MAT<x,y,z>* InitBiases()
     {
-        return new MAT<>();
+        return new MAT<x,y,z>(0.01);
     }
 
     /*
