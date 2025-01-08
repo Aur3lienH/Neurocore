@@ -9,6 +9,9 @@ template<typename Derived>
 class Layer
 {
 public:
+
+	using Shape = typename Derived::Shape;
+
     Layer();
 
     virtual ~Layer();

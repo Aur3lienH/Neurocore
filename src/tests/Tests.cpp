@@ -7,6 +7,7 @@
 #include "tests/LayerTests.h"
 #include "tests/ActivationTests.h"
 #include "tests/LossTests.h"
+#include "tests/NetworkTests.h"
 #include <limits>
 #include <tuple>
 #include <vector>
@@ -23,6 +24,7 @@ void Tests::ExecuteTests()
     functions.emplace_back((void*)LayerTests::ExecuteTests,std::string("LAYER TESTS"));
     functions.emplace_back((void*)ActivationTests::ExecuteTests,std::string("ACTIVATION TESTS"));
     functions.emplace_back((void*)LossTests::ExecuteTests,std::string("LOSS TESTS"));
+    functions.emplace_back((void*)NetworkTests::ExecuteTests,std::string("NETWORK TESTS"));
 
 
     
