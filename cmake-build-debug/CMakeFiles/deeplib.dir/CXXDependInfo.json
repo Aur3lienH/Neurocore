@@ -1,0 +1,23 @@
+{
+	"bmi-installation" : null,
+	"compiler-frontend-variant" : "GNU",
+	"compiler-id" : "GNU",
+	"compiler-simulate-id" : "",
+	"config" : "Debug",
+	"cxx-modules" : {},
+	"dir-cur-bld" : "/home/aurelien/Projects/DeepLearning/cmake-build-debug",
+	"dir-cur-src" : "/home/aurelien/Projects/DeepLearning",
+	"dir-top-bld" : "/home/aurelien/Projects/DeepLearning/cmake-build-debug",
+	"dir-top-src" : "/home/aurelien/Projects/DeepLearning",
+	"exports" : [],
+	"forward-modules-from-target-dirs" : [],
+	"include-dirs" : 
+	[
+		"/home/aurelien/Projects/DeepLearning/include",
+		"/home/aurelien/Projects/DeepLearning/dependencies/pybind11/include",
+		"/usr/include/python3.13"
+	],
+	"language" : "CXX",
+	"linked-target-dirs" : [],
+	"module-dir" : "/home/aurelien/Projects/DeepLearning/cmake-build-debug/CMakeFiles/deeplib.dir"
+}
