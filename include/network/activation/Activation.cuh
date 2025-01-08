@@ -1,17 +1,28 @@
 #pragma once
 
 #include "matrix/Matrix.cuh"
+#include "network/activation/ReLU.h"
+#include "network/activation/Sigmoid.h"
+#include "network/activation/Softmax.h"
+#include "network/activation/Tanh.h"
+#include "network/activation/SigmoidPrime.h"
+#include "network/activation/LeakyReLU.h"
 #include "network/InitFunc.cuh"
 #include <fstream>
 #include <emmintrin.h>
 #include <cmath>
 
+template<int rows, int prev_rows,int cols, int dims>
 class Sigmoid;
+template<int rows, int prev_rows,int cols, int dims>
 class SigmoidPrime;
-template<int rows, int cols, int dims>
+template<int rows, int prev_rows,int cols, int dims>
 class ReLU;
+template<int rows, int prev_rows, float def_val,int cols, int dims>
 class LeakyReLU;
+template<int rows, int prev_rows,int cols, int dims>
 class SoftMax;
+template<int rows, int prev_rows,int cols, int dims>
 class Tanh;
 
 template <typename... Args>
@@ -20,28 +31,28 @@ struct ActivationID {
 };
 
 // Specializations for specific type combinations
-template <>
-struct ActivationID<Sigmoid> {
+template<int rows, int prev_rows,int cols, int dims>
+struct ActivationID<Sigmoid<rows,prev_rows,cols,dims>> {
     static constexpr uint value = 0;
 };
 
-template <>
-struct ActivationID<SigmoidPrime> {
+template<int rows, int prev_rows,int cols, int dims>
+struct ActivationID<SigmoidPrime<rows,prev_rows,cols,dims>> {
     static constexpr uint value = 1;
 };
 
-template <int rows, int cols, int dims>
-struct ActivationID<ReLU<rows, cols, dims>> {
+template <int rows,int prev_rows ,int cols, int dims>
+struct ActivationID<ReLU<rows,prev_rows,cols, dims>> {
     static constexpr uint value = 2;
 };
 
-template <>
-struct ActivationID<LeakyReLU> {
+template<int rows, int prev_rows, float def_val,int cols, int dims>
+struct ActivationID<LeakyReLU<rows,prev_rows,def_val,cols,dims>> {
     static constexpr uint value = 3;
 };
 
-template <>
-struct ActivationID<Tanh> {
+template<int rows, int prev_rows,int cols, int dims>
+struct ActivationID<Tanh<rows,prev_rows,cols,dims>> {
     static constexpr uint value = 5;
 };
 
@@ -80,23 +91,20 @@ public:
         Derived::FeedForward(input, output);
     }
 
-    template<int x=1, int y=1, int z=1>
-    static void Derivative(const MAT<x,y,z>* input, MAT<x,y,z>* output)
+    static void Derivative(const MAT<Derived::Rows,Derived::Cols,Derived::Dims>* input, MAT<Derived::Rows,Derived::Cols,Derived::Dims>* output)
     {
         Derived::Derivative(input, output);
     }
 
 #endif
-    template<int x=1, int y=1, int z=1>
-    static MAT<x,y,z>* InitWeights()
+    static MAT<Derived::Rows,Derived::PrevRows,Derived::Dims>* InitWeights()
     {
         return Derived::InitWeights();
     }
 
-    template<int x=1, int y=1, int z=1>
-    static MAT<x,y,z>* InitBiases()
+    static MAT<Derived::Rows,Derived::Cols,Derived::Dims>* InitBiases()
     {
-        return new MAT<x,y,z>(0.01);
+        return new MAT<Derived::Rows,Derived::Cols,Derived::Dims>(0.01);
     }
 
     /*

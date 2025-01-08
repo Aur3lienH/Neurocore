@@ -40,12 +40,12 @@ bool MatrixTests::ExecuteTests()
     for (int i = 0; i < functions.size(); i++) {
         if(array[i])
         {
-            std::cout << "\033[1;32m[SUCCEED]\033[0m   ";
+            std::cout << "  \033[1;32m[SUCCEED]\033[0m   ";
             std::cout << std::get<1>(functions[i]) << "\n";
         }
         else
         {
-            std::cout << "\033[1;31m[FAIL]\033[0m   ";
+            std::cout << "  \033[1;31m[FAIL]\033[0m   ";
             std::cout << std::get<1>(functions[i]) << "\n";
         }
     }

@@ -132,7 +132,7 @@ void FCL<activation,prevLayerShape,layershape,optimizer>::Compile()
 
     if (Weights == nullptr)
     {
-        Weights = activation::template InitWeights<layershape::x, prevLayerShape::x>();
+        Weights = activation::InitWeights();
     }
     if (Delta == nullptr)
         Delta = new MAT<layershape::x, prevLayerShape::x>();
@@ -141,7 +141,7 @@ void FCL<activation,prevLayerShape,layershape,optimizer>::Compile()
     if (DeltaBiases == nullptr)
         DeltaBiases = new MAT<layershape::x>();
     if (Biases == nullptr)
-        Biases = activation::template InitBiases<layershape::x>();
+        Biases = activation::InitBiases();
     if (Result == nullptr)
         Result = new MAT<layershape::x>();
     z = new MAT<layershape::x >();

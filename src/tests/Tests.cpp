@@ -5,6 +5,8 @@
 #include <iostream>
 #include "tests/MatrixTests.h"
 #include "tests/LayerTests.h"
+#include "tests/ActivationTests.h"
+#include "tests/LossTests.h"
 #include <limits>
 #include <tuple>
 #include <vector>
@@ -19,8 +21,9 @@ void Tests::ExecuteTests()
     //functions.push_back(std::tuple((void*)MatrixTests::SMIDMatrixTest,std::string("SMID Cross Product")));
     functions.emplace_back((void*)MatrixTests::ExecuteTests,std::string("MATRIX TESTS"));
     functions.emplace_back((void*)LayerTests::ExecuteTests,std::string("LAYER TESTS"));
+    functions.emplace_back((void*)ActivationTests::ExecuteTests,std::string("ACTIVATION TESTS"));
+    functions.emplace_back((void*)LossTests::ExecuteTests,std::string("LOSS TESTS"));
 
-    bool* array = new bool[functions.size()];
 
     
     for (int i = 0; i < functions.size(); i++)
@@ -29,30 +32,17 @@ void Tests::ExecuteTests()
         bool res = func();
         if(res)
         {
-            array[i] = true;
-        }
-        else
-        {
-            array[i] = false;
-        }
-    }
-
-    //system("clear");
-    for (int i = 0; i < functions.size(); i++)
-    {
-        if(array[i])
-        {
-            std::cout << "  \033[1;32m[SUCCEED]\033[0m   ";
+            std::cout << "\033[1;32m[SUCCEED]\033[0m   ";
             std::cout << std::get<1>(functions[i]) << "\n";
         }
         else
         {
-            std::cout << "  \033[1;31m[FAIL]\033[0m   ";
+            std::cout << "\033[1;31m[FAIL]\033[0m   ";
             std::cout << std::get<1>(functions[i]) << "\n";
         }
     }
 
-    free(array);
+
 }
 
 
