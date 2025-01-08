@@ -15,6 +15,8 @@ public:
 
     ~FCL();
 
+    using Shape = layershape;
+
     //Cannot do that since templated
     //FCL(MAT* weights, MAT* bias, MAT* delta,
     //    MAT* deltaActivation);

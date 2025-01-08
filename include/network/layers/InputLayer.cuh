@@ -8,7 +8,9 @@
 template<typename layershape>
 class InputLayer
 {
-  public:
+
+public:
+    using Shape = layershape;
 public:
     const LMAT<layershape>* FeedForward(const LMAT<layershape>* input);
 

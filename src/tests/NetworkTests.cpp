@@ -1,8 +1,10 @@
 #include "tests/NetworkTests.h"
-/*#include "network/Network.h"
+#include "network/Network.h"
 #include "network/layers/FCL.cuh"
 #include "network/activation/ReLU.h"
 #include "network/layers/InputLayer.cuh"
+#include "network/loss/MSE.cuh"
+#include "network/loss/Loss.h"
 #include <iostream>
 #include <functional>
 
@@ -11,7 +13,7 @@ bool NetworkTests::ExecuteTests()
 {
     bool res = true;
     std::vector<std::tuple<void*,std::string>> functions;
-    //functions.push_back(std::tuple((void*)MatrixTests::SMIDMatrixTest,std::string("SMID Cross Product")));
+    functions.push_back(std::tuple((void*)BasicFFN,std::string("Basic FFN")));
 
     bool* array = new bool[functions.size()];
 
@@ -51,7 +53,16 @@ bool NetworkTests::ExecuteTests()
 
 bool NetworkTests::BasicFFN()
 {
-    
+    Network<
+        Loss<MSE<5,1,1>>,
+        InputLayer<LayerShape<1>>,
+        FCL<ReLU<5,1,1,1>,LayerShape<1>,LayerShape<5>>
+    > neuralnet;
+    //neuralnet.Compile();
+
     return true;
 }
-*/
+
+
+
+
