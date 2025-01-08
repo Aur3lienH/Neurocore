@@ -10,4 +10,6 @@ private:
     static bool TestLeakyReLU();
     static bool TestTanh();
     static bool TestSoftmax();
+    static bool TestSigmoid();
+    static bool TestSigmoidPrime();
 };

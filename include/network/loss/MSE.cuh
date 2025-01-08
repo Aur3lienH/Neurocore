@@ -1,10 +1,14 @@
 #pragma once
-#include "Loss.h"
+#include "matrix/Matrix.cuh"
 #include <cmath>
 
-class MSEConfig {
+template<int rows, int cols, int dims>
+class MSE {
 public:
-    template<int rows, int cols, int dims>
+    static constexpr int Rows = rows;
+    static constexpr int Cols = cols;
+    static constexpr int Dims = dims;
+public:
     static double Cost(const MAT<rows,cols,dims>* output, const MAT<rows,cols,dims>* target) {
 #if USE_GPU
         // Allocation de la mémoire CPU pour les calculs
@@ -41,7 +45,6 @@ public:
         return cost / (2.0 * output->GetRows());
     }
 
-    template<int rows, int cols, int dims>
     static void CostDerivative(const MAT<rows,cols,dims>* output,
                               const MAT<rows,cols,dims>* target,
                               MAT<rows,cols,dims>* result) {

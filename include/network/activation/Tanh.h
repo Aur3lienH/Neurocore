@@ -1,68 +1,70 @@
-// #pragma once
-// #include <cmath>
-// #include "matrix/Matrix.cuh"
-// #include "network/InitFunc.cuh"
-// #include "network/activation/Activation.cuh"
-//
-//
-//
-// class Tanh
-// {
-// public:
-//     Tanh();
-//
-// #if not USE_GPU
-//
-//     static double Function(double input);
-//
-// #endif
-//
-//     static double Derive(double input);
-//
-//     static MAT* InitWeights(int inputSize, int outputSize);
-//
-//
-//     static void FeedForward(const MAT* input, MAT* output)
-//     {
-//         DefaultFeedForward(input, output, Function);
-//     }
-//
-//     static void Derivative(const MAT* input, MAT* output)
-//     {
-//         DefaultDerivative(input, output, Derive);
-//     }
-// };
-//
-//
-// Tanh::Tanh()
-// {
-// #if USE_GPU
-//     checkCUDNN(cudnnCreateActivationDescriptor(&activationDesc));
-//     checkCUDNN(cudnnSetActivationDescriptor(activationDesc, CUDNN_ACTIVATION_TANH, CUDNN_NOT_PROPAGATE_NAN, 0));
-// #endif
-// }
-//
-// #if not USE_GPU
-//
-// double Tanh::Function(const double input)
-// {
-//     return tanh(input);
-// }
-//
-// #endif
-//
-// double Tanh::Derive(const double input)
-// {
-//     return 1 - tanh(input) * tanh(input);
-// }
-//
-// MAT* Tanh::InitWeights(const int previousNeuronsCount, const int NeuronsCount)
-// {
-// #if USE_GPU
-//     auto* weights = new Matrix_GPU(NeuronsCount, previousNeuronsCount);
-// #else
-//     auto* weights = new Matrix(NeuronsCount, previousNeuronsCount, 1, true);
-// #endif
-//     WeightsInit::XavierInit(previousNeuronsCount, weights);
-//     return weights;
-// }
+#pragma once
+#include <cmath>
+#include "matrix/Matrix.cuh"
+#include "network/InitFunc.cuh"
+
+
+template<int rows,int prev_rows, int cols = 1, int dims = 1>
+class Tanh
+{
+public:
+
+    static constexpr int Rows = rows;
+    static constexpr int Cols = cols;
+    static constexpr int Dims = dims;
+    static constexpr int PrevRows = prev_rows;
+
+    Tanh();
+
+#if not USE_GPU
+
+    static double Function(double input);
+
+#endif
+
+    static double Derive(double input);
+
+    static MAT<rows,prev_rows,dims>* InitWeights();
+
+
+    static void FeedForward(const MAT<rows,cols,dims>* input, MAT<rows,cols,dims>* output)
+    {
+        DefaultFeedForward(input, output, Function);
+    }
+
+    static void Derivative(const MAT<rows,cols,dims>* input, MAT<rows,cols,dims>* output)
+    {
+        DefaultDerivative(input, output, Derive);
+    }
+};
+
+template<int rows,int prev_rows, int cols, int dims>
+Tanh<rows,prev_rows,cols,dims>::Tanh()
+{
+#if USE_GPU
+    checkCUDNN(cudnnCreateActivationDescriptor(&activationDesc));
+    checkCUDNN(cudnnSetActivationDescriptor(activationDesc, CUDNN_ACTIVATION_TANH, CUDNN_NOT_PROPAGATE_NAN, 0));
+#endif
+}
+
+#if not USE_GPU
+template<int rows,int prev_rows, int cols, int dims>
+double Tanh<rows,prev_rows,cols,dims>::Function(const double input)
+{
+    return tanh(input);
+}
+
+#endif
+template<int rows,int prev_rows, int cols, int dims>
+double Tanh<rows,prev_rows,cols,dims>::Derive(const double input)
+{
+    return 1 - tanh(input) * tanh(input);
+}
+template<int rows,int prev_rows, int cols, int dims>
+MAT<rows,prev_rows,dims>* Tanh<rows,prev_rows,cols,dims>::InitWeights()
+{
+    auto* weights = new MAT<rows,prev_rows,dims>();
+
+    WeightsInit::XavierInit(prev_rows, weights);
+    return weights;
+}

@@ -1,16 +1,15 @@
 #pragma once
 #include "matrix/Matrix.cuh"
+#include "network/loss/MSE.cuh"
 
 template<typename Derived>
 class Loss {
 public:
-    template<int rows, int cols, int dims>
-    static double Cost(const MAT<rows,cols,dims>* output, const MAT<rows,cols,dims>* target) {
-        return Derived::ComputeCost(output, target);
+    static double Cost(const MAT<Derived::Rows,Derived::Cols,Derived::Dims>* output, const MAT<Derived::Rows,Derived::Cols,Derived::Dims>* target) {
+        return Derived::Cost(output, target);
     }
 
-    template<int rows, int cols, int dims>
-    static void CostDerivative(const MAT<rows,cols,dims>* output, const MAT<rows,cols,dims>* target, MAT<rows,cols,dims>* result) {
-        Derived::ComputeCostDerivative(output, target, result);
+    static void CostDerivative(const MAT<Derived::Rows,Derived::Cols,Derived::Dims>* output, const MAT<Derived::Rows,Derived::Cols,Derived::Dims>* target, MAT<Derived::Rows,Derived::Cols,Derived::Dims>* result) {
+        Derived::CostDerivative(output, target, result);
     }
 };

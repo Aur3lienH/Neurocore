@@ -439,19 +439,18 @@ void Matrix<rows,cols,dim>::Zero()
 template<int rows, int cols, int dim>
 void Matrix<rows,cols,dim>::Print() const
 {
-    Matrix matrix = *this;
-    std::cout << "Matrix: " << matrix.GetRows() << "x" << matrix.GetCols() << std::endl;
+    std::cout << "Matrix: " << this->GetRows() << "x" << this->GetCols() << std::endl;
 
 
-    if(matrix.columnMajor)
+    if(this->columnMajor)
     {
-        for (int i = 0; i < matrix.GetCols(); i++)
+        for (int i = 0; i < this->GetCols(); i++)
         {
             std::cout << "[";
-            for (int j = 0; j < matrix.GetRows(); j++)
+            for (int j = 0; j < this->GetRows(); j++)
             {
-                std::cout << matrix.data[i + j * matrix.GetRows()];
-                if (j != matrix.GetCols() - 1)
+                std::cout << this->data[i + j * this->GetRows()];
+                if (j != this->GetCols() - 1)
                 {
                     std::cout << " ";
                 }
@@ -461,13 +460,13 @@ void Matrix<rows,cols,dim>::Print() const
     }
     else
     {
-        for (int i = 0; i < matrix.GetRows(); i++)
+        for (int i = 0; i < this->GetRows(); i++)
         {
             std::cout << "[";
-            for (int j = 0; j < matrix.GetCols(); j++)
+            for (int j = 0; j < this->GetCols(); j++)
             {
-                std::cout << matrix.data[i * matrix.GetCols() + j];
-                if (j != matrix.GetCols() - 1)
+                std::cout << this->data[i * this->GetCols() + j];
+                if (j != this->GetCols() - 1)
                 {
                     std::cout << " ";
                 }

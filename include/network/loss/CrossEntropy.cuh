@@ -1,11 +1,17 @@
 #pragma once
 #include "Loss.h"
+#include "matrix/Matrix.cuh"
 #include <cmath>
 
+template<int rows, int cols, int dims>
 class CrossEntropy {
+public:
+    static constexpr int Rows = rows;
+    static constexpr int Cols = cols;
+    static constexpr int Dims = dims;
 private:
     static constexpr float EPSILON = 1e-15;
-
+#if USE_GPU
     // Kernel CUDA pour calculer la cross-entropy par élément
     __global__
     static void CrossEntropyKernel(const float* output, const float* target, float* result, const int size) {
@@ -36,9 +42,9 @@ private:
             }
         }
     }
+#endif
 
 public:
-    template<int rows, int cols, int dims>
     static double Cost(const MAT<rows,cols,dims>* output, const MAT<rows,cols,dims>* target) {
 #if USE_GPU
         float* res_d;
@@ -72,7 +78,6 @@ public:
 #endif
     }
 
-    template<int rows, int cols, int dims>
     static void CostDerivative(const MAT<rows,cols,dims>* output,
                               const MAT<rows,cols,dims>* target,
                               MAT<rows,cols,dims>* result) {

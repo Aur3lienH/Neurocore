@@ -2,11 +2,18 @@
 #include <cmath>
 #include "matrix/Matrix.cuh"
 #include "network/InitFunc.cuh"
-#include "network/activation/Activation.cuh"
 
+template<int rows,int prev_rows, int cols = 1, int dims = 1>
 class Sigmoid
 {
 public:
+
+    static constexpr int Rows = rows;
+    static constexpr int Cols = cols;
+    static constexpr int Dims = dims;
+    static constexpr int PrevRows = prev_rows;
+
+
     Sigmoid() {
 #if USE_GPU
         checkCUDNN(cudnnCreateActivationDescriptor(&activationDesc));
@@ -25,24 +32,20 @@ public:
         return exp(-input) / pow(1 + exp(-input), 2);
     }
 
-    static void FeedForward(const MAT* input, MAT* output)
+    static void FeedForward(const MAT<rows,cols,dims>* input, MAT<rows,cols,dims>* output)
     {
-        DefaultFeedForward(input, output, Function);
+        DefaultFeedForward<rows,cols,dims>(input, output, Function);
     }
 
-    static void Derivative(const MAT* input, MAT* output)
+    static void Derivative(const MAT<rows,cols,dims>* input, MAT<rows,cols,dims>* output)
     {
-        DefaultDerivative(input, output, Derive);
+        DefaultDerivative<rows,cols,dims>(input, output, Derive);
     }
 
-    static MAT* InitWeights(int previousNeuronsCount, int NeuronsCount)
+    static MAT<rows,prev_rows>* InitWeights()
     {
-#if USE_GPU
-        auto* weights = new Matrix_GPU(NeuronsCount, previousNeuronsCount);
-#else
-        auto* weights = new MAT(NeuronsCount, previousNeuronsCount, 1, true);
-#endif
-        WeightsInit::XavierInit(previousNeuronsCount, weights);
+        auto* weights = new MAT<rows,prev_rows>();
+        WeightsInit::XavierInit<rows,prev_rows,dims>(prev_rows, weights);
         return weights;
     }
 };
