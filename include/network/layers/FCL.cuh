@@ -7,8 +7,8 @@
 #include "network/LayerShape.cuh"
 #include "network/optimizers/Constant.h"
 
-template<typename activation,typename prevLayerShape,typename layershape,typename optimizer = Constant<0.001>>
-class FCL
+template<typename activation,typename prevLayerShape,typename layershape,typename optimizer = Constant<0.001>, bool test = false>
+class FCL final
 {
 public:
     FCL();
@@ -48,7 +48,7 @@ public:
     void UpdateWeights(double learningRate, int batchSize);
 
     //Add Delta from another identical layer
-    void AddDeltaFrom(Layer<FCL<activation,prevLayerShape,layershape,optimizer>>* otherLayer);
+    void AddDeltaFrom(Layer<FCL<activation,prevLayerShape,layershape,optimizer,test>>* otherLayer);
 
     //Initialize variable and check for network architecture
     void Compile();
@@ -58,6 +58,21 @@ public:
 
     //Clone layer
     Layer<FCL>* Clone();
+
+
+    void SetWeights(MAT<layershape::x, prevLayerShape::x>* weights) requires(test)
+    {
+        if (Weights != nullptr)
+            delete Weights;
+        Weights = weights;
+    }
+
+    void SetBiases(MAT<layershape::x>* biases) requires(test)
+    {
+        if (Biases != nullptr)
+            delete Biases;
+        Biases = biases;
+    }
 
 
     //!!! Disable because of the templates
@@ -121,14 +136,14 @@ private:
 #include "matrix/Matrix.cuh"
 #include "network/LayerShape.cuh"
 
-template<typename activation,typename prevLayerShape,typename layershape,typename optimizer>
-FCL<activation,prevLayerShape,layershape,optimizer>::FCL()
+template<typename activation,typename prevLayerShape,typename layershape,typename optimizer,bool test>
+FCL<activation,prevLayerShape,layershape,optimizer,test>::FCL()
 {
 
 }
 
-template<typename activation,typename prevLayerShape,typename layershape,typename optimizer>
-void FCL<activation,prevLayerShape,layershape,optimizer>::Compile()
+template<typename activation,typename prevLayerShape,typename layershape,typename optimizer,bool test>
+void FCL<activation,prevLayerShape,layershape,optimizer,test>::Compile()
 {
     buffer = new float[8];
 
@@ -238,8 +253,8 @@ FCL* FCL::Load(std::ifstream& reader)
 #else
 
 /*
-template<typename activation,typename prevLayerShape,typename layershape,typename optimizer>
-FCL<activation,prevLayerShape,layershape,optimizer>::FCL(MAT* weights, MAT* bias, MAT* delta, MAT* deltaBiases)
+template<typename activation,typename prevLayerShape,typename layershape,typename optimizer,bool test>
+FCL<activation,prevLayerShape,layershape,optimizer,test>::FCL(MAT* weights, MAT* bias, MAT* delta, MAT* deltaBiases)
 {
     this->Delta = delta;
     this->DeltaBiases = deltaBiases;
@@ -248,8 +263,8 @@ FCL<activation,prevLayerShape,layershape,optimizer>::FCL(MAT* weights, MAT* bias
 }
 */
 
-template<typename activation,typename prevLayerShape,typename layershape,typename optimizer>
-MAT<layershape::x>* FCL<activation,prevLayerShape,layershape,optimizer>::FeedForward(const MAT<prevLayerShape::x>* input)
+template<typename activation,typename prevLayerShape,typename layershape,typename optimizer,bool test>
+MAT<layershape::x>* FCL<activation,prevLayerShape,layershape,optimizer,test>::FeedForward(const MAT<prevLayerShape::x>* input)
 {
     //TODO: Check a solution to flatten without copying
     //input->Flatten();
@@ -260,8 +275,8 @@ MAT<layershape::x>* FCL<activation,prevLayerShape,layershape,optimizer>::FeedFor
     return Result;
 }
 
-template<typename activation,typename prevLayerShape,typename layershape,typename optimizer>
-const MAT<prevLayerShape::x>* FCL<activation,prevLayerShape,layershape,optimizer>::BackPropagate(const MAT<layershape::x>* lastDelta, const MAT<layershape::x>* PastActivation)
+template<typename activation,typename prevLayerShape,typename layershape,typename optimizer,bool test>
+const MAT<prevLayerShape::x>* FCL<activation,prevLayerShape,layershape,optimizer,test>::BackPropagate(const MAT<layershape::x>* lastDelta, const MAT<layershape::x>* PastActivation)
 {
     newDelta->Flatten();
     activation::Derivative(z, deltaActivation);
@@ -283,8 +298,8 @@ const MAT<prevLayerShape::x>* FCL<activation,prevLayerShape,layershape,optimizer
     return newDelta;
 }
 
-template<typename activation,typename prevLayerShape,typename layershape,typename optimizer>
-const MAT<layershape::x, prevLayerShape::x>* FCL<activation, prevLayerShape, layershape, optimizer>::BackPropagateSSE2(
+template<typename activation,typename prevLayerShape,typename layershape,typename optimizer,bool test>
+const MAT<layershape::x, prevLayerShape::x>* FCL<activation, prevLayerShape, layershape, optimizer,test>::BackPropagateSSE2(
     const MAT<layershape::x>* lastDelta, const MAT<layershape::x>* PastActivation)
 {
     /*newDelta->Flatten();
@@ -347,8 +362,8 @@ const MAT<layershape::x, prevLayerShape::x>* FCL<activation, prevLayerShape, lay
     return nullptr;
 }
 
-template<typename activation,typename prevLayerShape,typename layershape,typename optimizer>
-const MAT<layershape::x, prevLayerShape::x>* FCL<activation, prevLayerShape, layershape, optimizer>::BackPropagateAX2(
+template<typename activation,typename prevLayerShape,typename layershape,typename optimizer,bool test>
+const MAT<layershape::x, prevLayerShape::x>* FCL<activation, prevLayerShape, layershape, optimizer,test>::BackPropagateAX2(
     const MAT<layershape::x>* lastDelta, const MAT<layershape::x>* PastActivation)
 {
 
@@ -404,25 +419,25 @@ const MAT<layershape::x, prevLayerShape::x>* FCL<activation, prevLayerShape, lay
 
     return newDelta;
 }
-template<typename activation,typename prevLayerShape,typename layershape,typename optimizer>
-const MAT<layershape::x>* FCL<activation,prevLayerShape,layershape,optimizer>::getResult() const
+template<typename activation,typename prevLayerShape,typename layershape,typename optimizer,bool test>
+const MAT<layershape::x>* FCL<activation,prevLayerShape,layershape,optimizer,test>::getResult() const
 {
     return Result;
 }
-template<typename activation,typename prevLayerShape,typename layershape,typename optimizer>
-const MAT<layershape::x, prevLayerShape::x>* FCL<activation,prevLayerShape,layershape,optimizer>::getDelta()
+template<typename activation,typename prevLayerShape,typename layershape,typename optimizer,bool test>
+const MAT<layershape::x, prevLayerShape::x>* FCL<activation,prevLayerShape,layershape,optimizer,test>::getDelta()
 {
     return Delta;
 }
-template<typename activation,typename prevLayerShape,typename layershape,typename optimizer>
-const MAT<layershape::x>* FCL<activation,prevLayerShape,layershape,optimizer>::getDeltaBiases()
+template<typename activation,typename prevLayerShape,typename layershape,typename optimizer,bool test>
+const MAT<layershape::x>* FCL<activation,prevLayerShape,layershape,optimizer,test>::getDeltaBiases()
 {
     return DeltaBiases;
 }
 
 /*
-template<typename activation,typename prevLayerShape,typename layershape,typename optimizer>
-FCL* FCL<activation,prevLayerShape,layershape,optimizer>::Load(std::ifstream& reader)
+template<typename activation,typename prevLayerShape,typename layershape,typename optimizer,bool test>
+FCL* FCL<activation,prevLayerShape,layershape,optimizer,test>::Load(std::ifstream& reader)
 {
     int neuronsCount;
     reader.read(reinterpret_cast<char*>(&neuronsCount), sizeof(int));
@@ -435,15 +450,15 @@ FCL* FCL<activation,prevLayerShape,layershape,optimizer>::Load(std::ifstream& re
 
 #endif
 
-template<typename activation,typename prevLayerShape,typename layershape,typename optimizer>
-void FCL<activation,prevLayerShape,layershape,optimizer>::ClearDelta()
+template<typename activation,typename prevLayerShape,typename layershape,typename optimizer,bool test>
+void FCL<activation,prevLayerShape,layershape,optimizer,test>::ClearDelta()
 {
     Delta->Zero();
     DeltaBiases->Zero();
 }
 
-template<typename activation,typename prevLayerShape,typename layershape,typename optimizer>
-void FCL<activation,prevLayerShape,layershape,optimizer>::UpdateWeights(const double learningRate, const int batchSize)
+template<typename activation,typename prevLayerShape,typename layershape,typename optimizer,bool test>
+void FCL<activation,prevLayerShape,layershape,optimizer,test>::UpdateWeights(const double learningRate, const int batchSize)
 {
     optimizer::Compute(Delta, Weights);
     optimizer::Compute(DeltaBiases, Biases, Weights->GetSize());
@@ -451,8 +466,8 @@ void FCL<activation,prevLayerShape,layershape,optimizer>::UpdateWeights(const do
     Delta->Zero();
     DeltaBiases->Zero();
 }
-template<typename activation,typename prevLayerShape,typename layershape,typename optimizer>
-void FCL<activation,prevLayerShape,layershape,optimizer>::AddDeltaFrom(Layer<FCL<activation,prevLayerShape,layershape,optimizer>>* otherLayer)
+template<typename activation,typename prevLayerShape,typename layershape,typename optimizer,bool test>
+void FCL<activation,prevLayerShape,layershape,optimizer,test>::AddDeltaFrom(Layer<FCL<activation,prevLayerShape,layershape,optimizer,test>>* otherLayer)
 {
 #if USE_GPU
     throw std::runtime_error("FCL::AddDeltaFrom not implemented for GPU");
@@ -462,8 +477,8 @@ void FCL<activation,prevLayerShape,layershape,optimizer>::AddDeltaFrom(Layer<FCL
     DeltaBiases->AddAllDims(_FCLLayer->DeltaBiases, DeltaBiases);
 #endif
 }
-template<typename activation,typename prevLayerShape,typename layershape,typename optimizer>
-std::string FCL<activation,prevLayerShape,layershape,optimizer>::getLayerTitle()
+template<typename activation,typename prevLayerShape,typename layershape,typename optimizer,bool test>
+std::string FCL<activation,prevLayerShape,layershape,optimizer,test>::getLayerTitle()
 {
     std::string buf;
     buf += "Layer : Fully Connected Layer\n";
@@ -471,15 +486,15 @@ std::string FCL<activation,prevLayerShape,layershape,optimizer>::getLayerTitle()
     buf += "Neurons Count : " + std::to_string(layershape::x) + "\n";
     return buf;
 }
-template<typename activation,typename prevLayerShape,typename layershape,typename optimizer>
-Layer<FCL<activation,prevLayerShape,layershape,optimizer>>* FCL<activation,prevLayerShape,layershape,optimizer>::Clone()
+template<typename activation,typename prevLayerShape,typename layershape,typename optimizer,bool test>
+Layer<FCL<activation,prevLayerShape,layershape,optimizer,test>>* FCL<activation,prevLayerShape,layershape,optimizer,test>::Clone()
 {
-    return new FCL<activation,prevLayerShape,layershape,optimizer>();
+    return new FCL<activation,prevLayerShape,layershape,optimizer,test>();
 }
 
 /*
-template<typename activation,typename prevLayerShape,typename layershape,typename optimizer>
-void FCL<activation,prevLayerShape,layershape,optimizer>::SpecificSave(std::ofstream& write)
+template<typename activation,typename prevLayerShape,typename layershape,typename optimizer,bool test>
+void FCL<activation,prevLayerShape,layershape,optimizer,test>::SpecificSave(std::ofstream& write)
 {
     write.write(reinterpret_cast<char*>(&NeuronsCount), sizeof(int));
     Weights->Save(write);
@@ -488,14 +503,14 @@ void FCL<activation,prevLayerShape,layershape,optimizer>::SpecificSave(std::ofst
 }
 */
 
-template<typename activation,typename prevLayerShape,typename layershape,typename optimizer>
-void FCL<activation,prevLayerShape,layershape,optimizer>::AverageGradients(int batchSize)
+template<typename activation,typename prevLayerShape,typename layershape,typename optimizer,bool test>
+void FCL<activation,prevLayerShape,layershape,optimizer,test>::AverageGradients(int batchSize)
 {
     Delta->DivideAllDims(batchSize);
     DeltaBiases->DivideAllDims(batchSize);
 }
-template<typename activation,typename prevLayerShape,typename layershape,typename optimizer>
-FCL<activation,prevLayerShape,layershape,optimizer>::~FCL()
+template<typename activation,typename prevLayerShape,typename layershape,typename optimizer,bool test>
+FCL<activation,prevLayerShape,layershape,optimizer,test>::~FCL()
 {
     delete Weights;
     delete Biases;
@@ -532,8 +547,8 @@ void FCL::Save(const std::string& folderPath, const int n)
 
 #else
 /*
-template<typename activation,typename prevLayerShape,typename layershape,typename optimizer>
-void FCL<activation,prevLayerShape,layershape,optimizer>::Compare(const std::string& folderPath, int n)
+template<typename activation,typename prevLayerShape,typename layershape,typename optimizer,bool test>
+void FCL<activation,prevLayerShape,layershape,optimizer,test>::Compare(const std::string& folderPath, int n)
 {
     std::ifstream weightsReader(folderPath + "/weights" + std::to_string(n) + ".txt");
     std::ifstream biasesReader(folderPath + "/biases" + std::to_string(n) + ".txt");

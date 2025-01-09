@@ -8,7 +8,8 @@ enum class Opti
 };
 
 template<typename Derived>
-class Optimizer {
+class Optimizer final
+{
 public:
     virtual ~Optimizer() = default;
     static void Compile(int size)

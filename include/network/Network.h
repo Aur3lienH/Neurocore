@@ -12,7 +12,7 @@
 
 
 template<typename Loss,typename... Layers>
-class Network
+class Network final
 {
 public:
     Network() : layers(Layers()...) {
@@ -35,6 +35,10 @@ public:
     using FirstLayer = typename std::tuple_element<0, std::tuple<Layers...>>::type;
 
     using LastLayer = typename std::tuple_element<sizeof...(Layers) - 1, std::tuple<Layers...>>::type;
+    static constexpr std::size_t layersCount = sizeof...(Layers);
+
+    template<std::size_t I>
+    using LayersType_At = std::tuple_element_t<I, std::tuple<Layers...>>;
 
     using InputShape = typename FirstLayer::Shape;
     using OutputShape = typename LastLayer::Shape;
@@ -89,16 +93,27 @@ public:
         return const_cast<LMAT<OutputShape>*>(res);
     }
 
+    template<typename InputShapeL = InputShape,int I = 0>
+    auto FeedForwardRecu(const LMAT<InputShapeL>* input)
+    {
+        if constexpr (I == layersCount)
+        {
+            return input;
+        }
+        else
+        {
+            return FeedForwardRecu<typename LayersType_At<I>::Shape,I + 1>(std::get<I>(layers).FeedForward(input));
+        }
+    }
+
+
     //Compute values through the neural network
     const LMAT<OutputShape>* FeedForward(LMAT<InputShape>* input)
     {
-        output = input;
-        for (int i = 0; i < layersCount; i++)
-        {
-            output = layers[i]->FeedForward(output);
-        }
-        return output;
+        return FeedForwardRecu(input);
     }
+
+
 
 
 
@@ -242,6 +257,13 @@ public:
         for (int i = 0; i < layersCount; i++)
             std::cout << layers[i]->getLayerTitle() << std::endl;
     }
+    template <typename Tuple,std::size_t I = 0>
+    void for_each_tuple(Tuple& t) {
+        if constexpr (I < std::tuple_size_v<Tuple>) {
+            std::get<I>(t).Compile();
+            for_each_tuple<Tuple,I + 1>(t);
+        }
+    }
 
     //Initialize variable and check for error in the architecture of the model
     void Compile()
@@ -251,26 +273,19 @@ public:
 
         std::cout << layersCount << " this is the layers Count\n";
 
-        //Compile each layer
-        for (int i = 0; i < layersCount; i++)
-        {
-            std::cout << i << "\n";
-            if (i == 0)
-                layers[i]->Compile(nullptr, opti);
-            else
-                layers[i]->Compile(layers[i - 1]->GetLayerShape(), opti);
-        }
+        for_each_tuple<decltype(layers)>(layers);
 
         std::cout << "loop done \n";
 
         //Initialize the matrix which holds the values of the cost derivative.
-        costDerivative = layers[layersCount - 1]->GetLayerShape()->ToMatrix();
+        costDerivative = new LMAT<OutputShape>();
 
         std::cout << "Getting cost derivative matrix done \n";
-        auto* inputLayer = (Layer<InputLayer<InputShape>>*) layers[0];
+        /*
+        auto* inputLayer = (Layer<InputLayer<InputShape>>*) std::get<0>(layers);
         if (inputLayer == nullptr)
             throw std::invalid_argument("First layer must be an input layer");
-
+        */
         std::cout << "finished compiling \n";
         compiled = true;
     }
@@ -321,6 +336,12 @@ public:
        */
     }
 
+    template<int I>
+    auto* GetLayer()
+    {
+        return &std::get<I>(layers);
+    }
+
 
 private:
     void UpdateWeights(double learningRate, int batchSize)
@@ -354,8 +375,6 @@ private:
     //Is Compiled ?
     bool compiled = false;
 
-    //The number of layers
-    int layersCount = 0;
 
     Opti opti;
 
@@ -371,7 +390,6 @@ public:
 template<typename Loss,typename... Types>
 Network<Loss,Types...>::Network(Network* network)
 {
-    this->layersCount = network->layersCount;
     for (int i = 0; i < layersCount; i++)
         this->layers[i] = network->layers[i]->Clone();
 

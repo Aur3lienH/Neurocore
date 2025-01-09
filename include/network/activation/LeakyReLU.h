@@ -2,7 +2,7 @@
 #include <matrix/Matrix.cuh>
 #include <network/InitFunc.cuh>
 template<int rows,int prev_rows, float def_val = 0.01f, int cols = 1, int dims = 1>
-class LeakyReLU
+class LeakyReLU final
 {
 public:
 

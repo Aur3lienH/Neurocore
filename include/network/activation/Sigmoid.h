@@ -4,7 +4,7 @@
 #include "network/InitFunc.cuh"
 
 template<int rows,int prev_rows, int cols = 1, int dims = 1>
-class Sigmoid
+class Sigmoid final
 {
 public:
 

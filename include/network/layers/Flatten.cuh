@@ -3,7 +3,7 @@
 #include "Layer.cuh"
 
 template<LayerShape layershape>
-class Flatten
+class Flatten final
 {
 public:
     Flatten();

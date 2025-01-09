@@ -3,7 +3,7 @@
 #include "Layer.cuh"
 
 template<LayerShape<>>
-class PoolingLayer
+class PoolingLayer final
 {
 public:
     PoolingLayer(int filterSize, int stride);

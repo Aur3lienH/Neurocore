@@ -5,7 +5,7 @@
 
 
 template<int rows,int prev_rows, int cols = 1, int dims = 1>
-class Tanh
+class Tanh final
 {
 public:
 

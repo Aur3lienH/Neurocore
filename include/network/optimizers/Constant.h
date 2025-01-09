@@ -4,7 +4,8 @@
 
 
 template<double lr>
-class Constant {
+class Constant final
+{
 public:
     static void Compile(int size) {}
 
