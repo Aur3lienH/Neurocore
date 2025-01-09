@@ -5,7 +5,7 @@
 #include <iostream>
 
 //Class in which there are functions to init weights
-class WeightsInit
+class WeightsInit final
 {
 public:
     template<int x = 1, int y = 1, int z = 1>

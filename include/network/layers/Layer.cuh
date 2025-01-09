@@ -6,7 +6,7 @@
 #include "network/optimizers/Optimizer.h"
 
 template<typename Derived>
-class Layer
+class Layer final
 {
 public:
 

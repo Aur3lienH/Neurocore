@@ -5,5 +5,6 @@ class NetworkTests
 {
 public:
     static bool ExecuteTests();
-    static bool BasicFFN();
+    static bool BasicFFNFeedForward();
+    static bool BasicFFNLearn();
 };

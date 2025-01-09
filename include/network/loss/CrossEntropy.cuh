@@ -4,7 +4,8 @@
 #include <cmath>
 
 template<int rows, int cols, int dims>
-class CrossEntropy {
+class CrossEntropy final
+{
 public:
     static constexpr int Rows = rows;
     static constexpr int Cols = cols;

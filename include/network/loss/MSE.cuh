@@ -3,7 +3,8 @@
 #include <cmath>
 
 template<int rows, int cols, int dims>
-class MSE {
+class MSE final
+{
 public:
     static constexpr int Rows = rows;
     static constexpr int Cols = cols;

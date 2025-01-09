@@ -3,7 +3,7 @@
 #include "PoolingLayer.cuh"
 #include "Layer.cuh"
 
-class MaxPoolLayer : public PoolingLayer
+class MaxPoolLayer final
 {
 public:
     MaxPoolLayer(int filterSize, int stride);

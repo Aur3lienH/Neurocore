@@ -4,7 +4,7 @@
 #include "matrix/Matrix.cuh"
 #include <random>
 
-class DropoutFCL
+class DropoutFCL final
 {
     DropoutFCL(int NeuronsCount, Activation* activation, MAT* weights, MAT* bias, MAT* delta,
                MAT* deltaActivation, double dropoutRate = .5);

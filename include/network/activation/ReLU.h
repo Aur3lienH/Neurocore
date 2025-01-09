@@ -5,7 +5,7 @@
 #include "network/InitFunc.cuh"
 
 template<int rows,int prev_rows, int cols = 1, int dims = 1>
-class ReLU
+class ReLU final
 {
 public:
     static constexpr int Rows = rows;
@@ -64,6 +64,7 @@ void ReLU<rows,prev_rows,cols,dims>::FeedForward(const MAT<rows,cols,dims>* inpu
     for (; i < input->GetSize(); ++i)
     {
         if ((*input)[i] < 0) (*output)[i] = 0;
+        else (*output)[i] = (*input)[i];
     }
 }
 

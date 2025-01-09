@@ -3,7 +3,7 @@
 #include "Layer.cuh"
 #include "PoolingLayer.cuh"
 
-class AveragePoolLayer
+class AveragePoolLayer final
 {
 public:
     AveragePoolLayer(int filterSize, int stride);

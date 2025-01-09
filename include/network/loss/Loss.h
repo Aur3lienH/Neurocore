@@ -3,7 +3,8 @@
 #include "network/loss/MSE.cuh"
 
 template<typename Derived>
-class Loss {
+class Loss final
+{
 public:
     static double Cost(const MAT<Derived::Rows,Derived::Cols,Derived::Dims>* output, const MAT<Derived::Rows,Derived::Cols,Derived::Dims>* target) {
         return Derived::Cost(output, target);

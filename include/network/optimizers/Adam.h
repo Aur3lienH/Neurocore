@@ -12,7 +12,8 @@ struct AdamConfig {
 };
 
 template<double alpha, double beta1, double beta2, double gamma>
-class Optimizer<AdamConfig<alpha, beta1, beta2, gamma>> {
+class Optimizer<AdamConfig<alpha, beta1, beta2, gamma>> final
+{
 public:
     using State = AdamConfig<alpha, beta1, beta2, gamma>;
 

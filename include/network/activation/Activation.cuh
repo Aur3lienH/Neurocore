@@ -66,7 +66,7 @@ struct ActivationID<Tanh<rows,prev_rows,cols,dims>> {
 
 
 template<typename Derived,typename... Args>
-class Activation
+class Activation final
 {
     std::tuple<Args...> params;
     unsigned int id;

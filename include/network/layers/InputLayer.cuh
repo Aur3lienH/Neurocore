@@ -6,7 +6,7 @@
 
 
 template<typename layershape>
-class InputLayer
+class InputLayer final
 {
 
 public:
