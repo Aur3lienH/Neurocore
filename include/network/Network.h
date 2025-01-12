@@ -46,6 +46,14 @@ public:
     //Add a layer to the network
     //void AddLayer(Layer* layer);
 
+    template <typename Output,int I>
+    void for_each_layer_back_prop(Output output) {
+        if constexpr (I >= 1) {
+            auto new_out = std::get<I>(layers).BackPropagate(output, std::get<I-1>(layers).getResult());
+            for_each_layer_back_prop<decltype(new_out),I-1>(new_out);
+        }
+    }
+
     //Backpropagate threw the Network and store all the derivative
     double BackPropagate(LMAT<InputShape>* input, LMAT<OutputShape>* desiredOutput)
     {
@@ -60,28 +68,31 @@ public:
         double NetworkLoss = FeedForward(input, desiredOutput);
         //if (++ctr == 2) abort();
         //std::cout << "feeding stoped ! \n";
-        Loss::CostDerivative(layers[layersCount - 1]->getResult(), desiredOutput, costDerivative);
+        Loss::CostDerivative(std::get<layersCount - 1>(layers).getResult(), desiredOutput, costDerivative);
         output = costDerivative;
-        for (int i = layersCount - 1; i > 0; i--)
-        {
-            output = layers[i]->BackPropagate(output, layers[i - 1]->getResult());
-        }
+        for_each_layer_back_prop<decltype(output),layersCount - 1>(output);
+        // for (int i = layersCount - 1; i > 0; i--)
+        // {
+        //     output = std::get<i>(layersCount).BackPropagate(output, std::get<layersCount - 1>(layers).getResult());
+        // }
 
         return NetworkLoss;
     }
 
-    void Learn(int epochs, double learningRate, LMAT<InputShape>** inputs, LMAT<OutputShape>** outputs, int dataLength)
+
+
+    void Learn(int epochs, double learningRate, DataLoader<Network>* data_loader)
     {
-        Tools::TrainBar Bar = Tools::TrainBar(epochs * dataLength);
+        Tools::TrainBar Bar = Tools::TrainBar(epochs * data_loader->GetSize());
         double globalLoss;
         for (int e = 0; e < epochs; e++)
         {
             globalLoss = 0;
-            for (int i = 0; i < dataLength; i++)
+            for (int i = 0; i < data_loader->GetSize(); i++)
             {
-                globalLoss += BackPropagate(inputs[i], outputs[i]);
+                globalLoss += BackPropagate(&std::get<0>(data_loader->data[i]), &std::get<1>(data_loader->data[i]));
                 UpdateWeights(learningRate, 1);
-                Bar.ChangeProgress(e * dataLength + i, globalLoss / (i + 1));
+                //Bar.ChangeProgress(e * data_loader->GetSize() + i, globalLoss / (i + 1));
             }
         }
     }
@@ -125,7 +136,7 @@ public:
     /// @param batchSize The number of turn before updating weights
     /// @param dataLength The GetSize of the dataset
     /// @param threadNumber The number of thread used to train the model
-    void Learn(int epochs, double learningRate, DataLoader<InputShape,OutputShape>* dataLoader, int batchSize, int threadNumber)
+    void Learn(int epochs, double learningRate, DataLoader<Network>* dataLoader, int batchSize, int threadNumber)
     {
       /*
         //Check if the network is compiled
@@ -344,23 +355,51 @@ public:
 
 
 private:
-    void UpdateWeights(double learningRate, int batchSize)
-    {
-        for (int i = 1; i < layersCount; i++)
-            layers[i]->UpdateWeights(learningRate, batchSize);
+
+    template<int I = 0>
+    void UpdateWeightsRecu(double learningRate, int batchSize) {
+        if constexpr (I < layersCount) {
+            std::get<I>(layers).UpdateWeights(learningRate, batchSize);
+            UpdateWeightsRecu<I + 1>(learningRate, batchSize);
+        }
     }
 
+    void UpdateWeights(double learningRate, int batchSize)
+    {
+        UpdateWeightsRecu(learningRate,batchSize);
+        // for (int i = 1; i < layersCount; i++)
+        //     layers[i]->UpdateWeights(learningRate, batchSize);
+    }
+
+template<typename InputShapeL = InputShape, typename OutputShapeL = OutputShape, int I = 0>
+auto FeedForwardLearnRecu(const LMAT<InputShapeL>* input, const LMAT<OutputShapeL>* desiredOutput)
+{
+    if constexpr (I == layersCount)
+    {
+        return Loss::Cost(std::get<layersCount - 1>(layers).getResult(), desiredOutput);
+    }
+    else
+    {
+        using CurrentLayerShape = typename LayersType_At<I>::Shape;
+        //using NextLayerShape = typename LayersType_At<I + 1>::Shape;
+
+        auto layerOutput = std::get<I>(layers).FeedForward(input);
+
+        return FeedForwardLearnRecu<CurrentLayerShape, OutputShapeL, I + 1>(layerOutput, desiredOutput);
+    }
+}
     //Compute values and loss
     double FeedForward(LMAT<InputShape>* input, LMAT<OutputShape>* desiredOutput)
     {
-        output = input;
-        for (int i = 0; i < layersCount; i++)
-        {
-            //std::cout << "feedforward : " << i << "\n";
-            output = layers[i]->FeedForward(output);
-        }
-        //std::cout << *output;
-        return Loss::Cost(output, desiredOutput);
+        return FeedForwardLearnRecu(input,desiredOutput);
+        // output = input;
+        // for (int i = 0; i < layersCount; i++)
+        // {
+        //     //std::cout << "feedforward : " << i << "\n";
+        //     output = layers[i]->FeedForward(output);
+        // }
+        // //std::cout << *output;
+        // return Loss::Cost(output, desiredOutput);
     }
 
     //The output of the network

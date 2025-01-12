@@ -30,7 +30,7 @@ public:
     MAT<layershape::x>* FeedForward(const MAT<prevLayerShape::x>*);
 
     //Compute partial derivative (named delta)
-    const MAT<prevLayerShape::x>* BackPropagate(const MAT<layershape::x>* delta, const MAT<layershape::x>* lastWeights);
+    const MAT<prevLayerShape::x>* BackPropagate(const MAT<layershape::x>* delta, const MAT<prevLayerShape::x>* lastWeights);
 
     //Getter for delta
     const MAT<layershape::x, prevLayerShape::x>* getDelta();
@@ -72,6 +72,16 @@ public:
         if (Biases != nullptr)
             delete Biases;
         Biases = biases;
+    }
+
+    Matrix<layershape::x, prevLayerShape::x, 1>* GetWeights() requires(test)
+    {
+        return Weights;
+    }
+
+    Matrix<layershape::x>* GetBiases() requires(test)
+    {
+        return Biases;
     }
 
 
@@ -276,16 +286,16 @@ MAT<layershape::x>* FCL<activation,prevLayerShape,layershape,optimizer,test>::Fe
 }
 
 template<typename activation,typename prevLayerShape,typename layershape,typename optimizer,bool test>
-const MAT<prevLayerShape::x>* FCL<activation,prevLayerShape,layershape,optimizer,test>::BackPropagate(const MAT<layershape::x>* lastDelta, const MAT<layershape::x>* PastActivation)
+const MAT<prevLayerShape::x>* FCL<activation,prevLayerShape,layershape,optimizer,test>::BackPropagate(const MAT<layershape::x>* lastDelta, const MAT<prevLayerShape::x>* PastActivation)
 {
-    newDelta->Flatten();
+    //newDelta->Flatten();
     activation::Derivative(z, deltaActivation);
     deltaActivation->operator*=(lastDelta);
 
     DeltaBiases->Add(deltaActivation, DeltaBiases);
 
-    MAT<layershape::x, prevLayerShape::x>* d2 = new MAT(Delta->GetRows(), Delta->GetCols(), Delta->GetDims());
-    MAT<1,layershape::x>* PastActivationT = PastActivation->Transpose();
+    auto* d2 = new MAT<layershape::x,prevLayerShape::x>();
+    MAT<1,prevLayerShape::x>* PastActivationT = PastActivation->Transpose();
     deltaActivation->MatrixMultiplication(PastActivationT, d2);
     Delta->Add(d2, Delta);
     delete d2;

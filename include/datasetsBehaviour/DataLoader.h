@@ -8,31 +8,28 @@
 #include "matrix/Matrix.cuh"
 
 
-template<typename InputShape, typename OutputShape>
+template<typename Network>
 class DataLoader
 {
 public:
-    DataLoader(LMAT<InputShape>** input_data, LMAT<OutputShape>** output_data, int dataLength)
+    typedef std::tuple<LMAT<typename Network::InputShape>,LMAT<typename Network::OutputShape>> TrainingPair;
+    DataLoader(TrainingPair* data, size_t dataLength)
     {
-        this->input_data = input_data;
-        this->output_data = output_data;
+        this->data = data;
         this->dataLength = dataLength;
         rng = std::mt19937(rd());
     }
+
     //DataLoader(py::array_t<float> input, py::array_t<float> output);
     void Shuffle()
     {
-        //Shuffle the same way the input and output
-        std::shuffle(input_data, input_data + dataLength, rng);
-        std::shuffle(output_data, output_data + dataLength, rng);
-
+        std::shuffle(data, data + dataLength, rng);
     }
-    size_t GetSize()
+    size_t GetSize() const
     {
         return dataLength;
     }
-    LMAT<InputShape>** input_data;
-    LMAT<OutputShape>** output_data;
+    TrainingPair* data;
 
 private:
     size_t dataLength = 0;
