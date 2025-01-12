@@ -3,6 +3,7 @@
 #include "network/layers/FCL.cuh"
 #include "network/activation/ReLU.h"
 #include "network/layers/InputLayer.cuh"
+#include "datasetsBehaviour/DataLoader.h"
 #include "network/loss/MSE.cuh"
 #include "network/loss/Loss.h"
 #include <iostream>
@@ -14,7 +15,8 @@ bool NetworkTests::ExecuteTests()
     bool res = true;
     std::vector<std::tuple<void*,std::string>> functions;
     functions.push_back(std::tuple((void*)BasicFFNFeedForward,std::string("Basic FFN")));
-
+    functions.emplace_back((void*)DataLoaderTest,std::string("DataLoader"));
+    functions.emplace_back((void*)BasicFFNLearn,std::string("Basic FFN Learn"));
     bool* array = new bool[functions.size()];
 
 
@@ -84,6 +86,7 @@ bool NetworkTests::BasicFFNFeedForward()
 
 bool NetworkTests::BasicFFNLearn()
 {
+
     Network<
         Loss<MSE<5,1,1>>,
         InputLayer<LayerShape<1>>,
@@ -94,8 +97,32 @@ bool NetworkTests::BasicFFNLearn()
     auto fcl = neuralnet.GetLayer<1>();
     fcl->SetWeights(new MAT<5>({{1,2,3,4,5}}));
     fcl->SetBiases(new MAT<5>({1,2,3,4,5}));
+    Matrix<1> input2({1});
+    Matrix<5> desiredOutput({-2,-4,-6,-8,-10});
 
+    auto* tuple = new  std::tuple<decltype(input2),decltype(desiredOutput)>(input2,desiredOutput);
+    auto* dataset = new DataLoader<decltype(neuralnet)>(tuple,1);
+    neuralnet.Learn(1, 0.01, dataset);
+    auto* weights = fcl->GetWeights();
+    auto* biases = fcl->GetBiases();
+    const float values[5] = {0.96,1.92,2.88,3.84,4.80};
+    for (size_t i = 0; i < 5; i++) {
+        if (weights->data[i] - values[i] > 1e-6 || biases->data[i] - values[i] > 1e-6) {
+            weights->Print();
+            biases->Print();
+            return false;
+        }
+    }
     return true;
 }
 
+bool NetworkTests::DataLoaderTest() {
+    typedef Network<
+        Loss<MSE<5,1,1>>,
+        InputLayer<LayerShape<1>>,
+        FCL<ReLU<5,1,1,1>,LayerShape<1>,LayerShape<5>,Constant<0.01>,true>
+    > net;
+    auto dataset = DataLoader<net>(nullptr,0);
+    return true;
+}
 

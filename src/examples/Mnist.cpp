@@ -6,6 +6,7 @@
 #include "network/layers/ConvLayer.cuh"
 #include "network/layers/Flatten.cuh"
 #include "network/layers/MaxPooling.cuh"
+#include "datasetsBehaviour/DataLoader.h"
 #include "examples/Tools.h"
 #include <iostream>
 #include <fstream>
@@ -28,9 +29,9 @@ Matrix_GPU* LabelToMatrix(const int label)
     matrix->SetAt(label, 1);
 #else
 
-Matrix* LabelToMatrix(int label)
+Matrix<10,1>* LabelToMatrix(int label)
 {
-    auto* matrix = new Matrix(10, 1, 0.0f);
+    auto* matrix = new Matrix<10,1>(0.0f);
     matrix->operator[](label) = 1;
 #endif
     return matrix;
@@ -47,7 +48,7 @@ int MatrixToLabel(const Matrix_GPU* matrix)
 
 #else
 
-int MatrixToLabel(const Matrix* matrix)
+int MatrixToLabel(const Matrix<10,1>* matrix)
 {
     int label = 0;
     double max = 0;
@@ -64,7 +65,7 @@ int MatrixToLabel(const Matrix* matrix)
 
 #endif
 
-MAT*** GetDataset(const std::string& path, const int dataLength, const bool format2D)
+DataLoader<> GetDataset(const std::string& path, const int dataLength, const bool format2D)
 {
     const int cols = format2D ? 28 : 1;
     const int rows = format2D ? 28 : 784;
@@ -160,7 +161,7 @@ void Mnist1()
     double testingAccuracy = TestAccuracy(network, data + trainLength, 1000);
     std::cout << "Testing Accuracy : " << testingAccuracy * 100 << "% \n";
 }
-
+/*
 void Mnist2()
 {
 
@@ -308,7 +309,8 @@ void FashionMnist2()
     const double testingAccuracy = TestAccuracy(network, data + trainLength, 1000);
     std::cout << "Testing Accuracy : " << testingAccuracy * 100 << "% \n";
 }
-
+*/
+/*
 double TestAccuracy(Network* network, MAT*** data, const int dataLength)
 {
     int correct = 0;
@@ -320,7 +322,6 @@ double TestAccuracy(Network* network, MAT*** data, const int dataLength)
     }
     return (double) correct / (double) dataLength;
 }
-
 void LoadAndTest(std::string filename, const bool is2D)
 {
     Network* network = Network::Load(filename);
@@ -344,7 +345,8 @@ void LoadAndTest(std::string filename, const bool is2D)
     const double testingAccuracy = TestAccuracy(network, data + trainLength, 1000);
     std::cout << "Testing Accuracy : " << testingAccuracy * 100 << "% \n";
 }
-
+*/
+/*
 MAT*** GetFashionDataset(const std::string& data, const std::string& label, int& dataLength, const bool format2D)
 {
     int labelLength;
@@ -426,6 +428,4 @@ int ReverseInt(int i)
     c4 = (i >> 24) & 255;
     return ((int) c1 << 24) + ((int) c2 << 16) + ((int) c3 << 8) + c4;
 }
-
 */
-
