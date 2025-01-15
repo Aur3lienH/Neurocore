@@ -7,9 +7,10 @@ rel = ReLU()
 d = FullLayer(1,rel)
 n = Network()
 n.AddLayer(c)
-n.AddLayer(d)
+n.AddLayer(2d)
 
 print("compiling ... !")
 n.Compile(Constant,MSE())
 print("finished compiling !")
 n.Print()
+2
