@@ -22,7 +22,7 @@ public:
         auto* res = new MAT<x,y,z>();
         for (int i = 0; i < z; i++)
         {
-            res[i] = MAT();
+            res[i] = MAT<x,y,z>();
         }
 
         return res;
@@ -32,14 +32,14 @@ public:
 
 //    constexpr void Save(std::ofstream& save);
 
-    [[nodiscard]] constexpr std::string GetDimensions() const;
+    [[nodiscard]] constexpr static std::string GetDimensions();
 };
 
 
 
 
 template<int rows, int cols, int dims, int size>
-constexpr std::string LayerShape<rows, cols, dims, size>::GetDimensions() const
+constexpr std::string LayerShape<rows, cols, dims, size>::GetDimensions()
 {
     return "(" + std::to_string(rows) + "," + std::to_string(cols) + "," +
            std::to_string(dims) + ")";

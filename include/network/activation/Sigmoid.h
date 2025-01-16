@@ -48,4 +48,9 @@ public:
         WeightsInit::XavierInit<rows,prev_rows,dims>(prev_rows, weights);
         return weights;
     }
+
+    static std::string getName()
+    {
+        return "Sigmoid";
+    }
 };

@@ -33,6 +33,11 @@ public:
     {
         DefaultDerivative(input, output, Derive);
     }
+
+    static std::string getName()
+    {
+        return "LeakyReLU";
+    }
 };
 
 

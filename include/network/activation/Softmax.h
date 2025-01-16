@@ -34,6 +34,11 @@ public:
 
     static MAT<rows,prev_rows,dims>* InitWeights();
 
+    static std::string getName()
+    {
+        return "Softmax";
+    }
+
 };
 template<int rows,int prev_rows, int cols, int dims>
 Softmax<rows,prev_rows,cols,dims>::Softmax()

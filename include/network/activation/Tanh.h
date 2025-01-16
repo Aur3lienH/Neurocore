@@ -36,6 +36,11 @@ public:
     {
         DefaultDerivative(input, output, Derive);
     }
+
+    static std::string getName()
+    {
+        return "TanH";
+    }
 };
 
 template<int rows,int prev_rows, int cols, int dims>

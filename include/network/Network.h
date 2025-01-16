@@ -262,12 +262,22 @@ public:
             layers[i]->ClearDelta();
     }
 
+    template<size_t I = 0>
+    void PrintNetworkRecu()
+    {
+        if constexpr(I < layersCount)
+        {
+            std::cout << std::get<I>(layers).getLayerTitle() << "\n";
+            PrintNetworkRecu<I+1>();
+        }
+    }
+
     void PrintNetwork()
     {
         std::cout << " ---- Network ---- \n";
-        for (int i = 0; i < layersCount; i++)
-            std::cout << layers[i]->getLayerTitle() << std::endl;
+        PrintNetworkRecu();
     }
+
     template <typename Tuple,std::size_t I = 0>
     void for_each_tuple(Tuple& t) {
         if constexpr (I < std::tuple_size_v<Tuple>) {
