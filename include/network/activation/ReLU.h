@@ -31,6 +31,11 @@ public:
 
     static MAT<rows,cols,dims>* InitBiases();
 
+    static std::string getName()
+    {
+        return "ReLU";
+    }
+
 
 };
 

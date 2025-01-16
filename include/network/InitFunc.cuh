@@ -4,6 +4,7 @@
 #include <random>
 #include <iostream>
 
+
 //Class in which there are functions to init weights
 class WeightsInit final
 {
@@ -18,7 +19,7 @@ public:
     static void HeUniform(int inputSize, MAT<x,y,z>* weights);
 
 private:
-    static std::mt19937 rng;
+    inline static std::mt19937 rng{std::random_device{}()};
 };
 
 
