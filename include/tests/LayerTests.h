@@ -7,4 +7,5 @@ public:
 private:
     static bool TestFCLLayer();
     static bool TestInputLayer();
+    static bool TestCNNLayer();
 };

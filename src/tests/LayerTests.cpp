@@ -72,3 +72,13 @@ bool LayerTests::TestInputLayer()
     const Matrix<5>* out = inputlayer.FeedForward(&input);
     return out->GetRows() == 5 && out->GetCols() == 1;
 }
+#include "network/layers/ConvLayer.cuh"
+bool LayerTests::TestCNNLayer()
+{
+    ConvLayer<Activation<ReLU<5,2>>, LayerShape<3,3>, LayerShape<1,1>, LayerShape<3,3>, Constant<1.0>> cnn;
+    cnn.Compile();
+    Matrix<3,3> input(1);
+    //Matrix<1,1> out = cnn.FeedForward(&input);
+
+    return true;
+}
