@@ -981,7 +981,7 @@ Matrix<rows,cols,dim>* Matrix<rows,cols,dim>::Copy()
     {
         resArray[i] = data[i];
     }
-    return new Matrix(rows, cols, dim, resArray);
+    return new Matrix<rows, cols, dim>(resArray);
 }
 
 template<int rows, int cols, int dim>

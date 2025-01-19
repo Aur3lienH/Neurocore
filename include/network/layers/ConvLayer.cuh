@@ -56,8 +56,8 @@ private:
     LMAT<layerShape>* result = nullptr;
     LMAT<filterShape>* filters = nullptr;
     //Delta for next layer
-    LMAT<layerShape>* delta = nullptr;
-    LMAT<layerShape>* preDelta = nullptr;
+    LMAT<filterShape>* delta = nullptr;
+    LMAT<filterShape>* preDelta = nullptr;
     LMAT<layerShape>* activationDelta;
     LMAT<layerShape>* z;
     LMAT<layerShape>* previousDeltaMultiplied;
@@ -111,32 +111,31 @@ void ConvLayer<activation, prevLayerShape, layerShape, filterShape, optimizer>::
     //If the filters has no been initialized, create it and initialize it with random values
     if (filters == nullptr)
     {
-        filters = new MAT(filterShape::x, filterShape::y, (int) dimCount);
+        filters = new MAT<filterShape::x, filterShape::y, (int) dimCount>();
         //Function to init the filters with random values
         WeightsInit::HeUniform(filterShape::x * filterShape::y, filters);
     }
 
-    nextLayerDelta = new MAT(prevLayerShape::x, prevLayerShape::y,
-                             prevLayerShape::x);
+    nextLayerDelta = new LMAT<prevLayerShape>();
 
-    nextLayerDeltaTemp = new MAT(prevLayerShape::x, prevLayerShape::y);
+    nextLayerDeltaTemp = new MAT<prevLayerShape::x, prevLayerShape::y>();
 
 
     delta = filters->Copy();
     delta->Zero();
-    preDelta = new MAT(filters->GetRows(), filters->GetCols());
+    preDelta = new LMAT<filterShape>();
 
 
-//    layerShape = new LayerShape(previousLayer::x - filters->GetRows() + 1, previousLayer::y -
-//                                                                                       filters->GetCols() + 1,
+//    layerShape = new LayerShape(previousLayer::x - filters::GetRows() + 1, previousLayer::y -
+//                                                                                       filters::GetCols() + 1,
 //                                dimCount);
 
-    result = new MAT(layerShape::x, layerShape::y, layerShape::z);
+    result = new LMAT<layerShape>();
 
     z = result->Copy();
 
     previousDeltaMultiplied = result->Copy();
-    offset = previousDeltaMultiplied->GetRows() - 1;
+    offset = layerShape::x - 1; // previousDeltaMultiplied.rows -
     activationDelta = result->Copy();
 
     bias = new MAT<1, 1, (int) dimCount>();
@@ -341,7 +340,7 @@ LMAT<layerShape>* ConvLayer<activation, prevLayerShape, layerShape, filterShape,
             LMAT<layerShape>::Convolution<filterShape::x, 1>(input, filters, z);
 
             //Add the bias to the result
-            for (int k = 0; k < z->GetRows() * z->GetCols(); k++)
+            for (int k = 0; k < layerShape::x * layerShape::y; k++)
             {
                 (*z)[k] = bias[0][0] + (*z)[k];
             }
@@ -379,12 +378,12 @@ void ConvLayer<activation, prevLayerShape, layerShape, filterShape, optimizer>::
 {
     for (int d = 0; d < filters->GetDims(); d++)
     {
-        for (int i = 0; i < filters->GetCols(); ++i)
+        for (int i = 0; i < filterShape::y; ++i)
         {
-            for (int j = 0; j < filters->GetRows(); ++j)
+            for (int j = 0; j < filterShape::x; ++j)
             {
-                (*rotatedFilter)(i + offset, j + offset) = (*filters)(filters->GetRows() - 1 - j,
-                                                                      filters->GetCols() - 1 - i);
+                (*rotatedFilter)(i + offset, j + offset) = (*filters)(filterShape::x - 1 - j,
+                                                                      filterShape::y - 1 - i);
             }
         }
         rotatedFilter->GoToNextMatrix();
@@ -506,11 +505,11 @@ void ConvLayer<activation, prevLayerShape, layerShape, filterShape, optimizer>::
 
 #if USE_GPU
     //ToDo: Make this run on GPU
-    Matrix deltaBiasCPU(delta->GetRows(), deltaBias->GetCols(), deltaBias->GetDims(), deltaBias->GetData_CPU());
-    Matrix deltaCPU(delta->GetRows(), delta->GetCols(), delta->GetDims(), delta->GetData_CPU());
+    Matrix deltaBiasCPU(delta::GetRows(), deltaBias::GetCols(), deltaBias->GetDims(), deltaBias->GetData_CPU());
+    Matrix deltaCPU(delta::GetRows(), delta::GetCols(), delta->GetDims(), delta->GetData_CPU());
     for (int i = 0; i < deltaBias->GetDims(); i++)
     {
-        for (int j = 0; j < delta->GetRows() * delta->GetCols(); j++)
+        for (int j = 0; j < delta::GetRows() * delta::GetCols(); j++)
         {
             deltaBiasCPU[0] += deltaCPU[j];
         }
@@ -526,7 +525,7 @@ void ConvLayer<activation, prevLayerShape, layerShape, filterShape, optimizer>::
 #else
     for (int i = 0; i < deltaBias->GetDims(); i++)
     {
-        for (int j = 0; j < delta->GetRows() * delta->GetCols(); j++)
+        for (int j = 0; j < layerShape::x * layerShape::y; j++)
         {
             (*deltaBias)[0] += (*delta)[j];
         }
@@ -606,14 +605,14 @@ std::string ConvLayer<activation, prevLayerShape, layerShape, filterShape, optim
 template<typename activation,typename prevLayerShape,typename layerShape, typename filterShape, typename optimizer>
 void ConvLayer<activation, prevLayerShape, layerShape, filterShape, optimizer>::GetOperationsForFullConvolution()
 {
-    const int outputCols = previousDeltaMultiplied->GetCols() + filters->GetCols() - 1;
-    const int outputRows = previousDeltaMultiplied->GetRows() + filters->GetRows() - 1;
+    const int outputCols = layerShape::y + filterShape::y - 1;
+    const int outputRows = layerShape::x + filterShape::x - 1;
 
-    const int filterCols = filters->GetCols();
-    const int filterRows = filters->GetRows();
+    const int filterCols = filterShape::y;
+    const int filterRows = filterShape::x;
 
-    const int inputCols = previousDeltaMultiplied->GetCols();
-    const int inputRows = previousDeltaMultiplied->GetRows();
+    const int inputCols = layerShape::y;
+    const int inputRows = layerShape::x;
 
 
 
