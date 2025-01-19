@@ -15,7 +15,7 @@ public:
 
     LMAT<layerShape>* FeedForward(const LMAT<prevLayerShape>* input);
 
-    LMAT<layerShape>* BackPropagate(const LMAT<layerShape>* delta, const LMAT<prevLayerShape>* prevLayerOutput);
+    LMAT<prevLayerShape>* BackPropagate(const LMAT<layerShape>* delta, const LMAT<prevLayerShape>* prevLayerOutput);
 
     [[nodiscard]] LMAT<layerShape>* getResult() const;
 
@@ -91,11 +91,7 @@ private:
 template<typename activation,typename prevLayerShape,typename layerShape, typename filterShape, typename optimizer>
 void ConvLayer<activation, prevLayerShape, layerShape, filterShape, optimizer>::Compile()
 {
-    //Check if the previous layer has 3 dimensions, if not throw an error
-    if (prevLayerShape::z < 3)
-    {
-        throw std::invalid_argument("Input of a CNN network must have 3 dimensions");
-    }
+    static_assert(prevLayerShape::x && prevLayerShape::y, "Input of a CNN network must have 3 dimensions");
 
     //const int outputRow = previousLayer->dimensions[0] - filterShape->dimensions[0] + 1;
     //const int outputCol = previousLayer->dimensions[1] - filterShape->dimensions[1] + 1;
@@ -337,7 +333,7 @@ LMAT<layerShape>* ConvLayer<activation, prevLayerShape, layerShape, filterShape,
         for (int i = 0; i < filterCount; i++)
         {
             //Apply convolution between input and filters and output it in z
-            LMAT<layerShape>::Convolution<filterShape::x, 1>(input, filters, z);
+            LMAT<prevLayerShape>::template Convolution<filterShape::x, 1>(input, filters, z);
 
             //Add the bias to the result
             for (int k = 0; k < layerShape::x * layerShape::y; k++)
@@ -399,7 +395,7 @@ void ConvLayer<activation, prevLayerShape, layerShape, filterShape, optimizer>::
 
 //May be optimized by not rotating the matrix
 template<typename activation,typename prevLayerShape,typename layerShape, typename filterShape, typename optimizer>
-LMAT<layerShape>* ConvLayer<activation, prevLayerShape, layerShape, filterShape, optimizer>::BackPropagate(const LMAT<layerShape>* lastDelta, const LMAT<prevLayerShape>* prevLayerOutput)
+LMAT<prevLayerShape>* ConvLayer<activation, prevLayerShape, layerShape, filterShape, optimizer>::BackPropagate(const LMAT<layerShape>* lastDelta, const LMAT<prevLayerShape>* prevLayerOutput)
 {
     //Set to zero the delta of the next layer
     nextLayerDelta->Zero();
@@ -469,7 +465,7 @@ LMAT<layerShape>* ConvLayer<activation, prevLayerShape, layerShape, filterShape,
 
 
             //Calculate the partial derivative of the weights
-            LMAT<layerShape>::Convolution<filterShape::x, 1>(prevLayerOutput, previousDeltaMultiplied, preDelta);
+            LMAT<prevLayerShape>::template Convolution<layerShape::x, 1>(prevLayerOutput, previousDeltaMultiplied, preDelta);
 
             //Accumulate the result
             delta->Add(preDelta, delta);

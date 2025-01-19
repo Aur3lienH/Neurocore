@@ -58,15 +58,19 @@ void ReLU<rows,prev_rows,cols,dims>::FeedForward(const MAT<rows,cols,dims>* inpu
     __m128 zero = _mm_setzero_ps();
 
     size_t i;
-    for (i = 0; i <= input->GetSize() - 4; i += 4)
+    size_t s = input->GetSize();
+    if (s > 4) // prevents size_t underflow
     {
-        __m128 vals = _mm_loadu_ps(&((*input)[i]));
-        __m128 result = _mm_max_ps(zero, vals);
-        _mm_storeu_ps(&((*output)[i]), result);
+        for (i = 0; i <= s - 4; i += 4)
+        {
+            __m128 vals = _mm_loadu_ps(&((*input)[i]));
+            __m128 result = _mm_max_ps(zero, vals);
+            _mm_storeu_ps(&((*output)[i]), result);
+        }
     }
 
     // Process any remaining values
-    for (; i < input->GetSize(); ++i)
+    for (; i < s; ++i)
     {
         if ((*input)[i] < 0) (*output)[i] = 0;
         else (*output)[i] = (*input)[i];

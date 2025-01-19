@@ -25,6 +25,7 @@ pkg_check_modules(CAIRO REQUIRED cairo)
 # Collect all source files for tests
 file(GLOB_RECURSE TEST_SOURCES
         "${CMAKE_SOURCE_DIR}/src/tests/*.cpp"
+        "${CMAKE_SOURCE_DIR}/src/network/*.cpp"
         "${CMAKE_SOURCE_DIR}/src/tests/*.cu"
         "${CMAKE_SOURCE_DIR}/src/main.cpp"
 )
