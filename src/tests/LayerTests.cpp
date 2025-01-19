@@ -76,12 +76,16 @@ bool LayerTests::TestInputLayer()
 
 bool LayerTests::TestCNNLayer()
 {
-    ConvLayer<Activation<ReLU<1,3>>, LayerShape<3,3>, LayerShape<1,1>, LayerShape<3,3>, Constant<1.0>> cnn;
+    ConvLayer<Activation<ReLU<1,3>>, LayerShape<3,3>, LayerShape<1,1>, LayerShape<3,3>, Constant<1.0>, true> cnn;
     cnn.Compile();
-    Matrix<3,3> input(1);
+    Matrix<3,3> filters({0,0,0,0,1,0,0,0,0});
+    cnn.SetWeights(&filters);
+    Matrix<1,1> biases(0.);
+    cnn.SetBiases(&biases);
+    Matrix<3,3> input({1,1,1,1,2,1,1,1,1,1});
     Matrix<1,1>* out = cnn.FeedForward(&input);
     Matrix<1,1> delta(1);
     Matrix<3,3>* bout = cnn.BackPropagate(&delta, &input);
 
-    return true;
+    return out->data[0] == 2;
 }
