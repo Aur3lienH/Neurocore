@@ -6,7 +6,7 @@
 #include "network/Operations.h"
 #include "matrix/Matrix.cuh"
 
-template<typename activation,typename prevLayerShape,typename layerShape, typename filterShape, typename optimizer>
+template<typename activation,typename prevLayerShape,typename layerShape, typename filterShape, typename optimizer, bool test = false>
 class ConvLayer final
 {
 
@@ -36,6 +36,10 @@ public:
     std::string getLayerTitle();
 
     Layer<ConvLayer>* Clone();
+
+    void SetWeights(LMAT<filterShape>* weights) requires(test);
+
+    void SetBiases(MAT<filterShape::z * prevLayerShape::z>* biases) requires(test);
 
 private:
 
@@ -88,8 +92,22 @@ private:
 #endif
 };
 
-template<typename activation,typename prevLayerShape,typename layerShape, typename filterShape, typename optimizer>
-void ConvLayer<activation, prevLayerShape, layerShape, filterShape, optimizer>::Compile()
+template<typename activation,typename prevLayerShape,typename layerShape, typename filterShape, typename optimizer, bool test>
+void ConvLayer<activation, prevLayerShape, layerShape, filterShape, optimizer, test>::SetWeights(LMAT<filterShape>* weights) requires(test)
+{
+    delete filters;
+    filters = weights->Copy();
+}
+
+template<typename activation,typename prevLayerShape,typename layerShape, typename filterShape, typename optimizer, bool test>
+void ConvLayer<activation, prevLayerShape, layerShape, filterShape, optimizer, test>::SetBiases(MAT<filterShape::z * prevLayerShape::z>* biases) requires(test)
+{
+    delete bias;
+    bias = biases->Copy();
+}
+
+template<typename activation,typename prevLayerShape,typename layerShape, typename filterShape, typename optimizer, bool test>
+void ConvLayer<activation, prevLayerShape, layerShape, filterShape, optimizer, test>::Compile()
 {
     static_assert(prevLayerShape::x && prevLayerShape::y, "Input of a CNN network must have 3 dimensions");
 
@@ -297,8 +315,8 @@ void ConvLayer<activation, prevLayerShape, layerShape, filterShape, optimizer>::
 #endif
 }
 
-template<typename activation,typename prevLayerShape,typename layerShape, typename filterShape, typename optimizer>
-LMAT<layerShape>* ConvLayer<activation, prevLayerShape, layerShape, filterShape, optimizer>::FeedForward(const LMAT<prevLayerShape>* input)
+template<typename activation,typename prevLayerShape,typename layerShape, typename filterShape, typename optimizer, bool test>
+LMAT<layerShape>* ConvLayer<activation, prevLayerShape, layerShape, filterShape, optimizer, test>::FeedForward(const LMAT<prevLayerShape>* input)
 {
 #if USE_GPU
     checkCUDNN(cudnnConvolutionForward(Matrix_GPU::cuda->cudnnHandle,
@@ -369,8 +387,8 @@ LMAT<layerShape>* ConvLayer<activation, prevLayerShape, layerShape, filterShape,
 
 #if not USE_GPU
 
-template<typename activation,typename prevLayerShape,typename layerShape, typename filterShape, typename optimizer>
-void ConvLayer<activation, prevLayerShape, layerShape, filterShape, optimizer>::FlipAndCenterFilter()
+template<typename activation,typename prevLayerShape,typename layerShape, typename filterShape, typename optimizer, bool test>
+void ConvLayer<activation, prevLayerShape, layerShape, filterShape, optimizer, test>::FlipAndCenterFilter()
 {
     for (int d = 0; d < filters->GetDims(); d++)
     {
@@ -394,8 +412,8 @@ void ConvLayer<activation, prevLayerShape, layerShape, filterShape, optimizer>::
 #endif
 
 //May be optimized by not rotating the matrix
-template<typename activation,typename prevLayerShape,typename layerShape, typename filterShape, typename optimizer>
-LMAT<prevLayerShape>* ConvLayer<activation, prevLayerShape, layerShape, filterShape, optimizer>::BackPropagate(const LMAT<layerShape>* lastDelta, const LMAT<prevLayerShape>* prevLayerOutput)
+template<typename activation,typename prevLayerShape,typename layerShape, typename filterShape, typename optimizer, bool test>
+LMAT<prevLayerShape>* ConvLayer<activation, prevLayerShape, layerShape, filterShape, optimizer, test>::BackPropagate(const LMAT<layerShape>* lastDelta, const LMAT<prevLayerShape>* prevLayerOutput)
 {
     //Set to zero the delta of the next layer
     nextLayerDelta->Zero();
@@ -494,8 +512,8 @@ LMAT<prevLayerShape>* ConvLayer<activation, prevLayerShape, layerShape, filterSh
 }
 
 
-template<typename activation,typename prevLayerShape,typename layerShape, typename filterShape, typename optimizer>
-void ConvLayer<activation, prevLayerShape, layerShape, filterShape, optimizer>::UpdateWeights(const double learningRate, const int batchSize)
+template<typename activation,typename prevLayerShape,typename layerShape, typename filterShape, typename optimizer, bool test>
+void ConvLayer<activation, prevLayerShape, layerShape, filterShape, optimizer, test>::UpdateWeights(const double learningRate, const int batchSize)
 {
     optimizer::Compute(delta, filters);
 
@@ -536,15 +554,15 @@ void ConvLayer<activation, prevLayerShape, layerShape, filterShape, optimizer>::
     optimizer::Compute(deltaBias, bias, bias->GetSize());
 }
 
-template<typename activation,typename prevLayerShape,typename layerShape, typename filterShape, typename optimizer>
-LMAT<layerShape>* ConvLayer<activation, prevLayerShape, layerShape, filterShape, optimizer>::getResult() const
+template<typename activation,typename prevLayerShape,typename layerShape, typename filterShape, typename optimizer, bool test>
+LMAT<layerShape>* ConvLayer<activation, prevLayerShape, layerShape, filterShape, optimizer, test>::getResult() const
 {
     return result;
 }
 
 
-template<typename activation,typename prevLayerShape,typename layerShape, typename filterShape, typename optimizer>
-void ConvLayer<activation, prevLayerShape, layerShape, filterShape, optimizer>::AddDeltaFrom(Layer<ConvLayer<activation, prevLayerShape, layerShape, filterShape, optimizer>>* Layer)
+template<typename activation,typename prevLayerShape,typename layerShape, typename filterShape, typename optimizer, bool test>
+void ConvLayer<activation, prevLayerShape, layerShape, filterShape, optimizer, test>::AddDeltaFrom(Layer<ConvLayer<activation, prevLayerShape, layerShape, filterShape, optimizer, test>>* Layer)
 {
 #if USE_GPU
     throw std::runtime_error("ConvLayer::AddDeltaFrom is not implemented on GPU");
@@ -556,8 +574,8 @@ void ConvLayer<activation, prevLayerShape, layerShape, filterShape, optimizer>::
 #endif
 }
 
-//template<typename activation,typename prevLayerShape,typename layerShape, typename filterShape, typename optimizer>
-//Layer<ConvLayer<activation, prevLayerShape, layerShape, filterShape, optimizer>>* ConvLayer<activation, prevLayerShape, layerShape, filterShape, optimizer>::Load(std::ifstream& reader)
+//template<typename activation,typename prevLayerShape,typename layerShape, typename filterShape, typename optimizer, bool test>
+//Layer<ConvLayer<activation, prevLayerShape, layerShape, filterShape, optimizer>>* ConvLayer<activation, prevLayerShape, layerShape, filterShape, optimizer, test>::Load(std::ifstream& reader)
 //{
 //#if USE_GPU
 //    throw std::runtime_error("ConvLayer::Load is not implmentedd on GPU");
@@ -569,15 +587,15 @@ void ConvLayer<activation, prevLayerShape, layerShape, filterShape, optimizer>::
 //#endif
 //}
 
-template<typename activation,typename prevLayerShape,typename layerShape, typename filterShape, typename optimizer>
-void ConvLayer<activation, prevLayerShape, layerShape, filterShape, optimizer>::ClearDelta()
+template<typename activation,typename prevLayerShape,typename layerShape, typename filterShape, typename optimizer, bool test>
+void ConvLayer<activation, prevLayerShape, layerShape, filterShape, optimizer, test>::ClearDelta()
 {
     delta->Zero();
     deltaBias->Zero();
 }
 
-template<typename activation,typename prevLayerShape,typename layerShape, typename filterShape, typename optimizer>
-std::string ConvLayer<activation, prevLayerShape, layerShape, filterShape, optimizer>::getLayerTitle()
+template<typename activation,typename prevLayerShape,typename layerShape, typename filterShape, typename optimizer, bool test>
+std::string ConvLayer<activation, prevLayerShape, layerShape, filterShape, optimizer, test>::getLayerTitle()
 {
     std::string buf;
     buf += "Convolutional layer\n";
@@ -588,8 +606,8 @@ std::string ConvLayer<activation, prevLayerShape, layerShape, filterShape, optim
 }
 
 
-//template<typename activation,typename prevLayerShape,typename layerShape, typename filterShape, typename optimizer>
-//void ConvLayer<activation, prevLayerShape, layerShape, filterShape, optimizer>::SpecificSave(std::ofstream& writer)
+//template<typename activation,typename prevLayerShape,typename layerShape, typename filterShape, typename optimizer, bool test>
+//void ConvLayer<activation, prevLayerShape, layerShape, filterShape, optimizer, test>::SpecificSave(std::ofstream& writer)
 //{
 //    filters->Save(writer);
 //    filterShape->Save(writer);
@@ -598,8 +616,8 @@ std::string ConvLayer<activation, prevLayerShape, layerShape, filterShape, optim
 
 #if not USE_GPU
 
-template<typename activation,typename prevLayerShape,typename layerShape, typename filterShape, typename optimizer>
-void ConvLayer<activation, prevLayerShape, layerShape, filterShape, optimizer>::GetOperationsForFullConvolution()
+template<typename activation,typename prevLayerShape,typename layerShape, typename filterShape, typename optimizer, bool test>
+void ConvLayer<activation, prevLayerShape, layerShape, filterShape, optimizer, test>::GetOperationsForFullConvolution()
 {
     const int outputCols = layerShape::y + filterShape::y - 1;
     const int outputRows = layerShape::x + filterShape::x - 1;
@@ -638,8 +656,8 @@ void ConvLayer<activation, prevLayerShape, layerShape, filterShape, optimizer>::
 
 #endif
 
-template<typename activation,typename prevLayerShape,typename layerShape, typename filterShape, typename optimizer>
-Layer<ConvLayer<activation, prevLayerShape, layerShape, filterShape, optimizer>>* ConvLayer<activation, prevLayerShape, layerShape, filterShape, optimizer>::Clone()
+template<typename activation,typename prevLayerShape,typename layerShape, typename filterShape, typename optimizer, bool test>
+Layer<ConvLayer<activation, prevLayerShape, layerShape, filterShape, optimizer, test>>* ConvLayer<activation, prevLayerShape, layerShape, filterShape, optimizer, test>::Clone()
 {
     auto* filterCopy = filters->CopyWithSameData();
     auto cl = new ConvLayer<activation, prevLayerShape, layerShape,  filterShape, optimizer>();
@@ -648,15 +666,15 @@ Layer<ConvLayer<activation, prevLayerShape, layerShape, filterShape, optimizer>>
     return cl;
 }
 
-template<typename activation,typename prevLayerShape,typename layerShape, typename filterShape, typename optimizer>
-void ConvLayer<activation, prevLayerShape, layerShape, filterShape, optimizer>::AverageGradients(const int batchSize)
+template<typename activation,typename prevLayerShape,typename layerShape, typename filterShape, typename optimizer, bool test>
+void ConvLayer<activation, prevLayerShape, layerShape, filterShape, optimizer, test>::AverageGradients(const int batchSize)
 {
     delta->DivideAllDims(batchSize);
     deltaBias->DivideAllDims(batchSize);
 }
 
-template<typename activation,typename prevLayerShape,typename layerShape, typename filterShape, typename optimizer>
-ConvLayer<activation, prevLayerShape, layerShape, filterShape, optimizer>::~ConvLayer()
+template<typename activation,typename prevLayerShape,typename layerShape, typename filterShape, typename optimizer, bool test>
+ConvLayer<activation, prevLayerShape, layerShape, filterShape, optimizer, test>::~ConvLayer()
 {
     delete filters;
     //delete filterShape;
