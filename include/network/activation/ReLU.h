@@ -57,11 +57,11 @@ void ReLU<rows,prev_rows,cols,dims>::FeedForward(const MAT<rows,cols,dims>* inpu
 {
     __m128 zero = _mm_setzero_ps();
 
-    size_t i;
+    size_t i = 0;
     size_t s = input->GetSize();
     if (s > 4) // prevents size_t underflow
     {
-        for (i = 0; i <= s - 4; i += 4)
+        for (; i <= s - 4; i += 4)
         {
             __m128 vals = _mm_loadu_ps(&((*input)[i]));
             __m128 result = _mm_max_ps(zero, vals);
