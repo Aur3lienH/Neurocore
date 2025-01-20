@@ -11,6 +11,8 @@ class MatrixTypes:
         return f"matrix_{rows}x{cols}x{dims}"
 
     def add_lib(self,rows,cols,dims):
+        if not os.path.exists("build"):
+            os.makedirs("build")
         file = open(f'build/MAT_{rows}x{cols}x{dims}.cpp','w')
         file.write('#include "matrix/MatrixPy.hpp"\n')
         file.write('#include "matrix/Matrix.cuh"\n')
