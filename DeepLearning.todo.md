@@ -7,3 +7,5 @@
 - [ ] Python library : 
   - [ ] Manage the ownership between python and C++
   - [ ] Modify the README for python usage : Installation and usage
+- [ ] Fix : 
+  - [ ] Modify the Max pooling and Average pooling layer to be able to handle stride which is not a multiple of the input size
