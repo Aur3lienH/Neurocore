@@ -4,6 +4,7 @@
 #include "network/layers/DropoutFCL.cuh"
 #include "network/layers/MaxPooling.cuh"
 #include "network/layers/AveragePooling.cuh"
+#include "network/layers/ConvLayer.cuh"
 #include "network/layers/Reshape.cuh"
 #include <functional>
 #include <iostream>
@@ -17,6 +18,7 @@ bool LayerTests::ExecuteTests()
     //functions.push_back(std::tuple((void*)MatrixTests::SMIDMatrixTest,std::string("SMID Cross Product")));
     functions.emplace_back((void*)TestInputLayer, std::string("Input Layer"));
     functions.emplace_back((void*)TestFCLLayer, std::string("FCL layer"));
+    functions.emplace_back((void*)TestCNNLayer, std::string("CNN layer"));
 
 
     functions.emplace_back((void*)TestDropLayer, std::string("Dropout Layer"));
@@ -85,14 +87,20 @@ bool LayerTests::TestInputLayer()
     const Matrix<5>* out = inputlayer.FeedForward(&input);
     return out->GetRows() == 5 && out->GetCols() == 1;
 }
-#include "network/layers/ConvLayer.cuh"
+
 bool LayerTests::TestCNNLayer()
 {
-    ConvLayer<Activation<ReLU<5,2>>, LayerShape<3,3>, LayerShape<1,1>, LayerShape<3,3>, Constant<1.0>> cnn;
+    ConvLayer<Activation<ReLU<1,3>>, LayerShape<3,3>, LayerShape<1,1>, LayerShape<3,3>, Constant<1.0>, true> cnn;
     cnn.Compile();
-    Matrix<3,3> input(1);
-    //Matrix<1,1> out = cnn.FeedForward(&input);
-
+    Matrix<3,3> filters({0,0,0,0,1,0,0,0,0});
+    cnn.SetWeights(&filters);
+    Matrix<1,1> biases(0.);
+    cnn.SetBiases(&biases);
+    Matrix<3,3> input({1,1,1,1,2,1,1,1,1,1});
+    Matrix<1,1>* out = cnn.FeedForward(&input);
+    Matrix<1,1> delta(1);
+    Matrix<3,3>* bout = cnn.BackPropagate(&delta, &input);
+    
     return true;
 }
 
@@ -249,6 +257,7 @@ bool LayerTests::TestAveragePoolLayerBackprop()
 
     return isCorrect;
 }
+
 
 
 
