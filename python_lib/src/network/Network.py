@@ -33,6 +33,22 @@ def RunCommand(command):
     
     return return_code
 
+def ImportLib(libpath,module_name):
+
+    
+    # Add the network directory to Python's path
+    if "./build" not in sys.path:
+        sys.path.append("./build")
+    
+    # Reload the module if it was previously imported
+    if module_name in sys.modules:
+        del sys.modules[module_name]
+    
+    # Import the module and create the C++ network
+    deep_learning_py = importlib.import_module(module_name)
+    return deep_learning_py
+
+
 class Network:
     def __init__(self):
         self.layers = []
@@ -56,26 +72,11 @@ class Network:
             os.chdir(project_dir)
             
             # Run build commands
-            RunCommand('cmake .')
+            RunCommand('cmake build -S build')
             RunCommand('make')
             
-            # Create network directory if it doesn't exist
-            network_dir = os.path.join(project_dir, 'src', 'network')
-            os.makedirs(network_dir, exist_ok=True)
-            
-            # Copy the compiled library
-            RunCommand(f'cp ./deep_learning_py*.so {network_dir}/')
-            
-            # Add the network directory to Python's path
-            if network_dir not in sys.path:
-                sys.path.append(network_dir)
-            
-            # Reload the module if it was previously imported
-            if 'deep_learning_py' in sys.modules:
-                del sys.modules['deep_learning_py']
-            
-            # Import the module and create the C++ network
-            deep_learning_py = importlib.import_module('deep_learning_py')
+            deep_learning_py = ImportLib('./deep_learning_py*.so','deep_learning_py')
+
             self.cpp_network = deep_learning_py.Network()
             
         finally:
@@ -123,7 +124,7 @@ class Network:
         string += '\t.def("Print", &NETWORK::PrintNetwork)\n'
         string += '\t.def("Compile", &NETWORK::Compile);\n'
         string += '}'
-        file = open('network.cpp','w')
+        file = open('build/network.cpp','w')
         file.write(string)
         file.close()
         self.CompileCpp()
