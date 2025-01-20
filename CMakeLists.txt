@@ -27,6 +27,9 @@ file(GLOB_RECURSE TEST_SOURCES
         "${CMAKE_SOURCE_DIR}/src/tests/*.cpp"
         "${CMAKE_SOURCE_DIR}/src/tests/*.cu"
         "${CMAKE_SOURCE_DIR}/src/main.cpp"
+        "${CMAKE_SOURCE_DIR}/include/*.h"
+        "${CMAKE_SOURCE_DIR}/include/*.hpp"
+        "${CMAKE_SOURCE_DIR}/include/*.cuh"
 )
 
 # Create the test executable

@@ -19,13 +19,13 @@ public:
 	template<int rows_in, int cols_in, int dims_in, int rows_out, int cols_out, int dims_out>
     const MAT<rows_out,cols_out,dims_out>* FeedForward(const MAT<rows_in,cols_in,dims_in>* input)
 	{
-	    return static_cast<Derived*>(this)->FeedForwardImpl(input);
+	    return static_cast<Derived*>(this)->FeedForward(input);
 	}
 
 	template<int rows_in, int cols_in, int dims_in, int rows_out, int cols_out, int dims_out, int rows_in2, int cols_in2, int dims_in2>
     const MAT<rows_out,cols_out,dims_out>* BackPropagate(const MAT<rows_in,cols_in,dims_in>* delta, const MAT<rows_in2,cols_in2,dims_in2>* previousActivation)
     {
-	    return static_cast<Derived*>(this)->BackPropagateImpl(delta,previousActivation);
+	    return static_cast<Derived*>(this)->BackPropagate(delta,previousActivation);
     }
 
 	template<int rows, int cols, int dims>
