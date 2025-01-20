@@ -63,6 +63,10 @@ class Network:
         project_dir = os.path.dirname(os.path.abspath(__file__))
         project_dir = os.path.dirname(project_dir)  # Go up one level from src/network
         project_dir = os.path.dirname(project_dir)  # Go up one more level to reach python_lib
+
+        if not os.path.exists("build"):
+            os.makedirs("build")
+
         
         # Save current directory
         original_dir = os.getcwd()
