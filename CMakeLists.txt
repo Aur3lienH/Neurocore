@@ -3,6 +3,7 @@ cmake_minimum_required(VERSION 3.13)
 # Set the compilers BEFORE project()
 set(CMAKE_CXX_COMPILER "g++")
 project(deeplib_tests VERSION 1.0 LANGUAGES CUDA CXX)
+find_package(Python3 REQUIRED COMPONENTS Interpreter Development)
 
 # Language standards
 set(CMAKE_C_STANDARD 11)
@@ -44,6 +45,7 @@ target_include_directories(${PROJECT_NAME} PRIVATE
         ${CAIRO_INCLUDE_DIRS}
         ${CMAKE_SOURCE_DIR}/include
         ${CMAKE_SOURCE_DIR}/dependencies/pybind11/include
+        ${Python3_INCLUDE_DIRS}
 )
 
 # Link libraries
@@ -52,6 +54,7 @@ target_link_libraries(${PROJECT_NAME} PRIVATE
         ${SDL2_LIBRARIES}
         ${SDL2IMAGE_LIBRARIES}
         ${CAIRO_LIBRARIES}
+        ${Python3_LIBRARIES}
         m
         SDL2
 )
