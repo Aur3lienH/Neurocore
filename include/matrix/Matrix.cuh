@@ -4,7 +4,10 @@
 #include <vector>
 #include <cmath>
 #include <emmintrin.h>
+#include <pybind11/pybind11.h>
+#include <pybind11/numpy.h>
 
+namespace py = pybind11;
 
 #define USE_GPU 0
 #define SAFE 0
@@ -24,6 +27,81 @@ public:
             }
         }
     }
+
+
+    Matrix(py::array_t<float>& input)
+    {
+        py::buffer_info buf = input.request();
+
+        float* ptr = static_cast<float*>(buf.ptr);
+
+        Init(0);
+        memcpy(this->data,ptr,GetMatrixSize() * sizeof(float));
+    }
+
+    static py::object ConvertToArray(py::array_t<float>& input)
+    {
+        py::buffer_info buf = input.request();
+        auto dims = buf.shape;
+        float* ptr = static_cast<float*>(buf.ptr);
+        size_t n_matrices = 1;
+        size_t matrix_elements;
+
+        // Handle different dimensions
+        if (dims.size() == 3) {
+            // Format: [n_matrices, rows, cols]
+            n_matrices = dims[0];
+            matrix_elements = dims[1] * dims[2];
+        }
+        else if (dims.size() == 2) {
+            // Format: [n_matrices, matrix_elements] or [rows, cols]
+            if (dims[1] == rows * cols) {
+                // First dim is number of matrices
+                n_matrices = dims[0];
+                matrix_elements = dims[1];
+            } else {
+                // Single matrix case
+                matrix_elements = dims[0] * dims[1];
+            }
+        }
+        else {
+            // Handle error or single dimension case
+            matrix_elements = dims[0];
+        }
+
+        // Create and populate matrices
+        Matrix* matrices = new Matrix[n_matrices];
+        for(size_t i = 0; i < n_matrices; i++) {
+            std::cout << "initializing \n";
+            matrices[i].Init(0);
+            memcpy(matrices[i].data, ptr + (i * matrix_elements), matrix_elements * sizeof(float));
+        }
+
+        return py::capsule(matrices,"MATRIX_ARRAY", [](void* f) {
+            delete[] reinterpret_cast<Matrix*>(f);
+        });
+    }
+
+
+    py::array_t<float> ToNumpy()
+    {
+        std::vector<size_t> shape;
+        
+        // Ne mettre dans shape que les dimensions > 1
+        if (rows > 1) shape.push_back(rows);
+        if (cols > 1) shape.push_back(cols);
+        if (dim > 1) shape.push_back(dim);
+        owner = false;
+        // Si toutes les dimensions sont 1, on retourne un array 1D avec un seul élément
+        //owner = false;
+        if (shape.empty()) {
+            shape.push_back(1);
+        }
+
+        return py::array_t<float>(shape, data);
+    }
+    
+
 
     explicit Matrix();
 
@@ -202,7 +280,6 @@ Matrix<rows,columns,dims>::Matrix(float value)
 
 template<int row, int column, int size>
 void Matrix<row,column,size>::Init(float value) {
-
 
     //Create a simple array of size rows * cols * dim
     this->data = new float[row * column * size];

@@ -3,7 +3,8 @@
 #include <random>
 #include <algorithm>
 #include <iostream>
-
+#include <cstddef>
+#include <pybind11/pybind11.h>
 #include "network/LayerShape.cuh"
 #include "matrix/Matrix.cuh"
 
@@ -12,24 +13,48 @@ template<typename Network>
 class DataLoader
 {
 public:
-    typedef std::tuple<LMAT<typename Network::InputShape>,LMAT<typename Network::OutputShape>> TrainingPair;
-    DataLoader(TrainingPair* data, size_t dataLength)
+    typedef LMAT<typename Network::InputShape> InputShape;
+    typedef LMAT<typename Network::OutputShape> OutputShape;
+    InputShape* inputs;
+    OutputShape* outputs;
+
+    DataLoader(InputShape* inputs, OutputShape* outputs ,size_t dataLength)
     {
-        this->data = data;
+        this->inputs = inputs;
+        this->outputs = outputs;
         this->dataLength = dataLength;
         rng = std::mt19937(rd());
     }
 
-    //DataLoader(py::array_t<float> input, py::array_t<float> output);
+    DataLoader(const py::object& inputs_capsule, const py::object& outputs_capsule, size_t dataLength)
+    {
+        InputShape* inputs = static_cast<InputShape*>(inputs_capsule.cast<py::capsule>().get_pointer());
+        OutputShape* outputs = static_cast<OutputShape*>(outputs_capsule.cast<py::capsule>().get_pointer());
+        this->inputs = inputs;
+        this->outputs = outputs;
+        this->dataLength = dataLength;
+        rng = std::mt19937(rd());
+
+    }
+
+
+
     void Shuffle()
     {
-        std::shuffle(data, data + dataLength, rng);
+        for (size_t i = dataLength - 1; i > 0; --i) 
+        {
+            size_t j = rng() % (i + 1);
+
+            std::swap(inputs[i], inputs[j]);
+
+            std::swap(outputs[i], outputs[j]);
+        }
     }
+
     size_t GetSize() const
     {
         return dataLength;
     }
-    TrainingPair* data;
 
 private:
     size_t dataLength = 0;

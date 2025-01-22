@@ -1,3 +1,5 @@
+#pragma once
+
 #include <iostream>
 #include <chrono>
 #include <iomanip>
@@ -130,8 +132,21 @@ namespace Tools
         std::cout << "\r\n";
     }
 
-    int ProgressBar::GetConsoleWidth()
+    inline int ProgressBar::GetConsoleWidth()
     {
+        const char* ideTerminal = getenv("TERMINAL_EMULATOR");
+        if (ideTerminal && std::string(ideTerminal).find("JetBrains") != std::string::npos) {
+            // CLion typically sets COLUMNS environment variable
+            const char* columns = getenv("COLUMNS");
+            if (columns) {
+                int width = std::atoi(columns);
+                if (width > 0) {
+                    return width;
+                }
+            }
+            // If COLUMNS isn't set, CLion usually defaults to 80
+            return 80;
+        }
 #ifdef WIN32
         CONSOLE_SCREEN_BUFFER_INFO csbi;
         GetConsoleScreenBufferInfo(GetStdHandle(STD_OUTPUT_HANDLE), &csbi);
@@ -139,19 +154,21 @@ namespace Tools
 #else
         struct winsize w{};
         ioctl(STDOUT_FILENO, TIOCGWINSZ, &w);
+        if (w.ws_col == 0)
+            return 80;
         return w.ws_col;
 #endif
     }
 
     void ProgressBar::PrintProgressPart(const int size) const
     {
-        int newProgress = (int) (progress * 100);
         std::cout << "[";
         for (int i = 0; i < size - 2; i++)
         {
-            if (i < newProgress)
+            float bar_pos = i / (float) (size - 2);
+            if (bar_pos < progress)
                 std::cout << "=";
-            else if (i == newProgress)
+            else if (bar_pos == progress)
                 std::cout << ">";
             else
                 std::cout << " ";
@@ -283,7 +300,7 @@ namespace Tools
 
     void TrainBar::ChangeProgress(const int EpochsDone, const float _loss)
     {
-        progress = EpochsDone / (float) totalEpochs;
+        progress = static_cast<float>(EpochsDone) / static_cast<float>(totalEpochs);
         epochs = EpochsDone;
         loss = _loss;
         Print();
@@ -306,11 +323,10 @@ namespace Tools
                 std::to_string(seconds.count()) + " ";
         int BarSize = std::min((unsigned long) (Width - beginning.size()), (unsigned long) 100);
         std::cout << beginning;
-        unsigned int space = Width - BarSize - beginning.size();
-        for (unsigned int i = 0; i < space; i++)
-        {
-            std::cout << " ";
-        }
+        int space = Width - BarSize - beginning.size();
+        if (space < 0)
+            return;
+
 
         PrintProgressPart(BarSize);
         std::cout.flush();

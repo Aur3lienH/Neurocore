@@ -1,59 +1,45 @@
-from src.network.Network import RunCommand, ImportLib
-import os
-
-class MatrixTypes:
-    def __init__(self):
-        self.matrixTypes = []
-
-    def get_out_filename(self,rows,cols,dims):
-        return f"build/matrix_{rows}x{cols}x{dims}.so"
-    def get_module_name(self,rows,cols,dims):
-        return f"matrix_{rows}x{cols}x{dims}"
-
-    def add_lib(self,rows,cols,dims):
-        if not os.path.exists("build"):
-            os.makedirs("build")
-        file = open(f'build/MAT_{rows}x{cols}x{dims}.cpp','w')
-        file.write('#include "matrix/MatrixPy.hpp"\n')
-        file.write('#include "matrix/Matrix.cuh"\n')
-        file.write('#include <pybind11/pybind11.h>\n')
-        file.write('#include <pybind11/stl.h>\n')
-        file.write('namespace py = pybind11;\n')
-
-        file.write(f'BIND_MATRIX({rows},{cols},{dims})')
-        file.close()
-        out_file_name = self.get_out_filename(rows,cols,dims)
-        cmd = f"g++ -O3 -shared -std=c++20 -fPIC "\
-          f"`python3 -m pybind11 --includes` "\
-          f"-I ../dependencies/pybind11/include -I ../include "\
-          f"./build/MAT_{rows}x{cols}x{dims}.cpp "\
-          f"-o {out_file_name}"
-        print(cmd)
-
-        RunCommand(cmd)
-        lib = ImportLib(f'{out_file_name}',f'{self.get_module_name(rows,cols,dims)}')
-        self.matrixTypes.append(((rows,cols,dims),lib))
-        return lib
-    
-    def get_lib(self,rows,cols,dims):
-        for matrixType in self.matrixTypes:
-            ((rows_lib,cols_lib,dims_lib),lib) = matrixType
-            if rows_lib == rows and cols_lib == cols and dims_lib == dims:
-                return lib
-        return self.add_lib(rows,cols,dims)
-
+from src.network.MatrixTypes import MatrixTypes
+import numpy as np
+import numpy.typing as npt
         
 matTypes = MatrixTypes()
+
+def NumpyToMatrixArray(numpyArray: npt.NDArray[np.float32]):
+    if len(numpyArray.shape) == 3:
+        lib = matTypes.get_lib(numpyArray.shape[1],numpyArray.shape[2],1)
+    elif len(numpyArray.shape) == 2:
+        lib = matTypes.get_lib(numpyArray.shape[1],1,1)
+    else:
+        raise ValueError("Invalid numpy array shape")
+    print(lib)
+    return lib.Matrix.convert_to_array(numpyArray)
 
 
 class Matrix:
 
-    def __init__(self, rows, cols, dims):
+    def __init__(self, rows = 1, cols = 1, dims = 1, cpp_mat = None, numpyArray: npt.NDArray[np.float32] = None):
+        if numpyArray is not None:
+            self.rows = numpyArray.shape[0] if len(numpyArray.shape) > 0 else 1
+            self.cols = numpyArray.shape[1] if len(numpyArray.shape) > 1 else 1
+            self.dims = numpyArray.shape[2] if len(numpyArray.shape) > 2 else 1
+            print(self.rows)
+            print(self.cols)
+            print(self.dims)
+            self.cpp_mat = matTypes.get_lib(self.rows,self.cols,self.dims).Matrix(numpyArray)
+            return
         self.rows = rows
         self.cols = cols
         self.dims = dims
+        if cpp_mat == None:
+            self.cpp_mat = matTypes.get_lib(rows,cols,dims).Matrix()
+            return
+        else:
+            self.cpp_mat = cpp_mat
+            return
+    
 
-        self.lib = matTypes.get_lib(rows,cols,dims).Matrix()
+
+
 
     def Print(self):
-        self.lib.print()
+        self.cpp_mat.print()

@@ -19,6 +19,8 @@ public:
 
     }
 
+
+
     ~Network()
     {
         /*
@@ -83,16 +85,16 @@ public:
 
     void Learn(int epochs, double learningRate, DataLoader<Network>* data_loader)
     {
-        Tools::TrainBar Bar = Tools::TrainBar(epochs * data_loader->GetSize());
+        Tools::TrainBar Bar = Tools::TrainBar(epochs);
         double globalLoss;
         for (int e = 0; e < epochs; e++)
         {
             globalLoss = 0;
             for (int i = 0; i < data_loader->GetSize(); i++)
             {
-                globalLoss += BackPropagate(&std::get<0>(data_loader->data[i]), &std::get<1>(data_loader->data[i]));
+                globalLoss += BackPropagate(data_loader->inputs + i, data_loader->outputs + i);
                 UpdateWeights(learningRate, 1);
-                //Bar.ChangeProgress(e * data_loader->GetSize() + i, globalLoss / (i + 1));
+                Bar.ChangeProgress(e+1, globalLoss / (i + 1));
             }
         }
     }

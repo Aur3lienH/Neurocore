@@ -87,6 +87,7 @@ bool NetworkTests::BasicFFNFeedForward()
 bool NetworkTests::BasicFFNLearn()
 {
 
+
     Network<
         Loss<MSE<5,1,1>>,
         InputLayer<LayerShape<1>>,
@@ -100,8 +101,8 @@ bool NetworkTests::BasicFFNLearn()
     Matrix<1> input2({1});
     Matrix<5> desiredOutput({-2,-4,-6,-8,-10});
 
-    auto* tuple = new  std::tuple<decltype(input2),decltype(desiredOutput)>(input2,desiredOutput);
-    auto* dataset = new DataLoader<decltype(neuralnet)>(tuple,1);
+
+    auto* dataset = new DataLoader<decltype(neuralnet)>(&input2,&desiredOutput,1);
     neuralnet.Learn(1, 0.01, dataset);
     auto* weights = fcl->GetWeights();
     auto* biases = fcl->GetBiases();
@@ -113,16 +114,20 @@ bool NetworkTests::BasicFFNLearn()
             return false;
         }
     }
+
     return true;
 }
 
 bool NetworkTests::DataLoaderTest() {
+
     typedef Network<
         Loss<MSE<5,1,1>>,
         InputLayer<LayerShape<1>>,
         FCL<ReLU<5,1,1,1>,LayerShape<1>,LayerShape<5>,Constant<0.01>,true>
     > net;
-    auto dataset = DataLoader<net>(nullptr,0);
+    auto dataset = DataLoader<net>(nullptr,nullptr,0);
+    return true;
+
     return true;
 }
 
