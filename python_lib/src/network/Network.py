@@ -20,34 +20,37 @@ class Network:
         self.layers.append(layer)
 
     def CompileCpp(self):
-        # Get the absolute path to the project directory
-        # This will be /home/aurelien/Projects/DeepLearning/python_lib
-        project_dir = os.path.dirname(os.path.abspath(__file__))
-        project_dir = os.path.dirname(project_dir)  # Go up one level from src/network
-        project_dir = os.path.dirname(project_dir)  # Go up one more level to reach python_lib
+        project_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+        build_dir = os.path.join(project_dir, "build")
 
-        if not os.path.exists("build"):
-            os.makedirs("build")
+        if not os.path.exists(build_dir):
+            os.makedirs(build_dir)
 
-        
-        # Save current directory
         original_dir = os.getcwd()
-        
+        cache = os.path.join(build_dir, 'CMakeCache.txt')
+        makefile = os.path.join(build_dir, 'Makefile')
+        cmake_install = os.path.join(build_dir, 'cmake_install.cmake')
+        if os.path.exists(cache):
+            os.remove(cache)
+        if os.path.exists(makefile):
+            os.remove(makefile)
+        if os.path.exists(cmake_install):
+            os.remove(cmake_install)
+
         try:
-            # Change to project directory
             os.chdir(project_dir)
-            
-            # Run build commands
-            RunCommand('cmake build -S build')
-            RunCommand('make')
-            
-            deep_learning_py = ImportLib('./build/deep_learning_py*.so','deep_learning_py')
+            RunCommand('cmake build -S build -B build -DPython3_FIND_STRATEGY=LOCATION')
+            RunCommand('cd build && make')
+
+            # Use absolute path for module import
+            module_path = os.path.join(project_dir, "build", 'deep_learning_py*.so')
+            print(module_path)
+            deep_learning_py = ImportLib('deep_learning_py')
 
             self.cpp_network = deep_learning_py.Network()
             self.cpp_lib_core = deep_learning_py
-            
+
         finally:
-            # Always return to the original directory
             os.chdir(original_dir)
     
     def Compile(self, loss: Loss):
