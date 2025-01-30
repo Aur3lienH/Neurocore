@@ -2,6 +2,7 @@
 #include <cmath>
 #include "matrix/Matrix.cuh"
 #include "network/InitFunc.cuh"
+#include <type_traits>
 
 template<int rows,int prev_rows, int cols = 1, int dims = 1>
 class SigmoidPrime final
@@ -26,7 +27,13 @@ public:
 
     static void FeedForward(const MAT<rows,cols,dims>* input, MAT<rows,cols,dims>* output)
     {
+#if USE_GPU
+        checkCUDNN(cudnnActivationForward(cuda->cudnnHandle, activationDesc, cuda->one,
+                                      input->desc, input->GetData(), cuda->zero,
+                                      output->desc, output->GetData()));
+#else
         DefaultFeedForward(input, output, Function);
+#endif
     }
 
     static void Derivative(const MAT<rows,cols,dims>* input, MAT<rows,cols,dims>* output)
@@ -38,6 +45,8 @@ public:
     {
         return "SigmoidPrime";
     }
+
+    static std::enable_if_t<dims == 1, cudnnActivationDescriptor_t> activationDesc;
 };
 
 

@@ -1,4 +1,4 @@
-#pragma once
+/*#pragma once
 #include <cmath>
 #include "matrix/Matrix.cuh"
 #include "network/InitFunc.cuh"
@@ -72,4 +72,4 @@ MAT<rows,prev_rows,dims>* Tanh<rows,prev_rows,cols,dims>::InitWeights()
 
     WeightsInit::XavierInit(prev_rows, weights);
     return weights;
-}
+}*/

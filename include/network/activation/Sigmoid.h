@@ -53,4 +53,9 @@ public:
     {
         return "Sigmoid";
     }
+
+private:
+#if USE_GPU
+    cudnnActivationDescriptor_t activationDesc;
+#endif
 };

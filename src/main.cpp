@@ -1,17 +1,17 @@
 #include <iostream>
+
+#include "gpuComputation/CUDA.cuh"
 #include "tests/Tests.h"
-int main(int argc, char** argv)
+/*int main(int argc, char** argv)
 {
     Tests::ExecuteTests();
     //Mnist2();
     //QuickDraw2(10000);
 
-#if USE_GPU
-    delete Matrix_GPU::cuda;
-#endif
+    delete cuda;
     return 0;
     //LoadAndTest("./Models/MNIST_11.net",true);
-}
+}*/
 
 /*
 #include "GUI.cuh"

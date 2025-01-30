@@ -1,14 +1,15 @@
-//
-// Created by mat on 19/08/23.
-//
-
 #ifndef DEEPLEARNING_CUDA_CUH
 #define DEEPLEARNING_CUDA_CUH
 
-#if USE_GPU
 
 #include "cudnn.h"
 #include "cublas_v2.h"
+
+#ifdef USE_GPU
+constexpr bool GPU_DEFAULT = true;
+#else
+constexpr bool GPU_DEFAULT = false;
+#endif
 
 #define checkCUDNN(expression) \
 { \
@@ -77,6 +78,15 @@ static const char* cublasGetErrorEnum(cublasStatus_t error)
         }                                                                                             \
     }
 
+__global__ void initializeArray(float *array, float value, int n) {
+    int idx = blockIdx.x * blockDim.x + threadIdx.x;
+    if (idx < n) {
+        array[idx] = value;
+    }
+}
+
+#define CUDA_KERNEL_ARGS(cuda, data_length) data_length / cuda->threadsPerBlock, cuda->threadsPerBlock
+
 class CUDA
 {
 public:
@@ -98,6 +108,6 @@ public:
     const int threadsPerBlock = 256;
 };
 
+inline CUDA* cuda = new CUDA();
 
 #endif
-#endif //DEEPLEARNING_CUDA_CUH

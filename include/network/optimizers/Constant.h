@@ -1,9 +1,17 @@
 #pragma once
-#include "Optimizer.h"
+#include "gpuComputation/CUDA.cuh"
+
+__global__
+void ConstantComputeKernel(const float* gradient, float* parameters, const int size, const double learningRate)
+{
+    const int i = blockIdx.x * blockDim.x + threadIdx.x;
+    if (i < size)
+        parameters[i] -= gradient[i] * learningRate;
+
+}
 
 
-
-template<double lr>
+template<double lr, bool GPU = GPU_DEFAULT>
 class Constant final
 {
 public:
@@ -11,14 +19,18 @@ public:
 
     template<int rows, int cols, int dims>
     static void Compute(MAT<rows,cols,dims>* gradient, MAT<rows,cols,dims>* parameters, int offset = 0) {
-#if USE_GPU
-        const int numBlocks = (gradient->GetSize() + Matrix_GPU::cuda->threadsPerBlock - 1) / Matrix_GPU::cuda->threadsPerBlock;
-        ConstantComputeKernel<<<numBlocks, Matrix_GPU::cuda->threadsPerBlock>>>(gradient->GetData() + offset, parameters->GetData() + offset, gradient->GetSize(), lr);
-        checkCUDA(cudaDeviceSynchronize());
-#else
-        for (int i = 0; i < gradient->GetSize(); i++) {
-            (*parameters)[i] -= (*gradient)[i] * lr;
+
+        if constexpr (GPU)
+        {
+            const int numBlocks = (gradient->GetSize() + cuda->threadsPerBlock - 1) / cuda->threadsPerBlock;
+            ConstantComputeKernel<<<numBlocks, cuda->threadsPerBlock>>>(gradient->GetData() + offset, parameters->GetData() + offset, gradient->GetSize(), lr);
+            checkCUDA(cudaDeviceSynchronize());
         }
-#endif
+        else
+        {
+            for (int i = 0; i < gradient->GetSize(); i++) {
+                (*parameters)[i] -= (*gradient)[i] * lr;
+            }
+        }
     }
 };

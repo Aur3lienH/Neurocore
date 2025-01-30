@@ -1,4 +1,4 @@
-#pragma once
+/*#pragma once
 #include <cmath>
 #include "matrix/Matrix.cuh"
 
@@ -98,7 +98,7 @@ void Softmax::Derivative(const MAT* input, const cudnnTensorDescriptor_t& inputD
     /*checkCUDNN(cudnnSoftmaxBackward(Matrix_GPU::cuda->cudnnHandle, CUDNN_SOFTMAX_ACCURATE, CUDNN_SOFTMAX_MODE_INSTANCE,
                                     &Matrix_GPU::cuda->one, *input->GetDescriptor_1D(), input->GetData(),
                                     *lastDelta->GetDescriptor_1D(), lastDelta->GetData(), &Matrix_GPU::cuda->zero,
-                                    *output->GetDescriptor_1D(), output->GetData()));*/
+                                    *output->GetDescriptor_1D(), output->GetData()));#1#
 
     // The CPU version sets all values of output to one, but as the GPU version of Derivative also multiplies output
     // by lastDelta, we can just copy lastDelta to output
@@ -117,4 +117,4 @@ void Softmax<rows,prev_rows,cols,dims>::Derivative(const MAT<rows,cols,dims>* in
     }
 }
 
-#endif
+#endif*/

@@ -1,7 +1,7 @@
 #pragma once
 #include <matrix/Matrix.cuh>
 #include <network/InitFunc.cuh>
-template<int rows,int prev_rows, float def_val = 0.01f, int cols = 1, int dims = 1>
+template<int rows,int prev_rows, float def_val = 0.01f, int cols = 1, int dims = 1, bool GPU = GPU_DEFAULT>
 class LeakyReLU final
 {
 public:
@@ -13,11 +13,8 @@ public:
 
     LeakyReLU();
 
-#if not USE_GPU
+    static double Function(double input) requires(!GPU);
 
-    static double Function(double input);
-
-#endif
     static double Derive(double input);
 
     static MAT<rows,prev_rows,dims>* InitWeights();
@@ -41,25 +38,21 @@ public:
 };
 
 
-template<int rows,int prev_rows, float def_val, int cols, int dims>
-LeakyReLU<rows,prev_rows,def_val,cols,dims>::LeakyReLU()
+template<int rows,int prev_rows, float def_val, int cols, int dims, bool GPU>
+LeakyReLU<rows,prev_rows,def_val,cols,dims,GPU>::LeakyReLU()
 {
-#if USE_GPU
-    throw std::runtime_error("LeakyReLU is not implemented on GPU");
-#endif
+    if constexpr (GPU)
+        throw std::runtime_error("LeakyReLU is not implemented on GPU");
 }
 
-#if not USE_GPU
-
-template<int rows,int prev_rows, float def_val, int cols, int dims>
-double LeakyReLU<rows,prev_rows,def_val,cols,dims>::Function(const double input)
+template<int rows,int prev_rows, float def_val, int cols, int dims, bool GPU>
+double LeakyReLU<rows,prev_rows,def_val,cols,dims,GPU>::Function(const double input) requires(!GPU)
 {
     return input > 0 ? input : def_val * input;
 }
 
-#endif
-template<int rows,int prev_rows, float def_val, int cols, int dims>
-double LeakyReLU<rows,prev_rows,def_val,cols,dims>::Derive(const double input)
+template<int rows,int prev_rows, float def_val, int cols, int dims, bool GPU>
+double LeakyReLU<rows,prev_rows,def_val,cols,dims,GPU>::Derive(const double input)
 {
     return input > 0 ? 1 : def_val;
 }
@@ -70,8 +63,8 @@ void LeakyReLU::Save(std::ofstream& writer)
     writer.write(reinterpret_cast<char*>(&alpha), sizeof(float));
 }
 */
-template<int rows,int prev_rows, float def_val, int cols, int dims>
-MAT<rows,prev_rows,dims>* LeakyReLU<rows,prev_rows,def_val,cols,dims>::InitWeights()
+template<int rows,int prev_rows, float def_val, int cols, int dims, bool GPU>
+MAT<rows,prev_rows,dims>* LeakyReLU<rows,prev_rows,def_val,cols,dims,GPU>::InitWeights()
 {
 
     auto* weights = new Matrix<rows,prev_rows,dims>();
