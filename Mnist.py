@@ -44,7 +44,7 @@ net.Print()
 # Train the network
 batch_size = 32
 num_epochs = 10
-learning_rate = 0.01
+learning_rate = 0.001
 
 # Train on training set
 print(f"\nTraining on {len(X_train)} samples...")
