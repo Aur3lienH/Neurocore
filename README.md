@@ -1,17 +1,22 @@
-# DeepLearning
+# Neurocore (NEUROCORE Engine Using Recursive Operations for Computational Optimization and Research Excellence)
 
 ## 1. Introduction
 
-This repository aims to create a deep learning library from scratch. The main goal is to understand the background of deep learning and to implement the algorithms and optimizations from scratch. This library has been implemented in c++.
+This repository aims to create a deep learning library from scratch using CRTP (Curiously Recursive Template Pattern). The main goal of this project is to optimize small networks using JIT(Just In Time) compilation so each network is efficiently optimized by the compiler (GNU compiler and CUDA). 
+
+
 
 ## 2. Installation
 
 ### 2.1. Prerequisites
 
 - Make sure you have installed the following packages:
-  - make
   - g++
-  - CUDA Toolkit -> for ubuntu 18.04, you can follow the instructions [here](https://developer.nvidia.com/cuda-downloads?target_os=Linux&target_arch=x86_64&target_distro=Ubuntu&target_version=1804&target_type=deblocal)
+  - CUDA toolkit (not mandatory)
+  - CUDA (Not mandatory)
+  - CUDNN (Not mandatory)
+  - >= Python3.8
+
 
 
 ### 2.2. Installation
@@ -23,12 +28,12 @@ git clone git@github.com:Aur3lienH/DeepLearning.git
 
 - Go to the repository:
 ```bash
-cd DeepLearning
+cd DeepLearning/python_lib
 ```
 
 - Compile the library:
 ```bash
-make
+
 ```
 
 
@@ -101,3 +106,7 @@ network->Save("path/to/save");
 Network* network = Network::Load("path/to/load");
 
 ```
+
+## 4. Challenges
+
+Chanllenges are making this library efficient in both CPU and GPU mode using two different compilers

@@ -1,5 +1,0 @@
-setup.py
-deep_learning_lib.egg-info/PKG-INFO
-deep_learning_lib.egg-info/SOURCES.txt
-deep_learning_lib.egg-info/dependency_links.txt
-deep_learning_lib.egg-info/top_level.txt

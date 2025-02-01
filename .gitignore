@@ -1,4 +1,6 @@
-./build/
+.vscode/
+build/
+__pycache__/
 .idea/
 cmake-build-debug/
 cmake-build-release/

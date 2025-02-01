@@ -1,0 +1,2 @@
+class Config:
+    VERBOSE = False
