@@ -23,7 +23,9 @@ This repository aims to create a deep learning library from scratch using CRTP (
 
 - Clone the repository:
 ```bash
-git clone git@github.com:Aur3lienH/DeepLearning.git
+git clone git@github.com:Aur3lienH/Neurocore.git
+cd Neurocore
+
 ```
 
 - Go to the repository:
@@ -35,7 +37,6 @@ cd DeepLearning/python_lib
 ```bash
 
 ```
-
 
 ## 3. Usage
 
@@ -107,6 +108,14 @@ Network* network = Network::Load("path/to/load");
 
 ```
 
-## 4. Challenges
+## 4.Tests
+
+```bash
+git clone git@github.com:Aur3lienH/Neurocore.git
+cd Neurocore
+
+```
+
+## 5. Challenges
 
 Chanllenges are making this library efficient in both CPU and GPU mode using two different compilers

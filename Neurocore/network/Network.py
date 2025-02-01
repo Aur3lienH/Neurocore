@@ -8,7 +8,7 @@ import numpy.typing as npt
 from Neurocore.network.MatrixTypes import MatrixTypes
 import os
 from Neurocore.network.Config import Config
-from Neurocore.network.Matrix import matTypes, NumpyToMatrixArray
+from Neurocore.network.Matrix import matTypes, NumpyToMatrixArray, PreCompileMatrix
 
 
 class Network:
@@ -38,10 +38,17 @@ class Network:
         try:
             cmake_list_path = os.path.join(GetTemplateDir(),'CMakeLists.txt')
             source_path = os.path.join(build_dir,'network.cpp')
-
-            RunCommand(f'cp {cmake_list_path} {build_dir}')
-            RunCommand(f'cmake -DPYBIND11_ROOT={GetPybindDir()} -DINCLUDE_DIR={GetIncludeDir()} -DNETWORK_FILE={source_path} -S {build_dir} -B {build_dir} -DPython3_FIND_STRATEGY=LOCATION')
-            RunCommand(f'cd {build_dir} && make')
+            out_path = os.path.join(build_dir,'neurocore.so')
+            pybind_include = os.path.join(GetPybindDir(),'include')
+            cmd = f"g++ -O3 -shared -std=c++20 -fPIC -flto=auto "\
+          f" `python3 -m pybind11 --includes`"\
+          f"-I{pybind_include} -I{GetIncludeDir()} "\
+          f"{source_path} "\
+          f"-o {out_path}"
+            #RunCommand(f'cp {cmake_list_path} {build_dir}')
+            #RunCommand(f'cmake -DPYBIND11_ROOT={GetPybindDir()} -DINCLUDE_DIR={GetIncludeDir()} -DNETWORK_FILE={source_path} -S {build_dir} -B {build_dir} -DPython3_FIND_STRATEGY=LOCATION')
+            #RunCommand(f'cd {build_dir} && make')
+            RunCommand(cmd)
 
             # Use absolute path for module import
             module_path = os.path.join(build_dir, 'neurocore.so')
@@ -76,6 +83,7 @@ class Network:
 
         string += f'typedef Network<\n'
         string += f'\t{loss.get_code(self.layers[-1].layerShape)}'
+        
         prev_shape = None
         for layer in self.layers:
             string += ',\n'
@@ -105,6 +113,10 @@ class Network:
         file.write(string)
         file.close()
         self.CompileCpp()
+        first_layer = self.layers[0].get_layer_shape()
+        last_layer = self.layers[-1].get_layer_shape()
+        PreCompileMatrix(first_layer.x,first_layer.y,first_layer.z)
+        PreCompileMatrix(last_layer.x,last_layer.y,last_layer.z)
         self.cpp_network.Compile()
         
         

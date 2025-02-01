@@ -14,6 +14,9 @@ def NumpyToMatrixArray(numpyArray: npt.NDArray[np.float32]):
         raise ValueError("Invalid numpy array shape")
     return lib.Matrix.convert_to_array(numpyArray)
 
+def PreCompileMatrix(rows, cols, dims):
+    matTypes.get_lib(rows,cols,dims)
+
 
 class Matrix:
 

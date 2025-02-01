@@ -1,13 +1,12 @@
 cmake_minimum_required(VERSION 3.27)
-
 project(DeepLearningLibrary)
 
 
 set(CMAKE_CXX_STANDARD 20)
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -flto=auto -I${INCLUDE_DIR}")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -flto=auto -fPIC -I${INCLUDE_DIR}")
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
-# Find Python and include directories
+
 find_package(Python3 REQUIRED COMPONENTS Interpreter Development)
 include_directories(${Python3_INCLUDE_DIRS})
 
@@ -15,7 +14,8 @@ include_directories(${Python3_INCLUDE_DIRS})
 set(PYBIND11_SOURCE_DIR ${PYBIND11_ROOT})
 set(PYBIND11_BINARY_DIR ${PYBIND11_ROOT})
 add_subdirectory(${PYBIND11_SOURCE_DIR} ${PYBIND11_BINARY_DIR})
-find_package(pybind11 REQUIRED)
+
+
 
 #target_include_directories(deep_learning_py 
 #    PRIVATE

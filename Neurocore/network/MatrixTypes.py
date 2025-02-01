@@ -26,9 +26,10 @@ class MatrixTypes:
         file.write(f'BIND_MATRIX({rows},{cols},{dims})')
         file.close()
         out_file_path = os.path.join(build_dir,self.get_out_filename(rows,cols,dims))
-        cmd = f"g++ -O3 -shared -std=c++20 -fPIC "\
-          f"`python3 -m pybind11 --includes` "\
-          f"-I {GetPybindDir()} -I {GetIncludeDir()} "\
+        pybind_include = os.path.join(GetPybindDir(),'include')
+        cmd = f"g++ -O3 -shared -std=c++20 -fPIC -flto=auto "\
+          f" `python3 -m pybind11 --includes`"\
+          f"-I{pybind_include} -I{GetIncludeDir()} "\
           f"{filepath} "\
           f"-o {out_file_path}"
 
@@ -47,4 +48,5 @@ class MatrixTypes:
                 if Config.VERBOSE:
                     print(f'Retriving: Already compiled Matrix with size {rows}x{cols}x{dims}')
                 return lib
-        return self.add_lib(rows,cols,dims)
+        lib = self.add_lib(rows,cols,dims)
+        return lib
