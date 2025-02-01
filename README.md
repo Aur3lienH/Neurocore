@@ -1,26 +1,25 @@
-<h2> Neurocore (NEUROCORE Engine Using Recursive Operations for Computational Optimization and Research Excellence)</h2>
+<h2> N.E.U.R.O.C.O.R.E (NEUROCORE Engine Using Recursive Operations for Computational Optimization and Research Excellence)</h2>
 
-## 1. Introduction
+## 1. Introduction 🧠
 
-This repository aims to create a deep learning library from scratch using CRTP (Curiously Recursive Template Pattern). The main goal of this project is to optimize small networks using JIT(Just In Time) compilation so each network is efficiently optimized by the compiler (GNU compiler and CUDA). 
-
+Neurocore aims to create a deep learning library from scratch using CRTP (Curiously Recursive Template Pattern). The main goal of this project is to optimize small networks using JIT(Just In Time) compilation so each network is efficiently optimized by the compiler (GNU compiler and CUDA). 
 
 
 ## 2. Installation 👷
 
 ### 2.1. Prerequisites
 
-- Make sure you have installed the following packages:
-  - c++ Compiler: g++ (version 10.1 or higher)
-  - CUDA Toolkit (optional, version 12.2 or higher)
-  - CUDNN (optional, version 8.9 or higher)
-  - python (version 3.8 or higher)
-  - pip (latest version recommended)
+- Make sure you have installed the following packages to use Neurocore:
+  - **c++ Compiler**: g++ (version 10.1 or higher)
+  - **python** (version 3.8 or higher)
+  - **pip** (latest version recommended)
+  - **CUDA Toolkit** (optional, version 12.2 or higher)
+  - **CUDNN** (optional, version 8.9 or higher)
 
 
 ### 2.2. Installation
 
-- From the repository:
+- From the Neurocore repository:
 ```bash
 git clone git@github.com:Aur3lienH/Neurocore.git
 cd Neurocore
@@ -28,27 +27,54 @@ git submodule init
 git submodule update
 pip install .
 ```
--From the release:
+-From the Neurocore release:
 ```bash
 sudo pip install 
 ```
 
-## 3.Tests
+## 3.Tests 🧪✅
 
 ```bash
 ./run_tests
 ```
 If you see something which is not green, you may be missing packages or the library can't be installed on your computer
 
-## 4. Example
+## 4. Example 📝
 
-### 4.1. Train Mnist on 10 epochs
+### 4.1. Train Mnist on 10 epochs 
 
-How to create a neural network.
 
 ```bash
 python Mnist.py
 ```
+
+### 4.2 Explanation of the small example 😎
+
+**Firstly import all of the Neurocore utils**
+
+| Module | Description |
+|--------|-------------|
+| `Network` | Main class managing the neural network architecture. Handles model construction, training, and inference. Provides the backbone for building and operating the neural network. |
+| `FCL` (Fully Connected Layer) | Implements dense layers where each neuron connects to all neurons in the previous layer. Used for creating hidden and output layers, enabling complex pattern recognition. |
+| `InputLayer` | Defines the network's first layer that receives data. Specifies input dimensions and initializes data flow through the network. Essential for establishing the network's input structure. |
+| `ReLU` | Rectified Linear Unit activation function that introduces non-linearity in the network. Transforms negative values to zero while preserving positive values, helping the network learn complex patterns. |
+| `MSE` | Mean Squared Error loss function that calculates the average squared difference between network predictions and target values during training. Guides the network's learning process by quantifying prediction errors. |
+| `Matrix` | Core module handling optimized matrix operations for deep learning. Provides efficient implementation of network computations, leveraging hardware-specific optimizations through CRTP. |
+| `NumpyToMatrixArray` | Conversion utility that transforms NumPy arrays into Neurocore's internal Matrix format. Ensures seamless compatibility with external data structures while maintaining optimization benefits. |
+| `Config` | Configuration module for adjusting verbosity of logs and progress messages during network execution. Controls debugging output and training progress information. |
+
+```python
+from Neurocore.network.Network import Network
+from Neurocore.network.Layers import FCL, InputLayer
+from Neurocore.network.Activation import ReLU
+from Neurocore.network.Loss import MSE
+from Neurocore.network.Matrix import Matrix, NumpyToMatrixArray
+from Neurocore.network.Config import Config
+```
+
+
+
+How to create the neural network using Neurocore.
 
 **Network for the small example**
 
@@ -82,13 +108,13 @@ Y_val = ouptut (numpy array)<br>
 ```python
 Y_val = net.FeedForward(X_val)
 ```
-## 5. Objective of this repo
+## 5. Objective of this repo 🎯
 
 The main of this repo is to make a deep learning library accessible to everybody which is a little bit aware of the subject.<br>
-Making it efficient under the hood and lightweight during inference by compiling specically for the computer the library is running on and the specific network.
-This can have has side effect slightly better performance because of it's easier to retrieve the instructions
+Making it *efficient* under the hood and **lightweight** during inference by **compiling specically for the computer** the library is running on and **the specific network**.
+Neurocore can have has side effect slightly *better performance* of small networks because of it's easier to retrieve the instructions
 
-## Challenges and Roadmap
+### 5.1 Challenges and Roadmap 🛣️
 
 - **Performance Optimization**
   - Dual-mode efficiency for CPU and GPU compilation
