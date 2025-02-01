@@ -3,9 +3,13 @@ from Neurocore.network.Layers import FCL, InputLayer
 from Neurocore.network.Activation import ReLU
 from Neurocore.network.Loss import MSE
 from Neurocore.network.Matrix import Matrix, NumpyToMatrixArray
+from Neurocore.network.Config import Config
 import numpy as np
 from sklearn.datasets import fetch_openml
 from sklearn.model_selection import train_test_split
+
+#Set the verbose
+#Config.VERBOSE = True
 
 # Load MNIST dataset from scikit-learn
 print("Loading MNIST dataset...")
