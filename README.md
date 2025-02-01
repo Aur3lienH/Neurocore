@@ -5,7 +5,7 @@
 Neurocore aims to create a deep learning library from scratch using CRTP (Curiously Recursive Template Pattern). The main goal of this project is to optimize small networks using JIT(Just In Time) compilation so each network is efficiently optimized by the compiler (GNU compiler and CUDA). 
 
 
-## 2. Installation 👷
+## 2. Installation to Neurocore👷
 
 ### 2.1. Prerequisites
 
@@ -32,14 +32,14 @@ pip install .
 sudo pip install 
 ```
 
-## 3.Tests 🧪✅
+## 3.Neurocore Tests 🧪✅
 
 ```bash
 ./run_tests
 ```
 If you see something which is not green, you may be missing packages or the library can't be installed on your computer
 
-## 4. Example 📝
+## 4.Neurocore Example 📝
 
 ### 4.1. Train Mnist on 10 epochs 
 
@@ -86,7 +86,7 @@ net.AddLayer(FCL(10, ReLU()))
 net.Compile(MSE())
 net.Print()
 ```
-!!! Network should always start with an InputLayer and be compiled before used !!!
+!!! Network should always **start** with an **InputLayer** and be **compiled** before usage !!!
 
 | Parameter | Description |
 |-----------|-------------|
@@ -108,13 +108,13 @@ Y_val = ouptut (numpy array)<br>
 ```python
 Y_val = net.FeedForward(X_val)
 ```
-## 5. Objective of this repo 🎯
+## 5.Neurocore Objectives 🎯
 
 The main of this repo is to make a deep learning library accessible to everybody which is a little bit aware of the subject.<br>
 Making it *efficient* under the hood and **lightweight** during inference by **compiling specically for the computer** the library is running on and **the specific network**.
 Neurocore can have has side effect slightly *better performance* of small networks because of it's easier to retrieve the instructions
 
-### 5.1 Challenges and Roadmap 🛣️
+### 5.1 Neurocore Challenges and Roadmap 🛣️
 
 - **Performance Optimization**
   - Dual-mode efficiency for CPU and GPU compilation
