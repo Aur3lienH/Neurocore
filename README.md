@@ -1,4 +1,4 @@
-# Neurocore (NEUROCORE Engine Using Recursive Operations for Computational Optimization and Research Excellence)
+<h2> Neurocore (NEUROCORE Engine Using Recursive Operations for Computational Optimization and Research Excellence)</h2>
 
 ## 1. Introduction
 
@@ -6,116 +6,98 @@ This repository aims to create a deep learning library from scratch using CRTP (
 
 
 
-## 2. Installation
+## 2. Installation 👷
 
 ### 2.1. Prerequisites
 
 - Make sure you have installed the following packages:
-  - g++
-  - CUDA toolkit (not mandatory)
-  - CUDA (Not mandatory)
-  - CUDNN (Not mandatory)
-  - >= Python3.8
-
+  - c++ Compiler: g++ (version 10.1 or higher)
+  - CUDA Toolkit (optional, version 12.2 or higher)
+  - CUDNN (optional, version 8.9 or higher)
+  - python (version 3.8 or higher)
+  - pip (latest version recommended)
 
 
 ### 2.2. Installation
 
-- Clone the repository:
+- From the repository:
 ```bash
 git clone git@github.com:Aur3lienH/Neurocore.git
 cd Neurocore
-
+git submodule init
+git submodule update
+pip install .
 ```
-
-- Go to the repository:
+-From the release:
 ```bash
-cd DeepLearning/python_lib
+sudo pip install 
 ```
 
-- Compile the library:
+## 3.Tests
+
 ```bash
-
+./run_tests
 ```
+If you see something which is not green, you may be missing packages or the library can't be installed on your computer
 
-## 3. Usage
+## 4. Example
 
-### 3.1. Create a neural network
+### 4.1. Train Mnist on 10 epochs
 
 How to create a neural network.
 
-```c++
-#include "Network.h"
-#include "InputLayer.h"
-#include "FCL.h"
-#include "ReLU.h"
-// Create the neural network.
-Network* network = new Network();
-//Must start with one Input Layer.
-network->AddLayer(new InputLayer(784));
-//Hidden layer with 128.
-network->AddLayer(new FCL(128, new ReLU()));
-//Output layer with 10 neurons.
-network->AddLayer(new FCL(10, new Softmax()));
-//Compilte the network, with the optimizer and the loss function.
-network->Compile(Opti::Adam, new CrossEntropy());
-```
-
-### 3.2. Train the neural network
-
-How to train the neural network.
-
-```c++
-#include "DataLoader"
-
-// Load the data.
-//dataset : dataset[0] = input, dataset[1] = output
-DataLoader* data = new DataLoader(dataset, size);
-
-// Train the network.
-//epochs : number of epochs (int)
-//learningRate : learning rate (float)
-//batchSize : size of the batch (int)
-//threadCount : number of threads (int)
-
-network->Learn(epochs, learningRate, data, batchSize, threadCount);
-
-```
-
-### 3.3 Predict with the neural network
-
-How to predict with the neural network.
-
-```c++
-//input : Matrix of input (MAT)
-//out : Matrix of output (MAT)
-MAT out = network->Process(input);
-```
-
-look at matrix source file for more details [here](./include/matrix/Matrix.cuh) 
-
-
-### 3.4. Save and load the neural network
-
-
-```c++
-// Save the network.
-
-network->Save("path/to/save");
-
-// Load the network.
-Network* network = Network::Load("path/to/load");
-
-```
-
-## 4.Tests
-
 ```bash
-git clone git@github.com:Aur3lienH/Neurocore.git
-cd Neurocore
-
+python Mnist.py
 ```
 
-## 5. Challenges
+**Network for the small example**
 
-Chanllenges are making this library efficient in both CPU and GPU mode using two different compilers
+```python
+net = Network()
+net.AddLayer(InputLayer(784))
+net.AddLayer(FCL(128, ReLU()))
+net.AddLayer(FCL(10, ReLU()))
+net.Compile(MSE())
+net.Print()
+```
+!!! Network should always start with an InputLayer and be compiled before used !!!
+
+| Parameter | Description |
+|-----------|-------------|
+| X_train | Input data as numpy array (N+1 dimensional, where N is input dimension) |
+| Y_train | Expected output as numpy array (same format as input) |
+| batch_size | Training batch size - affects learning stability and memory usage |
+| num_epochs | Number of complete passes through the training dataset |
+| learning_rate | Learning step size (too high may cause instability, too low may cause slow convergence) |
+
+
+```python
+net.Learn(X_train, y_train, batch_size, num_epochs, learning_rate)
+```
+
+For inference FeedForward (Just go threw the network)<br>
+X_val = input (numpy array)<br>
+Y_val = ouptut (numpy array)<br>
+
+```python
+Y_val = net.FeedForward(X_val)
+```
+## 5. Objective of this repo
+
+The main of this repo is to make a deep learning library accessible to everybody which is a little bit aware of the subject.<br>
+Making it efficient under the hood and lightweight during inference by compiling specically for the computer the library is running on and the specific network.
+This can have has side effect slightly better performance because of it's easier to retrieve the instructions
+
+## Challenges and Roadmap
+
+- **Performance Optimization**
+  - Dual-mode efficiency for CPU and GPU compilation
+  - Block matrix operations for FCL networks
+  - Optimal matrix layouts for convolution operations
+  
+- **Feature Development**
+  - Implementation of advanced layers (SMorph, LSTM)
+  - Extended network architectures
+  - Additional optimization strategies
+
+
