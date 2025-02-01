@@ -29,7 +29,7 @@ class MatrixTypes:
         pybind_include = os.path.join(GetPybindDir(),'include')
         cmd = f"g++ -O3 -shared -std=c++20 -fPIC -flto=auto "\
           f" `python3 -m pybind11 --includes`"\
-          f"-I{pybind_include} -I{GetIncludeDir()} "\
+          f" -I{pybind_include} -I{GetIncludeDir()} "\
           f"{filepath} "\
           f"-o {out_file_path}"
 

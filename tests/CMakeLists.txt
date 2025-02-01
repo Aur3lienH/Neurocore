@@ -18,11 +18,11 @@ set(CMAKE_C_FLAGS "-fPIC -O3 -ffast-math")
 set(CMAKE_CXX_FLAGS "-fPIC -O3 -mavx -march=native")
 
 # Find packages
-find_package(PkgConfig REQUIRED)
-pkg_check_modules(GTK3 REQUIRED gtk+-3.0)
-pkg_check_modules(SDL2 REQUIRED sdl2)
-pkg_check_modules(SDL2IMAGE REQUIRED SDL2_image)
-pkg_check_modules(CAIRO REQUIRED cairo)
+#find_package(PkgConfig REQUIRED)
+#pkg_check_modules(GTK3 REQUIRED gtk+-3.0)
+#pkg_check_modules(SDL2 REQUIRED sdl2)
+#pkg_check_modules(SDL2IMAGE REQUIRED SDL2_image)
+#pkg_check_modules(CAIRO REQUIRED cairo)
 
 # Collect all source files for tests
 file(GLOB_RECURSE TEST_SOURCES
