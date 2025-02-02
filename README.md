@@ -111,7 +111,10 @@ Y_val = net.FeedForward(X_val)
 ## 5.Neurocore Objectives 🎯
 
 The main of this repo is to make a deep learning library accessible to everybody which is a little bit aware of the subject.<br>
-Making it *efficient* under the hood and **lightweight** during inference by **compiling specically for the computer** the library is running on and **the specific network**.
+The library achieves *efficiency* and lightweight networks by:
+- Generating **computer-specific** compiled code
+- **Optimizing** for each **individual** neural network
+
 Neurocore can have has side effect slightly *better performance* of small networks because of it's easier to retrieve the instructions
 
 ### 5.1 Neurocore Challenges and Roadmap 🛣️
