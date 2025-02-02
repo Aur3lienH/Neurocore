@@ -1,103 +1,129 @@
-# DeepLearning
+<h2> N.E.U.R.O.C.O.R.E (NEUROCORE Engine Using Recursive Operations for Computational Optimization and Research Excellence)</h2>
 
-## 1. Introduction
+## 1. Introduction 🧠
 
-This repository aims to create a deep learning library from scratch. The main goal is to understand the background of deep learning and to implement the algorithms and optimizations from scratch. This library has been implemented in c++.
+Neurocore aims to create a deep learning library from scratch using CRTP (Curiously Recursive Template Pattern). The main goal of this project is to optimize small networks using JIT(Just In Time) compilation so each network is efficiently optimized by the compiler (GNU compiler and CUDA). 
 
-## 2. Installation
+
+## 2. Installation to Neurocore👷
 
 ### 2.1. Prerequisites
 
-- Make sure you have installed the following packages:
-  - make
-  - g++
-  - CUDA Toolkit -> for ubuntu 18.04, you can follow the instructions [here](https://developer.nvidia.com/cuda-downloads?target_os=Linux&target_arch=x86_64&target_distro=Ubuntu&target_version=1804&target_type=deblocal)
+- Make sure you have installed the following packages to use Neurocore:
+  - **c++ Compiler**: g++ (version 10.1 or higher)
+  - **python** (version 3.8 or higher)
+  - **pip** (latest version recommended)
+  - **CUDA Toolkit** (optional, version 12.2 or higher)
+  - **CUDNN** (optional, version 8.9 or higher)
 
 
 ### 2.2. Installation
 
-- Clone the repository:
+- From the Neurocore repository:
 ```bash
-git clone git@github.com:Aur3lienH/DeepLearning.git
+git clone git@github.com:Aur3lienH/Neurocore.git
+cd Neurocore
+git submodule init
+git submodule update
+pip install .
 ```
-
-- Go to the repository:
+-From the Neurocore release:
 ```bash
-cd DeepLearning
+sudo pip install 
 ```
 
-- Compile the library:
+## 3.Neurocore Tests 🧪✅
+
 ```bash
-make
+./run_tests
+```
+If you see something which is not green, you may be missing packages or the library can't be installed on your computer
+
+## 4.Neurocore Example 📝
+
+### 4.1. Train Mnist on 10 epochs 
+
+
+```bash
+python Mnist.py
+```
+
+### 4.2 Explanation of the small example 😎
+
+**Firstly import all of the Neurocore utils**
+
+| Module | Description |
+|--------|-------------|
+| `Network` | Main class managing the neural network architecture. Handles model construction, training, and inference. Provides the backbone for building and operating the neural network. |
+| `FCL` (Fully Connected Layer) | Implements dense layers where each neuron connects to all neurons in the previous layer. Used for creating hidden and output layers, enabling complex pattern recognition. |
+| `InputLayer` | Defines the network's first layer that receives data. Specifies input dimensions and initializes data flow through the network. Essential for establishing the network's input structure. |
+| `ReLU` | Rectified Linear Unit activation function that introduces non-linearity in the network. Transforms negative values to zero while preserving positive values, helping the network learn complex patterns. |
+| `MSE` | Mean Squared Error loss function that calculates the average squared difference between network predictions and target values during training. Guides the network's learning process by quantifying prediction errors. |
+| `Matrix` | Core module handling optimized matrix operations for deep learning. Provides efficient implementation of network computations, leveraging hardware-specific optimizations through CRTP. |
+| `NumpyToMatrixArray` | Conversion utility that transforms NumPy arrays into Neurocore's internal Matrix format. Ensures seamless compatibility with external data structures while maintaining optimization benefits. |
+| `Config` | Configuration module for adjusting verbosity of logs and progress messages during network execution. Controls debugging output and training progress information. |
+
+```python
+from Neurocore.network.Network import Network
+from Neurocore.network.Layers import FCL, InputLayer
+from Neurocore.network.Activation import ReLU
+from Neurocore.network.Loss import MSE
+from Neurocore.network.Matrix import Matrix, NumpyToMatrixArray
+from Neurocore.network.Config import Config
 ```
 
 
-## 3. Usage
 
-### 3.1. Create a neural network
+How to create the neural network using Neurocore.
 
-How to create a neural network.
+**Network for the small example**
 
-```c++
-#include "Network.h"
-#include "InputLayer.h"
-#include "FCL.h"
-#include "ReLU.h"
-// Create the neural network.
-Network* network = new Network();
-//Must start with one Input Layer.
-network->AddLayer(new InputLayer(784));
-//Hidden layer with 128.
-network->AddLayer(new FCL(128, new ReLU()));
-//Output layer with 10 neurons.
-network->AddLayer(new FCL(10, new Softmax()));
-//Compilte the network, with the optimizer and the loss function.
-network->Compile(Opti::Adam, new CrossEntropy());
+```python
+net = Network()
+net.AddLayer(InputLayer(784))
+net.AddLayer(FCL(128, ReLU()))
+net.AddLayer(FCL(10, ReLU()))
+net.Compile(MSE())
+net.Print()
+```
+!!! Network should always **start** with an **InputLayer** and be **compiled** before usage !!!
+
+| Parameter | Description |
+|-----------|-------------|
+| X_train | Input data as numpy array (N+1 dimensional, where N is input dimension) |
+| Y_train | Expected output as numpy array (same format as input) |
+| batch_size | Training batch size - affects learning stability and memory usage |
+| num_epochs | Number of complete passes through the training dataset |
+| learning_rate | Learning step size (too high may cause instability, too low may cause slow convergence) |
+
+
+```python
+net.Learn(X_train, y_train, batch_size, num_epochs, learning_rate)
 ```
 
-### 3.2. Train the neural network
+For inference FeedForward (Just go threw the network)<br>
+X_val = input (numpy array)<br>
+Y_val = ouptut (numpy array)<br>
 
-How to train the neural network.
-
-```c++
-#include "DataLoader"
-
-// Load the data.
-//dataset : dataset[0] = input, dataset[1] = output
-DataLoader* data = new DataLoader(dataset, size);
-
-// Train the network.
-//epochs : number of epochs (int)
-//learningRate : learning rate (float)
-//batchSize : size of the batch (int)
-//threadCount : number of threads (int)
-
-network->Learn(epochs, learningRate, data, batchSize, threadCount);
-
+```python
+Y_val = net.FeedForward(X_val)
 ```
+## 5.Neurocore Objectives 🎯
 
-### 3.3 Predict with the neural network
+The main of this repo is to make a deep learning library accessible to everybody which is a little bit aware of the subject.<br>
+Making it *efficient* under the hood and **lightweight** during inference by **compiling specically for the computer** the library is running on and **the specific network**.
+Neurocore can have has side effect slightly *better performance* of small networks because of it's easier to retrieve the instructions
 
-How to predict with the neural network.
+### 5.1 Neurocore Challenges and Roadmap 🛣️
 
-```c++
-//input : Matrix of input (MAT)
-//out : Matrix of output (MAT)
-MAT out = network->Process(input);
-```
+- **Performance Optimization**
+  - Dual-mode efficiency for CPU and GPU compilation
+  - Block matrix operations for FCL networks
+  - Optimal matrix layouts for convolution operations
+  
+- **Feature Development**
+  - Implementation of advanced layers (SMorph, LSTM)
+  - Extended network architectures
+  - Additional optimization strategies
 
-look at matrix source file for more details [here](./include/matrix/Matrix.cuh) 
 
-
-### 3.4. Save and load the neural network
-
-
-```c++
-// Save the network.
-
-network->Save("path/to/save");
-
-// Load the network.
-Network* network = Network::Load("path/to/load");
-
-```
