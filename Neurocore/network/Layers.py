@@ -18,8 +18,15 @@ class Layer:
 
 
 class InputLayer(Layer):
-    def __init__(self, neuronsCount: int):
-        self.layerShape = LayerShape(neuronsCount)
+    def __init__(self, neuronsCount: int = None, layerShape: LayerShape = None):
+        if neuronsCount is None and layerShape is None:
+            raise ValueError("Should either give the neuronsCount or the layerShape in the InputLayer !")
+        if neuronsCount is not None and layerShape is not None:
+            raise ValueError("Should either give the neuronsCount or the layerShape in the InputLayer !")
+        if neuronsCount is None:
+            self.layerShape = layerShape
+        if layerShape is None:
+            self.layerShape = LayerShape(neuronsCount)
 
     def get_code(self, prevLayerShape: LayerShape):
         if prevLayerShape != None:

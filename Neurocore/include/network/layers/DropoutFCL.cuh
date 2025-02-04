@@ -11,11 +11,11 @@ class Dropout final
     [[nodiscard]] bool IsTraining() const
     { return isTraining; }
 
-    void Save();
-
-    void Drop();
 
 public:
+
+    using Shape = LayerShape;
+
     Dropout(): gen(rd()), dist(1.0f - dropoutRate), keepprob(1.0f - dropoutRate)
     {
         mask = new bool[LayerShape::x * LayerShape::y * LayerShape::z];

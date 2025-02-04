@@ -4,9 +4,14 @@
 
 template<typename LayerShape, typename PrevLayerShape>
 class Reshape final {
-public:
-    Reshape() {
 
+
+public:
+
+    using Shape = LayerShape;
+
+    Reshape() {
+        output
     }
 
     const LMAT<LayerShape>* FeedForward(const LMAT<PrevLayerShape>* _input)
@@ -21,6 +26,11 @@ public:
 
     [[nodiscard]] const LMAT<LayerShape>* getResult() const {
         return output;
+    }
+
+    void Compile()
+    {
+
     }
 
     void ClearDelta(){

@@ -11,6 +11,9 @@ class ConvLayer final
 {
 
 public:
+
+    using Shape = layerShape;
+
     ~ConvLayer();
 
     LMAT<layerShape>* FeedForward(const LMAT<prevLayerShape>* input);

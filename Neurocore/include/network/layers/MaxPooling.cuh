@@ -8,6 +8,8 @@ class MaxPoolLayer final
 {
 
 public:
+    using Shape = LayerShape;
+
     MaxPoolLayer()
     {
         output = new LMAT<LayerShape>();
