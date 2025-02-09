@@ -15,7 +15,7 @@
 
 template<int rows, int prev_rows,int cols, int dims>
 class Sigmoid;
-template<int rows, int prev_rows,int cols, int dims>
+template<int rows, int prev_rows,int cols, int dims, bool GPU>
 class SigmoidPrime;
 template<int rows, int prev_rows,int cols, int dims, bool GPU>
 class ReLU;
@@ -23,7 +23,7 @@ template<int rows, int prev_rows, float def_val,int cols, int dims, bool GPU>
 class LeakyReLU;
 template<int rows, int prev_rows,int cols, int dims>
 class SoftMax;
-template<int rows, int prev_rows,int cols, int dims>
+template<int rows, int prev_rows,int cols, int dims, bool GPU>
 class Tanh;
 
 template <typename... Args>
@@ -42,8 +42,8 @@ struct ActivationID<SigmoidPrime<rows,prev_rows,cols,dims>> {
     static constexpr uint value = 1;
 };
 
-template <int rows,int prev_rows ,int cols, int dims>
-struct ActivationID<ReLU<rows,prev_rows,cols, dims>> {
+template <int rows,int prev_rows ,int cols, int dims, bool GPU>
+struct ActivationID<ReLU<rows,prev_rows,cols, dims, GPU>> {
     static constexpr uint value = 2;
 };
 
@@ -80,9 +80,9 @@ public:
         Derived::FeedForward(input, output);
     }
 
-    static void Derivative(const MAT<Derived::Rows,Derived::Cols,Derived::Dims>* input, MAT<Derived::Rows,Derived::Cols,Derived::Dims>* output)
+    static void Derivative(const MAT<Derived::Rows,Derived::Cols,Derived::Dims>* input, MAT<Derived::Rows,Derived::Cols,Derived::Dims>* output, const MAT<Derived::Rows,Derived::Cols,Derived::Dims>* lastDelta, const MAT<Derived::Rows,Derived::Cols,Derived::Dims>* z)
     {
-        Derived::Derivative(input, output);
+        Derived::Derivative(input, output, lastDelta, z);
     }
 
     static MAT<Derived::Rows,Derived::PrevRows,Derived::Dims>* InitWeights()

@@ -4,7 +4,7 @@
 #include "network/InitFunc.cuh"
 #include <type_traits>
 
-template<int rows,int prev_rows, int cols = 1, int dims = 1>
+template<int rows,int prev_rows, int cols = 1, int dims = 1, bool GPU = GPU_DEFAULT>
 class SigmoidPrime final
 {
 public:
@@ -15,11 +15,8 @@ public:
 
     SigmoidPrime();
 
-#if not USE_GPU
 
-    static double Function(double input);
-
-#endif
+    static double Function(double input) requires (!GPU);
 
     static double Derive(double input);
 
@@ -28,17 +25,18 @@ public:
     static void FeedForward(const MAT<rows,cols,dims>* input, MAT<rows,cols,dims>* output)
     {
 #if USE_GPU
-        checkCUDNN(cudnnActivationForward(cuda->cudnnHandle, activationDesc, cuda->one,
-                                      input->desc, input->GetData(), cuda->zero,
-                                      output->desc, output->GetData()));
+        throw new std::runtime_error("Sigmoid prime not implemented on GPU");
+        /*checkCUDNN(cudnnActivationForward(cuda->cudnnHandle, activationDesc, &cuda->one,
+                                      input->desc, input->GetData(), &cuda->zero,
+                                      output->desc, output->GetData()));*/
 #else
-        DefaultFeedForward(input, output, Function);
+        DefaultFeedForward(input, output, (void*)Function);
 #endif
     }
 
-    static void Derivative(const MAT<rows,cols,dims>* input, MAT<rows,cols,dims>* output)
+    static void Derivative(const MAT<rows,cols,dims>* input, MAT<rows,cols,dims>* output, const Matrix<rows,cols,dims>* lastDelta, const Matrix<rows,cols,dims>* z)
     {
-        DefaultDerivative(input, output, Derive);
+        DefaultDerivative(input, output, (void*)Derive, lastDelta, z);
     }
 
     static std::string getName()
@@ -50,29 +48,27 @@ public:
 };
 
 
-template<int rows,int prev_rows, int cols, int dims>
-SigmoidPrime<rows,prev_rows,cols,dims>::SigmoidPrime()
+template<int rows,int prev_rows, int cols, int dims, bool GPU>
+SigmoidPrime<rows,prev_rows,cols,dims, GPU>::SigmoidPrime()
 {
 #if USE_GPU
     throw std::runtime_error("The sigmoid prime class has no meaning on GPU, please use the sigmoid class instead");
 #endif
 }
 
-#if not USE_GPU
-template<int rows,int prev_rows, int cols, int dims>
-double SigmoidPrime<rows,prev_rows,cols,dims>::Function(double input)
+template<int rows,int prev_rows, int cols, int dims, bool GPU>
+double SigmoidPrime<rows,prev_rows,cols,dims, GPU>::Function(double input) requires(!GPU)
 {
     return 0.5 + 0.5 * tanh(0.5 * input);
 }
 
-#endif
-template<int rows,int prev_rows, int cols, int dims>
-double SigmoidPrime<rows,prev_rows,cols,dims>::Derive(const double input)
+template<int rows,int prev_rows, int cols, int dims, bool GPU>
+double SigmoidPrime<rows,prev_rows,cols,dims, GPU>::Derive(const double input)
 {
     return 0.5 * (1 + tanh(0.5 * input)) * (1 - tanh(0.5 * input));
 }
-template<int rows,int prev_rows, int cols, int dims>
-MAT<rows,prev_rows,dims>* SigmoidPrime<rows,prev_rows,cols,dims>::InitWeights()
+template<int rows,int prev_rows, int cols, int dims, bool GPU>
+MAT<rows,prev_rows,dims>* SigmoidPrime<rows,prev_rows,cols,dims, GPU>::InitWeights()
 {
     auto* weights = new MAT<rows,prev_rows>();
 

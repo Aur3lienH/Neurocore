@@ -9,10 +9,10 @@
 class WeightsInit final
 {
 public:
-    template <int x = 1, int y = 1, int z = 1>
+    template <int x = 1, int y = 1, int z = 1, bool GPU = GPU_DEFAULT>
     static void XavierInit(int inputSize, MAT<x, y, z>* weights);
 
-    template <int x = 1, int y = 1, int z = 1>
+    template <int x = 1, int y = 1, int z = 1, bool GPU = GPU_DEFAULT>
     static void NormalizedXavierInit(int inputSize, int outputSize, MAT<x, y, z>* weights);
 
     template <int x = 1, int y = 1, int z = 1, bool GPU = GPU_DEFAULT>
@@ -27,30 +27,26 @@ private:
 #include <cmath>
 
 
-template <int x, int y, int z>
+template <int x, int y, int z, bool GPU>
 void WeightsInit::XavierInit(const int inputSize, MAT<x, y, z>* weights)
 {
     float upper = 1.0 / sqrt((float)inputSize);
     float lower = -upper;
-#if USE_GPU
-    Matrix m(weights->GetRows(), weights->GetCols(), weights->GetDims());
-#endif
 
-    for (int i = 0; i < weights->GetSize(); i++)
+    if constexpr (GPU)
     {
-#if USE_GPU
-        m[i] = lower + (rand() / ((float)RAND_MAX) * (upper - (lower)));
-#else
-        weights[0][i] = lower + (rand() / ((float) RAND_MAX) * (upper - (lower)));
-#endif
+        Matrix<x,y,z, true> m;
+        for (int i = 0; i < weights->GetSize(); i++)
+            m[i] = lower + (rand() / ((float)RAND_MAX) * (upper - (lower)));
+        checkCUDA(cudaMemcpy(weights->GetData(), m.GetData(), weights->GetSize() * sizeof(float), cudaMemcpyHostToDevice));
+        return;
     }
 
-#if USE_GPU
-    checkCUDA(cudaMemcpy(weights->GetData(), m.GetData(), weights->GetSize() * sizeof(float), cudaMemcpyHostToDevice));
-#endif
+    for (int i = 0; i < weights->GetSize(); i++)
+        weights[0][i] = lower + (rand() / ((float) RAND_MAX) * (upper - (lower)));
 };
 
-template <int x, int y, int z>
+template <int x, int y, int z, bool GPU>
 void WeightsInit::NormalizedXavierInit(const int inputSize, const int outputSize, MAT<x, y, z>* weights)
 {
     float upper = (sqrt(6.0) / sqrt((float)inputSize + (float)outputSize));

@@ -17,7 +17,7 @@ public:
 
 public:
     ReLU();
-    static void Derivative(const MAT<rows,cols,dims>* input, MAT<rows,cols,dims>* output, const Matrix<rows,cols,dims>* lastDelta, const Matrix<rows,cols,dims>* z_);
+    static void Derivative(const MAT<rows,cols,dims>* input, MAT<rows,cols,dims>* output, const Matrix<rows,cols,dims>* lastDelta, const Matrix<rows,cols,dims>* z);
 
     static double Function(double input) requires(!GPU);
 
@@ -76,7 +76,7 @@ void ReLU<rows, prev_rows, cols, dims, GPU>::FeedForward(const MAT<rows, cols, d
 }
 
 template<int rows, int prev_rows, int cols, int dims, bool GPU>
-void ReLU<rows,prev_rows,cols,dims, GPU>::Derivative(const MAT<rows,cols,dims>* input, MAT<rows,cols,dims>* output, const Matrix<rows,cols,dims>* lastDelta, const Matrix<rows,cols,dims>* z_)
+void ReLU<rows,prev_rows,cols,dims, GPU>::Derivative(const MAT<rows,cols,dims>* input, MAT<rows,cols,dims>* output, const Matrix<rows,cols,dims>* lastDelta, const Matrix<rows,cols,dims>* z)
 {
     if constexpr (GPU)
     {
@@ -84,7 +84,7 @@ void ReLU<rows,prev_rows,cols,dims, GPU>::Derivative(const MAT<rows,cols,dims>* 
         checkCUDNN(cudnnCreateActivationDescriptor(&activationDesc));
         checkCUDNN(
             cudnnSetActivationDescriptor(activationDesc, CUDNN_ACTIVATION_RELU, CUDNN_NOT_PROPAGATE_NAN, 0));
-        DefaultDerivative(input, output, &activationDesc, lastDelta, z_);
+        DefaultDerivative(input, output, &activationDesc, lastDelta, z);
         return;
     }
 

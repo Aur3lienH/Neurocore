@@ -71,7 +71,7 @@ bool ActivationTests::TestReLU()
     //ReLU::Derivative(Matrix*,Matrix*)
     MAT<5,1,1> input2({-1,2,-3,4,-5});
     MAT<5,1,1> output2;
-    ReLU::Derivative(&input2, &output2);
+    ReLU::Derivative(&input2, &output2, nullptr, nullptr);
     if(output2[0] != 0 || output2[1] != 1 || output2[2] != 0 || output2[3] != 1 || output2[4] != 0) {
         return false;
     }
@@ -118,7 +118,7 @@ bool ActivationTests::TestLeakyReLU()
     //LeakyReLU::Derivative(Matrix*,Matrix*)
     MAT<5,1,1> input2({-1,2,-3,4,-5});
     MAT<5,1,1> output2;
-    LeakyReLU::Derivative(&input2, &output2);
+    LeakyReLU::Derivative(&input2, &output2, nullptr, nullptr);
 
     if (std::abs(output2[0] - 0.01f) > epsilon ||
         std::abs(output2[1] - 1.0f) > epsilon ||
@@ -172,7 +172,7 @@ bool ActivationTests::TestTanh()
     //Tanh::Derivative(Matrix*,Matrix*)
     MAT<5,1,1> input2({-1,2,-3,4,-5});
     MAT<5,1,1> output2;
-    Tanh::Derivative(&input2, &output2);
+    Tanh::Derivative(&input2, &output2, nullptr, nullptr);
 
     if (std::abs(output2[0] - 0.419974f) > epsilon ||
         std::abs(output2[1] - 0.0706508f) > epsilon ||
@@ -218,7 +218,7 @@ bool ActivationTests::TestSoftmax()
     //Softmax::Derivative(Matrix*,Matrix*)
     MAT<5,1,1> input2({-1,2,-3,4,-5});
     MAT<5,1,1> output2;
-    Softmax::Derivative(&input2, &output2);
+    Softmax::Derivative(&input2, &output2, nullptr, nullptr);
 
     if (std::abs(output2[0] - 1) > epsilon ||
         std::abs(output2[1] - 1) > epsilon ||
@@ -264,7 +264,7 @@ bool ActivationTests::TestSigmoid()
     //Sigmoid::Derivative(Matrix*,Matrix*)
     MAT<5,1,1> input2({-1,2,-3,4,-5});
     MAT<5,1,1> output2;
-    Sigmoid::Derivative(&input2, &output2);
+    Sigmoid::Derivative(&input2, &output2, nullptr, nullptr);
 
     if (std::abs(output2[0] - 0.196612f) > epsilon ||
         std::abs(output2[1] - 0.104994f) > epsilon ||
@@ -309,7 +309,7 @@ bool ActivationTests::TestSigmoidPrime()
     //SigmoidPrime::Derivative(Matrix*,Matrix*)
     MAT<5,1,1> input2({-1,2,-3,4,-5});
     MAT<5,1,1> output2;
-    SigmoidPrime::Derivative(&input2, &output2);
+    SigmoidPrime::Derivative(&input2, &output2, nullptr, nullptr);
 
     if (std::abs(output2[0] - 0.196612f) > epsilon ||
         std::abs(output2[1] - 0.104994f) > epsilon ||

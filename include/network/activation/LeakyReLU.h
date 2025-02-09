@@ -15,7 +15,7 @@ public:
 
     static double Function(double input) requires(!GPU);
 
-    static double Derive(double input);
+    static double Derive(double input) requires(!GPU);
 
     static MAT<rows,prev_rows,dims>* InitWeights();
 
@@ -23,12 +23,22 @@ public:
 
     static void FeedForward(const MAT<rows,cols,dims>* input, MAT<rows,cols,dims>* output)
     {
-		DefaultFeedForward(input, output, Function);
+        if constexpr (GPU)
+        {
+            throw new std::runtime_error("Leaky Relu not implemented on GPU, a simple kernel suffice");
+        }
+		else
+		    DefaultFeedForward(input, output, (void*)Function);
     }
 
-    static void Derivative(const MAT<rows,cols,dims>* input, MAT<rows,cols,dims>* output)
+    static void Derivative(const MAT<rows,cols,dims>* input, MAT<rows,cols,dims>* output, const Matrix<rows,cols,dims>* lastDelta, const Matrix<rows,cols,dims>* z)
     {
-        DefaultDerivative(input, output, Derive);
+        if constexpr (GPU)
+        {
+            throw new std::runtime_error("Leaky Relu not implemented on GPU, a simple kernel suffice");
+        }
+        else
+            {DefaultDerivative<rows,cols,dims>(input, output, (void*)Derive, lastDelta, z);}
     }
 
     static std::string getName()
@@ -52,7 +62,7 @@ double LeakyReLU<rows,prev_rows,def_val,cols,dims,GPU>::Function(const double in
 }
 
 template<int rows,int prev_rows, float def_val, int cols, int dims, bool GPU>
-double LeakyReLU<rows,prev_rows,def_val,cols,dims,GPU>::Derive(const double input)
+double LeakyReLU<rows,prev_rows,def_val,cols,dims,GPU>::Derive(const double input) requires(!GPU)
 {
     return input > 0 ? 1 : def_val;
 }

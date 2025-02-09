@@ -78,13 +78,6 @@ static const char* cublasGetErrorEnum(cublasStatus_t error)
         }                                                                                             \
     }
 
-__global__ void initializeArray(float *array, float value, int n) {
-    int idx = blockIdx.x * blockDim.x + threadIdx.x;
-    if (idx < n) {
-        array[idx] = value;
-    }
-}
-
 #define CUDA_KERNEL_ARGS(cuda, data_length) data_length / cuda->threadsPerBlock, cuda->threadsPerBlock
 
 class CUDA

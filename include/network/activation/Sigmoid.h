@@ -34,12 +34,12 @@ public:
 
     static void FeedForward(const MAT<rows,cols,dims>* input, MAT<rows,cols,dims>* output)
     {
-        DefaultFeedForward<rows,cols,dims>(input, output, Function);
+        DefaultFeedForward<rows,cols,dims>(input, output, (void*)Function);
     }
 
-    static void Derivative(const MAT<rows,cols,dims>* input, MAT<rows,cols,dims>* output)
+    static void Derivative(const MAT<rows,cols,dims>* input, MAT<rows,cols,dims>* output, const Matrix<rows,cols,dims>* lastDelta, const Matrix<rows,cols,dims>* z)
     {
-        DefaultDerivative<rows,cols,dims>(input, output, Derive);
+        DefaultDerivative<rows,cols,dims>(input, output, (void*)Derive, lastDelta, z);
     }
 
     static MAT<rows,prev_rows>* InitWeights()

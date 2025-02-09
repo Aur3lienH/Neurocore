@@ -12,7 +12,12 @@
 #define AVX2 false
 #define SSE2 false
 
-//Todo: GPU: Multiply et multiplyalldims same pr divide
+__global__ void initializeArray(float *array, float value, int n) {
+    int idx = blockIdx.x * blockDim.x + threadIdx.x;
+    if (idx < n) {
+        array[idx] = value;
+    }
+}
 
 template <bool GPU>
 using enable_if_gpu_t = std::enable_if_t<GPU, cudnnTensorDescriptor_t>;
