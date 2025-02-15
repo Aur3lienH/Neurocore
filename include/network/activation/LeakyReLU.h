@@ -1,4 +1,19 @@
 #pragma once
+
+__global__ void leakyReluFeedForward(float* input, float *output, int n, float alpha) {
+    int idx = blockIdx.x * blockDim.x + threadIdx.x;
+    if (idx < n) {
+        output[idx] = input[idx] < 0 ? alpha * input[idx] : input[idx];;
+    }
+}
+
+__global__ void leakyReluDerivative(float *input, float* output, int n, float alpha) {
+    int idx = blockIdx.x * blockDim.x + threadIdx.x;
+    if (idx < n) {
+        output[idx] = input[idx] < 0 ? alpha : 1;;
+    }
+}
+
 #include <matrix/Matrix.cuh>
 #include <network/InitFunc.cuh>
 template<int rows,int prev_rows, float def_val = 0.01f, int cols = 1, int dims = 1, bool GPU = GPU_DEFAULT>
@@ -24,21 +39,17 @@ public:
     static void FeedForward(const MAT<rows,cols,dims>* input, MAT<rows,cols,dims>* output)
     {
         if constexpr (GPU)
-        {
-            throw new std::runtime_error("Leaky Relu not implemented on GPU, a simple kernel suffice");
-        }
-		else
-		    DefaultFeedForward(input, output, (void*)Function);
+            {leakyReluFeedForward<<<CUDA_KERNEL_ARGS(cuda, input->GetSize())>>>(input->data_d, output->data_d,input->GetSize(), def_val);}
+        else
+		    {DefaultFeedForward(input, output, (void*)Function);}
     }
 
-    static void Derivative(const MAT<rows,cols,dims>* input, MAT<rows,cols,dims>* output, const Matrix<rows,cols,dims>* lastDelta, const Matrix<rows,cols,dims>* z)
+    static void Derivative(const MAT<rows,cols,dims>* x, MAT<rows,cols,dims>* dx_, const Matrix<rows,cols,dims>* dy_, const Matrix<rows,cols,dims>* y_)
     {
         if constexpr (GPU)
-        {
-            throw new std::runtime_error("Leaky Relu not implemented on GPU, a simple kernel suffice");
-        }
+            {leakyReluDerivative<<<CUDA_KERNEL_ARGS(cuda, x->GetSize())>>>(x->data_d, dx_->data_d, x->GetSize(), def_val);}
         else
-            {DefaultDerivative<rows,cols,dims>(input, output, (void*)Derive, lastDelta, z);}
+            {DefaultDerivative<rows,cols,dims>(x, dx_, (void*)Derive, dy_, y_);}
     }
 
     static std::string getName()
@@ -51,8 +62,7 @@ public:
 template<int rows,int prev_rows, float def_val, int cols, int dims, bool GPU>
 LeakyReLU<rows,prev_rows,def_val,cols,dims,GPU>::LeakyReLU()
 {
-    if constexpr (GPU)
-        throw std::runtime_error("LeakyReLU is not implemented on GPU");
+
 }
 
 template<int rows,int prev_rows, float def_val, int cols, int dims, bool GPU>

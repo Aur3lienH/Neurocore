@@ -78,7 +78,7 @@ static const char* cublasGetErrorEnum(cublasStatus_t error)
         }                                                                                             \
     }
 
-#define CUDA_KERNEL_ARGS(cuda, data_length) data_length / cuda->threadsPerBlock, cuda->threadsPerBlock
+#define CUDA_KERNEL_ARGS(cuda, data_length) (data_length < cuda->threadsPerBlock ? 1 : (data_length / cuda->threadsPerBlock)), cuda->threadsPerBlock
 
 class CUDA
 {

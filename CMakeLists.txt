@@ -28,11 +28,14 @@ pkg_check_modules(CAIRO REQUIRED cairo)
 
 # Collect all source files for tests
 file(GLOB_RECURSE TEST_SOURCES
+        "${CMAKE_SOURCE_DIR}/src/network/*.cpp"
+        "${CMAKE_SOURCE_DIR}/src/tests/ActivationTests.cpp"
+        "${CMAKE_SOURCE_DIR}/src/tests/Tests.cpp"
+        "${CMAKE_SOURCE_DIR}/src/main.cpp"
+        "${CMAKE_SOURCE_DIR}/include/*.h"
+        "${CMAKE_SOURCE_DIR}/include/*.hpp"
         "${CMAKE_SOURCE_DIR}/include/*.cuh"
         "${CMAKE_SOURCE_DIR}/src/GPUmain.cpp"
-        "${CMAKE_SOURCE_DIR}/include/network/layers/InputLayer.cuh"
-        "${CMAKE_SOURCE_DIR}/include/network/layers/FCL.cuh"
-        "${CMAKE_SOURCE_DIR}/include/network/Network.h"
 )
 
 # Create the test executable
@@ -50,7 +53,10 @@ if (USE_GPU)
             CUDA_SEPARABLE_COMPILATION ON)
 endif()
 set_source_files_properties(
-        ${CMAKE_SOURCE_DIR}/src/GPUmain.cpp
+        "${CMAKE_SOURCE_DIR}/src/GPUmain.cpp"
+        "${CMAKE_SOURCE_DIR}/src/tests/ActivationTests.cpp"
+        "${CMAKE_SOURCE_DIR}/src/tests/Tests.cpp"
+        "${CMAKE_SOURCE_DIR}/src/main.cpp"
         PROPERTIES LANGUAGE CUDA
 )
 target_link_libraries(deeplib_tests PRIVATE stdc++) # does not compile if it's not there

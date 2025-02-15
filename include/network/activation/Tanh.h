@@ -38,7 +38,7 @@ public:
             DefaultFeedForward(input, output, (void*)Function);
     }
 
-    static void Derivative(const MAT<rows,cols,dims>* input, MAT<rows,cols,dims>* output, const Matrix<rows,cols,dims>* lastDelta, const Matrix<rows,cols,dims>* z)
+    static void Derivative(const MAT<rows,cols,dims>* x_, MAT<rows,cols,dims>* dx_, const Matrix<rows,cols,dims>* dy_, const Matrix<rows,cols,dims>* y_)
     {
         if constexpr (GPU)
         {
@@ -46,10 +46,10 @@ public:
             checkCUDNN(cudnnCreateActivationDescriptor(&activationDesc));
             checkCUDNN(
                 cudnnSetActivationDescriptor(activationDesc, CUDNN_ACTIVATION_TANH, CUDNN_NOT_PROPAGATE_NAN, 0));
-            DefaultDerivative(input, output, &activationDesc, lastDelta, z);
+            DefaultDerivative(x_, dx_, &activationDesc, dy_, y_);
             return;
         }
-        DefaultDerivative(input, output, (void*)Derive, lastDelta, z);
+        DefaultDerivative(x_, dx_, (void*)Derive, dy_, y_);
     }
 
     static std::string getName()

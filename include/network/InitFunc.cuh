@@ -35,15 +35,17 @@ void WeightsInit::XavierInit(const int inputSize, MAT<x, y, z>* weights)
 
     if constexpr (GPU)
     {
-        Matrix<x,y,z, true> m;
+        Matrix<x,y,z, false> m;
         for (int i = 0; i < weights->GetSize(); i++)
             m[i] = lower + (rand() / ((float)RAND_MAX) * (upper - (lower)));
         checkCUDA(cudaMemcpy(weights->GetData(), m.GetData(), weights->GetSize() * sizeof(float), cudaMemcpyHostToDevice));
         return;
     }
-
-    for (int i = 0; i < weights->GetSize(); i++)
-        weights[0][i] = lower + (rand() / ((float) RAND_MAX) * (upper - (lower)));
+    else
+    {
+        for (int i = 0; i < weights->GetSize(); i++)
+            weights[0][i] = lower + (rand() / ((float) RAND_MAX) * (upper - (lower)));
+    }
 };
 
 template <int x, int y, int z, bool GPU>

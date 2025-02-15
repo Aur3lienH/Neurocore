@@ -34,9 +34,9 @@ public:
 #endif
     }
 
-    static void Derivative(const MAT<rows,cols,dims>* input, MAT<rows,cols,dims>* output, const Matrix<rows,cols,dims>* lastDelta, const Matrix<rows,cols,dims>* z)
+    static void Derivative(const MAT<rows,cols,dims>* x_, MAT<rows,cols,dims>* dx_, const Matrix<rows,cols,dims>* dy_, const Matrix<rows,cols,dims>* y_)
     {
-        DefaultDerivative(input, output, (void*)Derive, lastDelta, z);
+        DefaultDerivative(x_, dx_, (void*)Derive, dy_, y_);
     }
 
     static std::string getName()

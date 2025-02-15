@@ -13,7 +13,7 @@
 #include <cmath>
 #include <functional>
 
-template<int rows, int prev_rows,int cols, int dims>
+template<int rows, int prev_rows,int cols, int dims, bool GPU>
 class Sigmoid;
 template<int rows, int prev_rows,int cols, int dims, bool GPU>
 class SigmoidPrime;
@@ -74,15 +74,15 @@ class Activation final
 public:
     ~Activation() = default;
 
-    template<int x=1, int y=1, int z=1>
-    static void FeedForward(const MAT<x,y,z>* input, MAT<x,y,z>* output)
+    template<int x=1, int y=1, int z=1, bool GPU=GPU_DEFAULT>
+    static void FeedForward(const MAT<x,y,z,GPU>* input, MAT<x,y,z,GPU>* output)
     {
         Derived::FeedForward(input, output);
     }
 
-    static void Derivative(const MAT<Derived::Rows,Derived::Cols,Derived::Dims>* input, MAT<Derived::Rows,Derived::Cols,Derived::Dims>* output, const MAT<Derived::Rows,Derived::Cols,Derived::Dims>* lastDelta, const MAT<Derived::Rows,Derived::Cols,Derived::Dims>* z)
+    static void Derivative(const MAT<Derived::Rows,Derived::Cols,Derived::Dims>* x_, MAT<Derived::Rows,Derived::Cols,Derived::Dims>* dx_, const MAT<Derived::Rows,Derived::Cols,Derived::Dims>* dy_, const MAT<Derived::Rows,Derived::Cols,Derived::Dims>* y_)
     {
-        Derived::Derivative(input, output, lastDelta, z);
+        Derived::Derivative(x_, dx_, dy_, y_);
     }
 
     static MAT<Derived::Rows,Derived::PrevRows,Derived::Dims>* InitWeights()
@@ -145,7 +145,7 @@ void DefaultFeedForward(const MAT<x,y,z>* input, MAT<x,y,z>* output, void *funct
 }
 
 template<int x=1, int y=1, int z=1, bool GPU=GPU_DEFAULT>
-void DefaultDerivative(const MAT<x,y,z>* input, MAT<x,y,z>* output, void* derivative, const Matrix<x,y,z>* lastDelta, const Matrix<x,y,z>* z_)
+void DefaultDerivative(const MAT<x,y,z>* x_, MAT<x,y,z>* dx_, void* derivative, const Matrix<x,y,z>* dy_, const Matrix<x,y,z>* y_)
 {
 #if SAFE
     if (input->GetCols() != output->GetCols() || input->GetRows() != output->GetRows() ||
@@ -159,17 +159,18 @@ void DefaultDerivative(const MAT<x,y,z>* input, MAT<x,y,z>* output, void* deriva
     {
         cudnnActivationDescriptor_t* activationDesc = static_cast<cudnnActivationDescriptor_t*>(derivative);
         checkCUDNN(cudnnActivationBackward(cuda->cudnnHandle, *activationDesc, &cuda->one,
-                                       input->desc, input->GetData(),
-                                       lastDelta->desc,
-                                       lastDelta->GetData(), z_->desc, z_->GetData(),
-                                       &cuda->zero, output->desc, output->GetData()));
+                                       y_->desc, y_->GetData(),
+                                       dy_->desc, dy_->GetData(),
+                                       x_->desc, x_->GetData(),
+                                       &cuda->zero,
+                                       dx_->desc, dx_->GetData()));
     }
     else
     {
-        for (int i = 0; i < input->GetSize(); i++)
+        for (int i = 0; i < x_->GetSize(); i++)
         {
             DerivativeFunc Derive = reinterpret_cast<DerivativeFunc>(derivative);
-            output[0][i] = Derive(input[0][i]);
+            dx_[0][i] = Derive(x_[0][i]);
         }
     }
 }

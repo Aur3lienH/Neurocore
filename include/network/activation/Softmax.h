@@ -38,30 +38,29 @@ void Softmax<rows,prev_rows,cols,dims, GPU>::FeedForward(const MAT<rows,cols,dim
 {
     if constexpr (GPU)
     {
-        cudnnActivationDescriptor_t activationDesc; // Todo: move that elsewhere in a proper way
-        checkCUDNN(cudnnCreateActivationDescriptor(&activationDesc));
-        checkCUDNN(
-            cudnnSetActivationDescriptor(activationDesc, CUDNN_ACTIVATION_RELU, CUDNN_NOT_PROPAGATE_NAN, 0));
-        DefaultFeedForward(input, output, &activationDesc);
+        cudnnSoftmaxForward(cuda->cudnnHandle, CUDNN_SOFTMAX_FAST, CUDNN_SOFTMAX_MODE_INSTANCE, &cuda->one, input->desc, input->GetData(), &cuda->zero, output->desc, output->GetData());
         return;
     }
-    double sum = 0;
-    double max = input[0][0];
-    for (int i = 0; i < input->GetSize(); i++)
+    else
     {
-        if (input[0][i] > max)
+        double sum = 0;
+        double max = input[0][0];
+        for (int i = 0; i < input->GetSize(); i++)
         {
-            max = input[0][i];
+            if (input[0][i] > max)
+            {
+                max = input[0][i];
+            }
         }
-    }
 
-    for (int i = 0; i < input->GetSize(); i++)
-    {
-        sum += exp(input[0][i] - max);
-    }
-    for (int i = 0; i < input->GetSize(); i++)
-    {
-        output[0][i] = exp(input[0][i] - max) / sum;
+        for (int i = 0; i < input->GetSize(); i++)
+        {
+            sum += exp(input[0][i] - max);
+        }
+        for (int i = 0; i < input->GetSize(); i++)
+        {
+            output[0][i] = exp(input[0][i] - max) / sum;
+        }
     }
 }
 
@@ -89,8 +88,11 @@ void Softmax<rows,prev_rows,cols,dims, GPU>::Derivative(const MAT<rows,cols,dims
                              cudaMemcpyHostToDevice));
         return;
     }
-    for (int i = 0; i < input->GetSize(); i++)
+    else
     {
-        output[0][i] = 1;
+        for (int i = 0; i < input->GetSize(); i++)
+        {
+            output[0][i] = 1;
+        }
     }
 }

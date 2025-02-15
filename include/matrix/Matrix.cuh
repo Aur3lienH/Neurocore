@@ -161,15 +161,17 @@ public:
 
     void Save(std::ofstream& writer);
 
-    float& operator[](int index);
+    float get(int index);
 
-    float& operator()(int _rows, int _cols);
+    float& operator[](int index) requires(!GPU);
 
-    const float& operator[](int index) const;
+    float& operator()(int _rows, int _cols) requires(!GPU);
 
-    const float& operator()(int _rows, int _cols) const;
+    const float& operator[](int index) const requires(!GPU);
 
-    const float& operator()(int _rows, int _cols, int _dims) const;
+    const float& operator()(int _rows, int _cols) const requires(!GPU);
+
+    const float& operator()(int _rows, int _cols, int _dims) const requires(!GPU);
 
     template <int other_rows, int other_cols>
     void MatrixMultiplication(const Matrix<other_rows, other_cols>* other, Matrix<rows, other_cols>* output) const;
@@ -252,12 +254,12 @@ void Matrix<rows, cols, dims, GPU>::Init(float value)
     if constexpr (GPU)
     {
         checkCUDA(cudaMalloc(&data_d, rows * cols * dims * sizeof(float)));
-        checkCUDA(cudaMemset(data_d, 0, rows * cols * dims * sizeof(float)));
+        //checkCUDA(cudaMemset(data_d, 0, rows * cols * dims * sizeof(float)));
         checkCUDNN(cudnnCreateTensorDescriptor(&desc));
         checkCUDNN(cudnnCreateTensorDescriptor(&desc_1D));
         checkCUDNN(cudnnSetTensor4dDescriptor(desc, CUDNN_TENSOR_NCHW, CUDNN_DATA_FLOAT, 1, dims, rows, cols));
         checkCUDNN(cudnnSetTensor4dDescriptor(desc_1D, CUDNN_TENSOR_NCHW, CUDNN_DATA_FLOAT, 1, 1, rows, cols));
-        initializeArray<<<CUDA_KERNEL_ARGS(cuda, GetSize())>>>(data, value, GetSize());
+        initializeArray<<<CUDA_KERNEL_ARGS(cuda, GetSize())>>>(data_d, value, GetSize());
     }
     else
     {
@@ -607,7 +609,7 @@ void Matrix<rows, cols, dims, GPU>::PrintSize() const
 }
 
 template <int rows, int cols, int dims, bool GPU>
-float& Matrix<rows, cols, dims, GPU>::operator[](int index)
+float& Matrix<rows, cols, dims, GPU>::operator[](int index) requires(!GPU)
 {
 #if SAFE
     if (index >= this->rows * this->cols * this->dim)
@@ -621,7 +623,7 @@ float& Matrix<rows, cols, dims, GPU>::operator[](int index)
 }
 
 template <int rows, int cols, int dims, bool GPU>
-const float& Matrix<rows, cols, dims, GPU>::operator[](int index) const
+const float& Matrix<rows, cols, dims, GPU>::operator[](int index) const requires(!GPU)
 {
 #if SAFE
     if (index >= this->rows * this->cols * this->dim)
@@ -634,7 +636,7 @@ const float& Matrix<rows, cols, dims, GPU>::operator[](int index) const
     return this->data[index];
 }
 
-template <int rows, int cols, int dims, bool GPU>
+/*template <int rows, int cols, int dims, bool GPU>
 const float& Matrix<rows, cols, dims, GPU>::operator()(int _rows, int _cols) const
 {
 #if SAFE
@@ -699,15 +701,15 @@ Matrix<rows, cols, dims, GPU>* Matrix<rows, cols, dims, GPU>::operator*=(const M
 
     return this;
 
-    /*
+    *//*
         for (int i = 0; i < cols * rows; i++)
         {
             this->data[i] *= other->data[i];
         }
         return this;
 
-    */
-}
+    *//*
+}*/
 
 
 template <int rows, int cols, int dims, bool GPU>
@@ -809,6 +811,26 @@ Matrix<rows, cols, dims, GPU>* Matrix<rows, cols, dims, GPU>::operator-=(const M
     return this;
 }
 
+
+template <int rows, int cols, int dims, bool GPU>
+float Matrix<rows, cols, dims, GPU>::get(int index)
+{
+#if SAFE
+    if (index >= this->rows * this->cols * this->dim)
+    {
+        throw std::out_of_range("Matrix : Index out of bounds");
+    }
+#endif
+
+    if constexpr (GPU)
+    {
+        float val;
+        checkCUDA(cudaMemcpy(&val, data_d + index, sizeof(float), cudaMemcpyDeviceToHost));
+        return val;
+    }
+
+    return this->data[index];
+}
 
 template <int rows, int cols, int dims, bool GPU>
 template <int other_rows, int other_cols>
@@ -1033,7 +1055,33 @@ void Matrix<rows, cols, dims, GPU>::OptimizedCrossProduct(const Matrix* a, const
             sum = _mm_hadd_ps(sum,sum);
             sum = _mm_hadd_ps(sum,sum);
             _mm_storeu_ps(temp, sum);
-            output->data[i * output->cols + j] += temp[0];
+            output->data[i * output->cols + j] += temp[0];template <int rows, int cols, int dims, bool GPU>
+float& Matrix<rows, cols, dims, GPU>::operator[](int index)
+{
+#if SAFE
+    if (index >= this->rows * this->cols * this->dim)
+    {
+        throw std::out_of_range("Matrix : Index out of bounds");
+    }
+#endif
+
+
+    return data[index];
+}
+
+template <int rows, int cols, int dims, bool GPU>
+const float& Matrix<rows, cols, dims, GPU>::operator[](int index) const
+{
+#if SAFE
+    if (index >= this->rows * this->cols * this->dim)
+    {
+        throw std::out_of_range("Matrix : Index out of bounds");
+    }
+#endif
+
+
+    return this->data[index];
+}
 #endif
 
 
@@ -1371,7 +1419,7 @@ float Matrix<rows, cols, dims, GPU>::Sum()
     return res;
 }
 
-template <int rows, int cols, int dims, bool GPU>
+/*template <int rows, int cols, int dims, bool GPU>
 float& Matrix<rows, cols, dims, GPU>::operator()(int _rows, int _cols)
 {
     if (_rows >= rows || _cols >= cols)
@@ -1379,7 +1427,7 @@ float& Matrix<rows, cols, dims, GPU>::operator()(int _rows, int _cols)
         throw std::out_of_range("Matrix : Index out of bounds");
     }
     return data[_rows * this->GetCols() + _cols];
-}
+}*/
 
 template <int rows, int cols, int dims, bool GPU>
 bool Matrix<rows, cols, dims, GPU>::operator==(const Matrix other)
