@@ -28,18 +28,13 @@ pkg_check_modules(CAIRO REQUIRED cairo)
 
 # Collect all source files for tests
 file(GLOB_RECURSE TEST_SOURCES
+        "${CMAKE_SOURCE_DIR}/src/tests/*.cpp"
         "${CMAKE_SOURCE_DIR}/src/network/*.cpp"
-        "${CMAKE_SOURCE_DIR}/src/tests/ActivationTests.cpp"
-        "${CMAKE_SOURCE_DIR}/src/tests/MatrixTests.cpp"
-        "${CMAKE_SOURCE_DIR}/src/tests/LossTests.cpp"
-        "${CMAKE_SOURCE_DIR}/src/tests/LayerTests.cpp"
-        "${CMAKE_SOURCE_DIR}/src/tests/Tests.cpp"
-        "${CMAKE_SOURCE_DIR}/src/gpuComputation/CUDA.cu"
+        "${CMAKE_SOURCE_DIR}/src/tests/*.cu"
         "${CMAKE_SOURCE_DIR}/src/main.cpp"
         "${CMAKE_SOURCE_DIR}/include/*.h"
         "${CMAKE_SOURCE_DIR}/include/*.hpp"
         "${CMAKE_SOURCE_DIR}/include/*.cuh"
-        "${CMAKE_SOURCE_DIR}/src/GPUmain.cpp"
 )
 
 # Create the test executable
@@ -47,19 +42,19 @@ add_executable(${PROJECT_NAME} ${TEST_SOURCES})
 
 set(CMAKE_VERBOSE_MAKEFILE ON)
 
-set (USE_GPU true)
+set (USE_GPU false)
 
 if (USE_GPU)
     target_compile_definitions(${PROJECT_NAME} PRIVATE USE_GPU)
-    set_target_properties(
-            ${PROJECT_NAME}
-            PROPERTIES
-            CUDA_SEPARABLE_COMPILATION ON)
 endif()
+set_target_properties(
+        ${PROJECT_NAME}
+        PROPERTIES
+        CUDA_SEPARABLE_COMPILATION ON)
 set_source_files_properties(
-        "${CMAKE_SOURCE_DIR}/src/GPUmain.cpp"
         "${CMAKE_SOURCE_DIR}/src/tests/ActivationTests.cpp"
         "${CMAKE_SOURCE_DIR}/src/tests/LayerTests.cpp"
+        "${CMAKE_SOURCE_DIR}/src/tests/NetworkTests.cpp"
         "${CMAKE_SOURCE_DIR}/src/tests/LossTests.cpp"
         "${CMAKE_SOURCE_DIR}/src/tests/MatrixTests.cpp"
         "${CMAKE_SOURCE_DIR}/src/tests/Tests.cpp"

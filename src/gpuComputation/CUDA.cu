@@ -80,3 +80,23 @@ __global__ void SumKernel(float* arr, const int len, float* res)
         *res += arr[i];
     }
 }
+
+__global__
+void MSEDerivativeKernel(const float* output, const float* target,
+                         float* result, const int size)
+{
+    const int idx = blockIdx.x * blockDim.x + threadIdx.x;
+    if (idx < size)
+    {
+        result[idx] = output[idx] - target[idx];
+    }
+}
+
+__global__
+void ConstantComputeKernel(const float* gradient, float* parameters, const int size, const double learningRate)
+{
+    const int i = blockIdx.x * blockDim.x + threadIdx.x;
+    if (i < size)
+        parameters[i] -= gradient[i] * learningRate;
+
+}

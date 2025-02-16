@@ -2,17 +2,6 @@
 #include "matrix/Matrix.cuh"
 #include <cmath>
 
-__global__
-void MSEDerivativeKernel(const float* output, const float* target,
-                                    float* result, const int size)
-{
-    const int idx = blockIdx.x * blockDim.x + threadIdx.x;
-    if (idx < size)
-    {
-        result[idx] = output[idx] - target[idx];
-    }
-}
-
 template <int rows, int cols, int dims, bool GPU=GPU_DEFAULT>
 class MSE final
 {
@@ -50,7 +39,7 @@ public:
 
 #pragma omp parallel for reduction(+:cost)
             for (int i = 0; i < totalSize; i++) {
-                const double diff = output[0][i] - target[0][i];
+                const double diff = output->data[i] - target->data[i];
                 cost += diff * diff;
             }
         }
@@ -82,7 +71,7 @@ public:
 #pragma omp parallel for
             for (int i = 0; i < totalSize; i++)
             {
-                result[0][i] = output[0][i] - target[0][i];
+                result->data[i] = output->data[i] - target->data[i];
             }
         }
     }

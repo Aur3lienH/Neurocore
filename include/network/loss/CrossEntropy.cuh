@@ -44,8 +44,8 @@ public:
             double cost = 0;
             for (int i = 0; i < output->GetRows() * output->GetCols(); i++)
             {
-                cost += target[0][i] * log(output[0][i] + EPSILON) +
-                    (1 - target[0][i]) * log(1 - output[0][i] + EPSILON);
+                cost += target->data[i] * log(output->data[i] + EPSILON) +
+                    (1 - target->data[i]) * log(1 - output->data[i] + EPSILON);
             }
             return -cost / output->GetRows();
         }
@@ -66,13 +66,13 @@ public:
         {
             for (int i = 0; i < output->GetRows() * output->GetCols(); i++)
             {
-                if (target[0][i] == 1)
+                if (target->data[i] == 1)
                 {
-                    result[0][i] = -1 + output[0][i];
+                    result->data[i] = -1 + output->data[i];
                 }
                 else
                 {
-                    result[0][i] = output[0][i];
+                    result->data[i] = output->data[i];
                 }
             }
         }

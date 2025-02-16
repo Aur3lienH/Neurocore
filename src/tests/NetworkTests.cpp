@@ -59,7 +59,7 @@ bool NetworkTests::BasicFFNFeedForward()
     Network<
         Loss<MSE<5,1,1>>,
         InputLayer<LayerShape<1>>,
-        FCL<ReLU<5,1,1,1>,LayerShape<1>,LayerShape<5>,Constant<0.01>,true>
+        FCL<ReLU<5,1,1,1>,LayerShape<1>,LayerShape<5>,Constant<0.01>>
     > neuralnet;
     neuralnet.Compile();
     MAT<1> input({1});
@@ -75,9 +75,9 @@ bool NetworkTests::BasicFFNFeedForward()
     // Test each output value
     bool correct = true;
     for(int i = 0; i < 5; i++) {
-        if(std::abs((*output)[i] - expected[i]) > 1e-6) {  // Using epsilon for float comparison
+        if(std::abs(output->get(i) - expected[i]) > 1e-6) {  // Using epsilon for float comparison
             std::cout << "Mismatch at position " << i << ": Expected "
-                      << expected[i] << " but got " << (*output)[i] << std::endl;
+                      << expected[i] << " but got " << output->get(i) << std::endl;
             correct = false;
         }
     }
@@ -91,7 +91,7 @@ bool NetworkTests::BasicFFNLearn()
     Network<
         Loss<MSE<5,1,1>>,
         InputLayer<LayerShape<1>>,
-        FCL<ReLU<5,1,1,1>,LayerShape<1>,LayerShape<5>,Constant<0.01>,true>
+        FCL<ReLU<5,1,1,1>,LayerShape<1>,LayerShape<5>,Constant<0.01>>
     > neuralnet;
     neuralnet.Compile();
     MAT<1> input({1});
@@ -104,8 +104,8 @@ bool NetworkTests::BasicFFNLearn()
 
     auto* dataset = new DataLoader<decltype(neuralnet)>(&input2,&desiredOutput,1);
     neuralnet.Learn(1, 0.01, dataset);
-    auto* weights = fcl->GetWeights();
-    auto* biases = fcl->GetBiases();
+    auto* weights = fcl->GetWeightsCPUCopy();
+    auto* biases = fcl->GetBiasesCPUCopy();
     const float values[5] = {0.96,1.92,2.88,3.84,4.80};
     for (size_t i = 0; i < 5; i++) {
         if (weights->data[i] - values[i] > 1e-6 || biases->data[i] - values[i] > 1e-6) {
@@ -114,6 +114,8 @@ bool NetworkTests::BasicFFNLearn()
             return false;
         }
     }
+    delete weights;
+    delete biases;
 
     return true;
 }
@@ -123,7 +125,7 @@ bool NetworkTests::DataLoaderTest() {
     typedef Network<
         Loss<MSE<5,1,1>>,
         InputLayer<LayerShape<1>>,
-        FCL<ReLU<5,1,1,1>,LayerShape<1>,LayerShape<5>,Constant<0.01>,true>
+        FCL<ReLU<5,1,1,1>,LayerShape<1>,LayerShape<5>,Constant<0.01>>
     > net;
     auto dataset = DataLoader<net>(nullptr,nullptr,0);
     return true;

@@ -1,15 +1,6 @@
 #pragma once
 #include "gpuComputation/CUDA.cuh"
 
-__global__
-void ConstantComputeKernel(const float* gradient, float* parameters, const int size, const double learningRate)
-{
-    const int i = blockIdx.x * blockDim.x + threadIdx.x;
-    if (i < size)
-        parameters[i] -= gradient[i] * learningRate;
-
-}
-
 
 template<double lr, bool GPU = GPU_DEFAULT>
 class Constant final
@@ -28,7 +19,7 @@ public:
         else
         {
             for (int i = 0; i < gradient->GetSize(); i++) {
-                (*parameters)[i] -= (*gradient)[i] * lr;
+                parameters->data[i] -= gradient->data[i] * lr;
             }
         }
     }

@@ -74,14 +74,20 @@ public:
         Biases = biases;
     }
 
-    Matrix<layershape::x, prevLayerShape::x, 1>* GetWeights() requires(!GPU)
+    Matrix<layershape::x, prevLayerShape::x, 1, false>* GetWeightsCPUCopy()
     {
-        return Weights;
+        if constexpr (GPU)
+            {return Weights->CPU_copy();}
+        else
+        {return Weights->Copy();}
     }
 
-    Matrix<layershape::x>* GetBiases() requires(!GPU)
+    Matrix<layershape::x, 1,1, false>* GetBiasesCPUCopy()
     {
-        return Biases;
+        if constexpr (GPU)
+            {return Biases->CPU_copy();}
+        else
+            {return Biases->Copy();}
     }
 
     Matrix<layershape::x, prevLayerShape::x, 1, false>* GetWeights_CPU() requires(GPU)
@@ -120,8 +126,8 @@ protected:
     //Results of the layer
     MAT<layershape::x>* Result = nullptr;
 
-    MAT<layershape::x, prevLayerShape::x>* Weights = nullptr;
-    MAT<layershape::x>* Biases = nullptr;
+    MAT<layershape::x, prevLayerShape::x, 1, GPU>* Weights = nullptr;
+    MAT<layershape::x, 1, 1, GPU>* Biases = nullptr;
 
     //Result before passing through the activation function
     MAT<layershape::x>* z = nullptr;

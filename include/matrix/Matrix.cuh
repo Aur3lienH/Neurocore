@@ -137,7 +137,7 @@ public:
 
     Matrix* operator-(const Matrix& other) const;
 
-    Matrix* operator*=(const Matrix* other);
+    Matrix* operator*=(const Matrix* other) requires(!GPU);
 
     Matrix* operator*=(float other);
 
@@ -693,10 +693,10 @@ const float& Matrix<rows, cols, dims, GPU>::operator()(int _rows, int _cols, int
     }
 #endif
     return data[_dims * GetMatrixSize() + _rows * cols + _cols];
-}
+}*/
 
 template <int rows, int cols, int dims, bool GPU>
-Matrix<rows, cols, dims, GPU>* Matrix<rows, cols, dims, GPU>::operator*=(const Matrix<rows, cols, dims, GPU>* other)
+Matrix<rows, cols, dims, GPU>* Matrix<rows, cols, dims, GPU>::operator*=(const Matrix<rows, cols, dims, GPU>* other) requires(!GPU)
 {
 #if SAFE
     if (this->cols != other->cols && this->rows != other->rows)
@@ -704,6 +704,7 @@ Matrix<rows, cols, dims, GPU>* Matrix<rows, cols, dims, GPU>::operator*=(const M
         throw std::runtime_error("Error: Matrix dimensions must agree.");
     }
 #endif
+
 
     float* temp = new float[4];
 
@@ -722,12 +723,12 @@ Matrix<rows, cols, dims, GPU>* Matrix<rows, cols, dims, GPU>::operator*=(const M
 
         for (int j = 0; j < 4; j++)
         {
-            (*this)[i + j] = temp[j];
+            data[i + j] = temp[j];
         }
     }
     for (; i < size; i++)
     {
-        (*this)[i] *= (*other)[i];
+        data[i] *= other->data[i];
     }
 
 
@@ -735,15 +736,15 @@ Matrix<rows, cols, dims, GPU>* Matrix<rows, cols, dims, GPU>::operator*=(const M
 
     return this;
 
-    *//*
-        for (int i = 0; i < cols * rows; i++)
-        {
-            this->data[i] *= other->data[i];
-        }
-        return this;
+    /*
+            for (int i = 0; i < cols * rows; i++)
+            {
+                this->data[i] *= other->data[i];
+            }
+            return this;
 
-    *//*
-}*/
+        */
+}
 
 
 template <int rows, int cols, int dims, bool GPU>
