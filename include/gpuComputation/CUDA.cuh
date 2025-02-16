@@ -120,5 +120,8 @@ __global__ void scalarMult_kernel(float* arr, float val, float* res, int n);
 __global__ void transpose_kernel(float *A, float *A_T, int rows, int cols);
 __global__ void leakyReluFeedForward(float* input, float *output, int n, float alpha);
 __global__ void leakyReluDerivative(float *input, float* output, int n, float alpha);
+__global__ void CrossEntropyKernel(const float* output, const float* target, float* result, int size, float EPSILON);
+__global__  void CostDerivativeKernel(const float* output, const float* target, float* result, int size);
+__global__ void SumKernel(float* arr, const int len, float* res);
 
 #endif

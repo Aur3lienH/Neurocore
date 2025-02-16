@@ -62,7 +62,7 @@ bool LossTests::TestMSELoss()
 
     MAT<2,1,1> output;
     Loss<MSE<2,1,1>>::CostDerivative(&input, &desiredOutput, &output);
-    if(output[0] + 2 >= 1e-6 || output[1] + 2 >= 1e-6)
+    if(output.get(0) + 2 >= 1e-6 || output.get(1) + 2 >= 1e-6)
     {
         return false;
     }
@@ -84,7 +84,7 @@ bool LossTests::TestCrossEntropyLoss()
 
     MAT<2,1,1> output;
     Loss<CrossEntropy<2,1,1>>::CostDerivative(&input, &desiredOutput, &output);
-    if(std::abs(output[0] + 0.5) >= 1e-6 || std::abs(output[1] - 0.5) >= 1e-6)
+    if(std::abs(output.get(0) + 0.5) >= 1e-6 || std::abs(output.get(1) - 0.5) >= 1e-6)
     {
         return false;
     }

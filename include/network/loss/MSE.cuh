@@ -36,7 +36,7 @@ public:
 #pragma omp parallel for reduction(+:cost)
             for (int i = 0; i < totalSize; i++)
             {
-                const double diff = (*outputCPU)[i] - (*targetCPU)[i];
+                const double diff = outputCPU->data[i] - targetCPU->data[i];
                 cost += diff * diff;
             }
 
