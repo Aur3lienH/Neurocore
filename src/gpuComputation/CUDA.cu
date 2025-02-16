@@ -23,3 +23,17 @@ __global__ void transpose_kernel(float *A, float *A_T, int rows, int cols) {
         A_T[x * rows + y] = A[y * cols + x];
     }
 }
+
+__global__ void leakyReluFeedForward(float* input, float *output, int n, float alpha) {
+    int idx = blockIdx.x * blockDim.x + threadIdx.x;
+    if (idx < n) {
+        output[idx] = input[idx] < 0 ? alpha * input[idx] : input[idx];;
+    }
+}
+
+__global__ void leakyReluDerivative(float *input, float* output, int n, float alpha) {
+    int idx = blockIdx.x * blockDim.x + threadIdx.x;
+    if (idx < n) {
+        output[idx] = input[idx] < 0 ? alpha : 1;;
+    }
+}

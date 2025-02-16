@@ -44,22 +44,22 @@ void Softmax<rows,prev_rows,cols,dims, GPU>::FeedForward(const MAT<rows,cols,dim
     else
     {
         double sum = 0;
-        double max = input[0][0];
+        double max = input->data[0];
         for (int i = 0; i < input->GetSize(); i++)
         {
-            if (input[0][i] > max)
+            if (input->data[i] > max)
             {
-                max = input[0][i];
+                max = input->data[i];
             }
         }
 
         for (int i = 0; i < input->GetSize(); i++)
         {
-            sum += exp(input[0][i] - max);
+            sum += exp(input->data[i] - max);
         }
         for (int i = 0; i < input->GetSize(); i++)
         {
-            output[0][i] = exp(input[0][i] - max) / sum;
+            output->data[i] = exp(input->data[i] - max) / sum;
         }
     }
 }
@@ -92,7 +92,7 @@ void Softmax<rows,prev_rows,cols,dims, GPU>::Derivative(const MAT<rows,cols,dims
     {
         for (int i = 0; i < input->GetSize(); i++)
         {
-            output[0][i] = 1;
+            output->data[i] = 1;
         }
     }
 }

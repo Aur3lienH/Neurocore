@@ -4,7 +4,7 @@
 
 #include <iostream>
 #include "tests/MatrixTests.h"
-//#include "tests/LayerTests.h"
+#include "tests/LayerTests.h"
 #include "tests/ActivationTests.h"
 //#include "tests/LossTests.h"
 //#include "tests/NetworkTests.h"
@@ -21,7 +21,7 @@ void Tests::ExecuteTests()
     std::vector<std::tuple<void*,std::string>> functions;
     //functions.push_back(std::tuple((void*)MatrixTests::SMIDMatrixTest,std::string("SMID Cross Product")));
     functions.emplace_back((void*)MatrixTests::ExecuteTests,std::string("MATRIX TESTS"));
-    //functions.emplace_back((void*)LayerTests::ExecuteTests,std::string("LAYER TESTS"));
+    functions.emplace_back((void*)LayerTests::ExecuteTests,std::string("LAYER TESTS"));
     functions.emplace_back((void*)ActivationTests::ExecuteTests,std::string("ACTIVATION TESTS"));
     ///functions.emplace_back((void*)LossTests::ExecuteTests,std::string("LOSS TESTS"));
     ///functions.emplace_back((void*)NetworkTests::ExecuteTests,std::string("NETWORK TESTS"));

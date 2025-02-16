@@ -3,10 +3,11 @@
 #include "matrix/Matrix.cuh"
 
 
-template<typename LayerShape,typename PrevLayerShape,int filterSize, int stride>
+template<typename LayerShape,typename PrevLayerShape,int filterSize, int stride, bool GPU = GPU_DEFAULT>
 class MaxPoolLayer final
 {
-
+    cudnnPoolingDescriptor_t poolingDescriptor;
+    cudnnTensorDescriptor_t forwardInputDesc, forwardOutputDesc;
 public:
     MaxPoolLayer()
     {
@@ -15,99 +16,133 @@ public:
     }
 
     void Compile() {
+        if constexpr (GPU)
+        {
+            checkCUDNN(cudnnCreatePoolingDescriptor(&poolingDescriptor));
+            checkCUDNN(cudnnSetPooling2dDescriptor(poolingDescriptor,
+                                                   CUDNN_POOLING_MAX,
+                                                   CUDNN_NOT_PROPAGATE_NAN,
+                                                   filterSize,
+                                                   filterSize,
+                                                   0,
+                                                   0,
+                                                   stride,
+                                                   stride));
 
+            checkCUDNN(cudnnCreateTensorDescriptor(&forwardInputDesc));
+            checkCUDNN(cudnnSetTensor4dDescriptor(forwardInputDesc,
+                                                  CUDNN_TENSOR_NCHW,
+                                                  CUDNN_DATA_FLOAT,
+                                                  1,
+                                                  PrevLayerShape::z,
+                                                  PrevLayerShape::x,
+                                                  PrevLayerShape::y));
+            checkCUDNN(cudnnCreateTensorDescriptor(&forwardOutputDesc));
+            checkCUDNN(cudnnSetTensor4dDescriptor(forwardOutputDesc,
+                                                  CUDNN_TENSOR_NCHW,
+                                                  CUDNN_DATA_FLOAT,
+                                                  1,
+                                                  LayerShape::z,
+                                                  LayerShape::x,
+                                                  LayerShape::y));
+        }
     }
 
     //static Layer* Load(std::ifstream& reader);
 
     const LMAT<LayerShape>* FeedForward(const LMAT<PrevLayerShape>* input)
     {
-#if USE_GPU
-		checkCUDNN(
-					cudnnPoolingForward(Matrix_GPU::cuda->cudnnHandle,
-					poolingDescriptor,
-					&Matrix_GPU::cuda->one,
-					forwardInputDesc,
-					input->GetData(),
-					&Matrix_GPU::cuda->zero,
-					forwardOutputDesc,
-					result->GetData()));
-#else
-
-		//result->Reshape(layerShape->dimensions[0], layerShape->dimensions[1], layerShape->dimensions[2]);
-		LMAT<PrevLayerShape>::template MaxPool<filterSize,stride>(input, output);
-#endif
+        if constexpr (GPU)
+        {
+            checkCUDNN(
+                       cudnnPoolingForward(cuda->cudnnHandle,
+                       poolingDescriptor,
+                       &cuda->one,
+                       forwardInputDesc,
+                       input->GetData(),
+                       &cuda->zero,
+                       forwardOutputDesc,
+                       output->GetData()));
+        }
+        else
+        {
+            //result->Reshape(layerShape->dimensions[0], layerShape->dimensions[1], layerShape->dimensions[2]);
+            LMAT<PrevLayerShape>::template MaxPool<filterSize,stride>(input, output);
+        }
 
 		return output;
     }
 
     LMAT<PrevLayerShape>* BackPropagate(const LMAT<LayerShape>* delta, const LMAT<PrevLayerShape>* previousActivation)
     {
-        #if USE_GPU
-    checkCUDNN(
-            cudnnPoolingBackward(Matrix_GPU::cuda->cudnnHandle,
-                                 poolingDescriptor,
-                                 &Matrix_GPU::cuda->one,
-                                 forwardOutputDesc,
-                                 result->GetData(),
-                                 forwardOutputDesc,
-                                 delta->GetData(),
-                                 forwardInputDesc,
-                                 previousActivation->GetData(),
-                                 &Matrix_GPU::cuda->zero,
-                                 forwardInputDesc,
-                                 newDelta->GetData()));
-#else
-        // The idea is that if an element is the maximum than maxPool has selected, then the delta is
-        // the same as the previous delta, because the current element is the only one affecting the result.
-
-        for (int m = 0; m < LayerShape::z; m++)
+        if constexpr (GPU)
         {
-            for (int i = 0; i < LayerShape::x; ++i)
+            checkCUDNN(
+                   cudnnPoolingBackward(cuda->cudnnHandle,
+                                        poolingDescriptor,
+                                        &cuda->one,
+                                        forwardOutputDesc,
+                                        output->GetData(),
+                                        forwardOutputDesc,
+                                        delta->GetData(),
+                                        forwardInputDesc,
+                                        previousActivation->GetData(),
+                                        &cuda->zero,
+                                        forwardInputDesc,
+                                        newDelta->GetData()));
+        }
+        else
+        {
+            // The idea is that if an element is the maximum than maxPool has selected, then the delta is
+            // the same as the previous delta, because the current element is the only one affecting the result.
+
+            for (int m = 0; m < LayerShape::z; m++)
             {
-                for (int j = 0; j < LayerShape::y; ++j)
+                for (int i = 0; i < LayerShape::x; ++i)
                 {
-                    for (int k = 0; k < filterSize; ++k)
+                    for (int j = 0; j < LayerShape::y; ++j)
                     {
-                        for (int l = 0; l < filterSize; ++l)
+                        for (int k = 0; k < filterSize; ++k)
                         {
-                            const int r = i * stride + k;
-                            //if (r >= previousActivation->GetRows())
-                            //    continue;
-                            const int c = j * stride + l;
-                            //if (c >= previousActivation->GetCols())
-                            //    continue;
-                            //std::cout << m  << "  " << i << "  " << j << "  " << k << "  " << l << "\n";
-                            //std::cout << r << " : x y : " << c << "\n";
-                            //std::cout << (*previousActivation)(r,c) << "\n";
+                            for (int l = 0; l < filterSize; ++l)
+                            {
+                                const int r = i * stride + k;
+                                //if (r >= previousActivation->GetRows())
+                                //    continue;
+                                const int c = j * stride + l;
+                                //if (c >= previousActivation->GetCols())
+                                //    continue;
+                                //std::cout << m  << "  " << i << "  " << j << "  " << k << "  " << l << "\n";
+                                //std::cout << r << " : x y : " << c << "\n";
+                                //std::cout << (*previousActivation)(r,c) << "\n";
 
-                            if (r >= previousActivation->GetRows())
-                                continue;
-                            if (c >= previousActivation->GetCols())
-                                continue;
+                                if (r >= previousActivation->GetRows())
+                                    continue;
+                                if (c >= previousActivation->GetCols())
+                                    continue;
 
 
-                            if ((*previousActivation)(r, c) == (*output)(i, j))
-                                (*newDelta)(r, c) = (*delta)(i, j);
-                            // Should already be 0
-                            //else
-                            //    (*newDelta)(r,c) = 0.0;
+                                if (previousActivation->get(r, c) == output->get(i, j))
+                                    newDelta->set(r, c, delta->get(i, j));
+                                // Should already be 0
+                                //else
+                                //    (*newDelta)(r,c) = 0.0;
+                            }
                         }
                     }
                 }
+                previousActivation->GoToNextMatrix();
+                output->GoToNextMatrix();
+                newDelta->GoToNextMatrix();
+                delta->GoToNextMatrix();
             }
-            previousActivation->GoToNextMatrix();
-            output->GoToNextMatrix();
-            newDelta->GoToNextMatrix();
-            delta->GoToNextMatrix();
+
+
+            previousActivation->ResetOffset();
+            output->ResetOffset();
+            newDelta->ResetOffset();
+            delta->ResetOffset();
         }
-
-
-        previousActivation->ResetOffset();
-        output->ResetOffset();
-        newDelta->ResetOffset();
-        delta->ResetOffset();
-    #endif
 
 
         //std::cout << *delta;
@@ -129,10 +164,6 @@ private:
     LMAT<PrevLayerShape>* newDelta = nullptr;
 
     //void SpecificSave(std::ofstream& writer);
-
-#if USE_GPU
-    void Compile(LayerShape* previousActivation);
-#endif
 };
 
 
@@ -160,21 +191,3 @@ void MaxPoolLayer::SpecificSave(std::ofstream& writer)
     writer.write(reinterpret_cast<char*>(&tempStride), sizeof(int));
 }
 */
-#if USE_GPU
-
-void MaxPoolLayer::Compile(LayerShape* previousActivation)
-{
-    PoolingLayer::Compile(previousActivation);
-    checkCUDNN(cudnnCreatePoolingDescriptor(&poolingDescriptor));
-    checkCUDNN(cudnnSetPooling2dDescriptor(poolingDescriptor,
-                                           CUDNN_POOLING_MAX,
-                                           CUDNN_NOT_PROPAGATE_NAN,
-                                           filterSize,
-                                           filterSize,
-                                           0,
-                                           0,
-                                           stride,
-                                           stride));
-}
-
-#endif

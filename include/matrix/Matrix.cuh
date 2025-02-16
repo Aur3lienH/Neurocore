@@ -380,12 +380,12 @@ void Matrix<rows, cols, dims, GPU>::Add(Matrix* other, Matrix* result)
 
             for (int j = 0; j < 4; j++)
             {
-                (*result)[i + j] = temp[j];
+                result->set(i + j, temp[j]);
             }
         }
         for (; i < size; i++)
         {
-            (*result)[i] = (*this)[i] + (*other)[i];
+            result->set(i, get(i) + other->get(i));
         }
 
 
@@ -779,7 +779,7 @@ Matrix<rows, cols, dims, GPU>* Matrix<rows, cols, dims, GPU>::operator+(const Ma
     {
         for (int i = 0; i < this->GetCols() * this->GetRows(); i++)
         {
-            result->operator[](i) = other.data[i] + this->data[i];
+            result->set(i, other.data[i] + this->data[i]);
         }
     }
         return result;
@@ -807,7 +807,7 @@ Matrix<rows, cols, dims, GPU>* Matrix<rows, cols, dims, GPU>::operator-(const Ma
     {
         for (int i = 0; i < this->GetCols() * this->GetRows(); i++)
         {
-            result->operator[](i) = this->data[i] - other.data[i];
+            result->set(i, this->data[i] - other.data[i]);
         }
     }
     return result;
@@ -1264,12 +1264,21 @@ float Matrix<rows, cols, dims, GPU>::Distance(Matrix* a, Matrix* b)
 template <int rows, int cols, int dims, bool GPU>
 Matrix<rows, cols, dims, GPU>* Matrix<rows, cols, dims, GPU>::Copy()
 {
-    auto* resArray = new float[cols * rows * dims];
-    for (int i = 0; i < cols * rows * dims; i++)
+    if constexpr (GPU)
     {
-        resArray[i] = data[i];
+        Matrix* res = new Matrix();
+        checkCUDA(cudaMemcpy(res->data_d, data_d, GetSize() * sizeof(float), cudaMemcpyDeviceToDevice));
+        return res;
     }
-    return new Matrix<rows, cols, dims>(resArray);
+    else
+    {
+        auto* resArray = new float[cols * rows * dims];
+        for (int i = 0; i < cols * rows * dims; i++)
+        {
+            resArray[i] = data[i];
+        }
+        return new Matrix<rows, cols, dims>(resArray);
+    }
 }
 
 template <int rows, int cols, int dims, bool GPU>
@@ -1286,7 +1295,7 @@ void Matrix<rows, cols, dims, GPU>::Flip180(const Matrix* input, Matrix* output)
         for (int j = 0; j < input->GetRows() / 2; ++j)
         {
             //UGLY
-            (*output)(i, j) = (*input)(input->GetRows() - 1 - j, input->GetCols() - 1 - i);
+            output->set(i, j, input->get(input->GetRows() - 1 - j, input->GetCols() - 1 - i));
         }
     }
 }

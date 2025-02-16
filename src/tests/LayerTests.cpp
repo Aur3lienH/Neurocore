@@ -90,13 +90,13 @@ bool LayerTests::TestInputLayer()
 
 bool LayerTests::TestCNNLayer()
 {
-    ConvLayer<Activation<ReLU<1,3>>, LayerShape<3,3>, LayerShape<1,1>, LayerShape<3,3>, Constant<1.0>, true> cnn;
+    ConvLayer<Activation<ReLU<1,3>>, LayerShape<3,3>, LayerShape<1,1>, LayerShape<3,3>, Constant<1.0>> cnn;
     cnn.Compile();
     Matrix<3,3> filters({0,0,0,0,1,0,0,0,0});
     cnn.SetWeights(&filters);
     Matrix<1,1> biases(0.);
     cnn.SetBiases(&biases);
-    Matrix<3,3> input({1,1,1,1,2,1,1,1,1,1});
+    Matrix<3,3> input({1,1,1,1,2,1,1,1,1});
     Matrix<1,1>* out = cnn.FeedForward(&input);
     Matrix<1,1> delta(1);
     Matrix<3,3>* bout = cnn.BackPropagate(&delta, &input);
@@ -107,6 +107,8 @@ bool LayerTests::TestCNNLayer()
 
 bool LayerTests::TestDropLayer()
 {
+    if (GPU_DEFAULT)
+        return false;
     typedef LayerShape<3000,3000> DropLayerShape;
     Dropout<DropLayerShape,0.75> drop;
     LMAT<DropLayerShape> input(1);
@@ -116,7 +118,7 @@ bool LayerTests::TestDropLayer()
     {
         for (int j = 0; j < out->GetCols(); j++)
         {
-            if (out->data[j + i * out->GetCols()] < 1e-5)
+            if (out->get(j + i * out->GetCols()) < 1e-5)
             {
                 count++;
             }
@@ -132,6 +134,8 @@ bool LayerTests::TestDropLayer()
 
 bool LayerTests::TestDropLayerBackprop()
 {
+    if (GPU_DEFAULT)
+        return false;
     typedef LayerShape<3000,3000> DropLayerShape;
     Dropout<DropLayerShape,0.25> drop;
 
@@ -147,7 +151,7 @@ bool LayerTests::TestDropLayerBackprop()
     {
         for (int j = 0; j < back_out->GetCols(); j++)
         {
-            if (back_out->data[j + i * back_out->GetCols()] < 1e-5)
+            if (back_out->get(j + i * back_out->GetCols()) < 1e-5)
             {
                 count++;
             }
@@ -171,7 +175,7 @@ bool LayerTests::TestMaxPoolLayer()
     maxpool.Compile();
     Matrix<3,3> input({1,2,3,4,5,6,7,8,9});
     const Matrix<>* out = maxpool.FeedForward(&input);
-    return out->data[0] - 5.0f < 1e-5;
+    return out->get(0) - 5.0f < 1e-5;
 }
 
 bool LayerTests::TestAveragePoolLayer()
@@ -180,7 +184,7 @@ bool LayerTests::TestAveragePoolLayer()
     avgpool.Compile();
     Matrix<3,3> input({1,2,3,4,5,6,7,8,9});
     const Matrix<>* out = avgpool.FeedForward(&input);
-    return out->data[0] - 3.0f < 1e-5;
+    return out->get(0) - 3.0f < 1e-5;
 }
 
 bool LayerTests::TestMaxPoolLayerBackprop()
@@ -201,10 +205,10 @@ bool LayerTests::TestMaxPoolLayerBackprop()
 
     for (int i = 0; i < 3; i++) {
         for (int j = 0; j < 3; j++) {
-            sum += back_out->data[j + i * back_out->GetCols()];
+            sum += back_out->get(j + i * back_out->GetCols());
 
-            if (input.data[j + i * input.GetCols()] != 5.0f &&
-                back_out->data[j + i * back_out->GetCols()] > 1e-5) {
+            if (input.get(j + i * input.GetCols()) != 5.0f &&
+                back_out->get(j + i * back_out->GetCols()) > 1e-5) {
                 isCorrect = false;
             }
         }
@@ -236,7 +240,7 @@ bool LayerTests::TestAveragePoolLayerBackprop()
 
     for (int i = 0; i < 3; i++) {
         for (int j = 0; j < 3; j++) {
-            float value = back_out->data[j + i * back_out->GetCols()];
+            float value = back_out->get(j + i * back_out->GetCols());
             sum += value;
 
             if (i < 2 && j < 2) {

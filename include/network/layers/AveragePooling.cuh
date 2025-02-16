@@ -2,9 +2,11 @@
 
 #include "Layer.cuh"
 
-template<typename LayerShape,typename PrevLayerShape,int filterSize, int stride>
+template<typename LayerShape,typename PrevLayerShape,int filterSize, int stride, bool GPU = GPU_DEFAULT>
 class AveragePoolLayer final
 {
+    cudnnPoolingDescriptor_t poolingDescriptor;
+    cudnnTensorDescriptor_t forwardInputDesc, forwardOutputDesc;
 public:
     AveragePoolLayer(): fs_2(filterSize * filterSize)
     {
@@ -16,65 +18,73 @@ public:
 
     const LMAT<LayerShape>* FeedForward(const LMAT<PrevLayerShape>* input)
     {
-#if USE_GPU
-        checkCUDNN(
-                cudnnPoolingForward(Matrix_GPU::cuda->cudnnHandle,
-                                    poolingDescriptor,
-                                    &Matrix_GPU::cuda->one,
-                                    forwardInputDesc,
-                                    input->GetData(),
-                                    &Matrix_GPU::cuda->zero,
-                                    forwardOutputDesc,
-                                    result->GetData()));
-#else
-        LMAT<PrevLayerShape>::template AveragePool<filterSize,stride>(input, output);
-#endif
+        if constexpr (GPU)
+        {
+            checkCUDNN(
+                   cudnnPoolingForward(cuda->cudnnHandle,
+                                       poolingDescriptor,
+                                       &cuda->one,
+                                       forwardInputDesc,
+                                       input->GetData(),
+                                       &cuda->zero,
+                                       forwardOutputDesc,
+                                       output->GetData()));
+        }
+        else
+        {
+            LMAT<PrevLayerShape>::template AveragePool<filterSize,stride>(input, output);
+        }
+
 
         return output;
     }
 
-    LMAT<PrevLayerShape>* BackPropagate(const LMAT<LayerShape>* delta, const LMAT<PrevLayerShape>* previousActivation) {
-#if USE_GPU
-        cudnnPoolingBackward(Matrix_GPU::cuda->cudnnHandle,
-                             poolingDescriptor,
-                             &Matrix_GPU::cuda->one,
-                             forwardOutputDesc,
-                             result->GetData(),
-                             forwardOutputDesc,
-                             delta->GetData(),
-                             forwardInputDesc,
-                             previousActivation->GetData(),
-                             &Matrix_GPU::cuda->zero,
-                             forwardInputDesc,
-                             newDelta->GetData());
-#else
-        // All elements in the pooling window have the same delta which is delta / (filterSize * filterSize)
-        for (int d = 0; d < LayerShape::z; ++d)
+    LMAT<PrevLayerShape>* BackPropagate(const LMAT<LayerShape>* delta, const LMAT<PrevLayerShape>* previousActivation)
+    {
+        if constexpr (GPU)
         {
-            for (int i = 0; i < LayerShape::x; ++i)
+            cudnnPoolingBackward(cuda->cudnnHandle,
+                                poolingDescriptor,
+                                &cuda->one,
+                                forwardOutputDesc,
+                                output->GetData(),
+                                forwardOutputDesc,
+                                delta->GetData(),
+                                forwardInputDesc,
+                                previousActivation->GetData(),
+                                &cuda->zero,
+                                forwardInputDesc,
+                                newDelta->GetData());
+        }
+        else
+        {
+            // All elements in the pooling window have the same delta which is delta / (filterSize * filterSize)
+            for (int d = 0; d < LayerShape::z; ++d)
             {
-                for (int j = 0; j < LayerShape::y; ++j)
+                for (int i = 0; i < LayerShape::x; ++i)
                 {
-                    for (int k = 0; k < filterSize; ++k)
+                    for (int j = 0; j < LayerShape::y; ++j)
                     {
-                        for (int l = 0; l < filterSize; ++l)
+                        for (int k = 0; k < filterSize; ++k)
                         {
-                            (*newDelta)(i * stride + k, j * stride + l) = (*delta)(i, j) / fs_2;
+                            for (int l = 0; l < filterSize; ++l)
+                            {
+                                newDelta->set(i * stride + k, j * stride + l, delta->get(i, j) / fs_2);
+                            }
                         }
                     }
                 }
+                previousActivation->GoToNextMatrix();
+                output->GoToNextMatrix();
+                newDelta->GoToNextMatrix();
+                delta->GoToNextMatrix();
             }
-            previousActivation->GoToNextMatrix();
-            output->GoToNextMatrix();
-            newDelta->GoToNextMatrix();
-            delta->GoToNextMatrix();
-        }
 
-        previousActivation->ResetOffset();
-        output->ResetOffset();
-        newDelta->ResetOffset();
-        delta->ResetOffset();
-#endif
+            previousActivation->ResetOffset();
+            output->ResetOffset();
+            newDelta->ResetOffset();
+            delta->ResetOffset();
+        }
 
         return newDelta;
     }
@@ -90,38 +100,42 @@ public:
     }
 
     void Compile() {
+        if constexpr (GPU)
+        {
+            checkCUDNN(cudnnCreatePoolingDescriptor(&poolingDescriptor));
+            checkCUDNN(cudnnSetPooling2dDescriptor(poolingDescriptor,
+                                                   CUDNN_POOLING_AVERAGE_COUNT_EXCLUDE_PADDING,
+                                                   CUDNN_NOT_PROPAGATE_NAN,
+                                                   filterSize,
+                                                   filterSize,
+                                                   0,
+                                                   0,
+                                                   stride,
+                                                   stride));
 
+            checkCUDNN(cudnnCreateTensorDescriptor(&forwardInputDesc));
+            checkCUDNN(cudnnSetTensor4dDescriptor(forwardInputDesc,
+                                                  CUDNN_TENSOR_NCHW,
+                                                  CUDNN_DATA_FLOAT,
+                                                  1,
+                                                  PrevLayerShape::z,
+                                                  PrevLayerShape::x,
+                                                  PrevLayerShape::y));
+            checkCUDNN(cudnnCreateTensorDescriptor(&forwardOutputDesc));
+            checkCUDNN(cudnnSetTensor4dDescriptor(forwardOutputDesc,
+                                                  CUDNN_TENSOR_NCHW,
+                                                  CUDNN_DATA_FLOAT,
+                                                  1,
+                                                  LayerShape::z,
+                                                  LayerShape::x,
+                                                  LayerShape::y));
+        }
     }
 
     void SpecificSave(std::ofstream& writer);
-
-#if USE_GPU
-
-    void Compile(LayerShape* previousActivation) override;
-
-#endif
 
 private:
     LMAT<LayerShape>* output = nullptr;
     LMAT<PrevLayerShape>* newDelta = nullptr;
     const int fs_2;
 };
-
-
-
-#if USE_GPU
-void AveragePoolLayer::Compile(LayerShape* previousActivation)
-{
-    PoolingLayer::Compile(previousActivation);
-    checkCUDNN(cudnnCreatePoolingDescriptor(&poolingDescriptor));
-    checkCUDNN(cudnnSetPooling2dDescriptor(poolingDescriptor,
-                                           CUDNN_POOLING_AVERAGE_COUNT_EXCLUDE_PADDING,
-                                           CUDNN_NOT_PROPAGATE_NAN,
-                                           filterSize,
-                                           filterSize,
-                                           0,
-                                           0,
-                                           stride,
-                                           stride));
-}
-#endif

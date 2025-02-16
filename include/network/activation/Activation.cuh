@@ -139,7 +139,7 @@ void DefaultFeedForward(const MAT<x,y,z>* input, MAT<x,y,z>* output, void *funct
         for (int i = 0; i < input->GetSize(); i++)
         {
             ActivationFunc Func = reinterpret_cast<ActivationFunc>(function);
-            output[0][i] = Func(input[0][i]);
+            output->data[i] = Func(input->data[i]);
         }
     }
 }
@@ -170,7 +170,7 @@ void DefaultDerivative(const MAT<x,y,z>* x_, MAT<x,y,z>* dx_, void* derivative, 
         for (int i = 0; i < x_->GetSize(); i++)
         {
             DerivativeFunc Derive = reinterpret_cast<DerivativeFunc>(derivative);
-            dx_[0][i] = Derive(x_[0][i]);
+            dx_->data[i] = Derive(x_->data[i]);
         }
     }
 }
