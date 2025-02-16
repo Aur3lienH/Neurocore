@@ -235,7 +235,7 @@ void Matrix_GPU::HadamardProduct(const Matrix_GPU& a, const Matrix_GPU& b, Matri
 #endif
     const int size = a.GetSize();
     const int blocksPerGrid = (size + cuda->threadsPerBlock - 1) / cuda->threadsPerBlock;
-    CoeffWiseMultKernel<<<blocksPerGrid, cuda->threadsPerBlock>>>(a.data_d, b.data_d, res.data_d, size);
+    checkKernel((CoeffWiseMultKernel<<<blocksPerGrid, cuda->threadsPerBlock>>>(a.data_d, b.data_d, res.data_d, size)));
     checkCUDA(cudaDeviceSynchronize());
 }
 

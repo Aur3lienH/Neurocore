@@ -12,16 +12,6 @@
 #define AVX2 false
 #define SSE2 false
 
-__global__ void initializeArray(float *array, float value, int n) {
-    int idx = blockIdx.x * blockDim.x + threadIdx.x;
-    if (idx < n) {
-        array[idx] = value;
-    }
-}
-
-template <bool GPU>
-using enable_if_gpu_t = std::enable_if_t<GPU, cudnnTensorDescriptor_t>;
-
 template <int rows = 1, int cols = 1, int dims = 1, bool GPU = GPU_DEFAULT>
 class Matrix final
 {
@@ -91,7 +81,7 @@ public:
 
     static Matrix Random();
 
-    Matrix<cols, rows, dims>* Transpose() const;
+    Matrix<cols, rows, dims, GPU>* Transpose() const;
 
 
     //Movement threw the matrix with the offset, all the operations are done with matrix with this offset
@@ -161,17 +151,23 @@ public:
 
     void Save(std::ofstream& writer);
 
-    float get(int index);
+    float get(int index) const;
 
-    float& operator[](int index) requires(!GPU);
+    float get(int _rows, int _cols) const;
 
-    float& operator()(int _rows, int _cols) requires(!GPU);
+    void set(int index, float value);
 
-    const float& operator[](int index) const requires(!GPU);
+    void set(int _rows, int _cols, float value);
 
-    const float& operator()(int _rows, int _cols) const requires(!GPU);
+    //float& operator[](int index) requires(!GPU);
 
-    const float& operator()(int _rows, int _cols, int _dims) const requires(!GPU);
+    //float& operator()(int _rows, int _cols) requires(!GPU);  // () cannot be used to set values ton GPU matrices
+
+    //const float& operator[](int index) const requires(!GPU);;
+
+    //const float& operator()(int _rows, int _cols) const requires(!GPU);;
+
+    //const float& operator()(int _rows, int _cols, int _dims) const requires(!GPU);;
 
     template <int other_rows, int other_cols>
     void MatrixMultiplication(const Matrix<other_rows, other_cols>* other, Matrix<rows, other_cols>* output) const;
@@ -259,7 +255,7 @@ void Matrix<rows, cols, dims, GPU>::Init(float value)
         checkCUDNN(cudnnCreateTensorDescriptor(&desc_1D));
         checkCUDNN(cudnnSetTensor4dDescriptor(desc, CUDNN_TENSOR_NCHW, CUDNN_DATA_FLOAT, 1, dims, rows, cols));
         checkCUDNN(cudnnSetTensor4dDescriptor(desc_1D, CUDNN_TENSOR_NCHW, CUDNN_DATA_FLOAT, 1, 1, rows, cols));
-        initializeArray<<<CUDA_KERNEL_ARGS(cuda, GetSize())>>>(data_d, value, GetSize());
+        checkKernel(initializeArray_kernel<<<CUDA_KERNEL_ARGS(cuda, GetSize())>>>(data_d, value, GetSize()));
     }
     else
     {
@@ -426,21 +422,47 @@ void Matrix<rows, cols, dims, GPU>::Substract(const Matrix* other, Matrix* resul
     }
 #endif
 
-    for (int i = 0; i < this->GetRows() * this->GetCols(); i++)
+    if constexpr (GPU)
     {
-        result->data[i] = this->data[i] - other->data[i];
+        checkCUBLAS(
+            cublasSgeam(cuda->cublasHandle, CUBLAS_OP_N, CUBLAS_OP_N, rows, cols,
+                &cuda->one, data_d, rows, &cuda->minus_one, other->data_d, rows, result->data_d, rows));
+    }
+    else
+    {
+        for (int i = 0; i < this->GetRows() * this->GetCols(); i++)
+        {
+            result->data[i] = this->data[i] - other->data[i];
+        }
     }
 }
 
 template <int rows, int cols, int dims, bool GPU>
-Matrix<cols, rows, dims>* Matrix<rows, cols, dims, GPU>::Transpose() const
+Matrix<cols, rows, dims, GPU>* Matrix<rows, cols, dims, GPU>::Transpose() const
 {
-    auto* res = new Matrix<cols, rows, dims>();
-    for (int i = 0; i < rows; i++)
+    auto* res = new Matrix<cols, rows, dims, GPU>();
+
+    if constexpr (GPU)
     {
-        for (int j = 0; j < cols * dims; j++)
+        for (int i = 0; i < dims; i++)
         {
-            res->data[j * rows + i] = data[i * cols * dims + j];
+            dim3 threads(16, 16);  // Each block has 16x16 threads
+            dim3 blocks((cols + threads.x - 1) / threads.x, (rows + threads.y - 1) / threads.y);
+            checkKernel((transpose_kernel<<<blocks, threads>>>(data_d, res->data_d, rows, cols)));
+            //GoToNextMatrix();
+            //res->GoToNextMatrix();
+        }
+        //ResetOffset();
+        //res->ResetOffset();
+    }
+    else
+    {
+        for (int i = 0; i < rows; i++)
+        {
+            for (int j = 0; j < cols * dims; j++)
+            {
+                res->data[j * rows + i] = data[i * cols * dims + j];
+            }
         }
     }
     return res;
@@ -485,11 +507,18 @@ void Matrix<rows, cols, dims, GPU>::MultiplyAllDims(const Matrix* other, Matrix*
 template <int rows, int cols, int dims, bool GPU>
 void Matrix<rows, cols, dims, GPU>::MultiplyAllDims(float value)
 {
-    int size = GetRows() * GetCols() * GetDims();
-
-    for (int i = 0; i < size; i++)
+    if constexpr (GPU)
     {
-        this->data[i] *= value;
+        checkKernel((scalarMult_kernel<<<CUDA_KERNEL_ARGS(cuda, GetSize())>>>(data_d, value, data_d, GetSize())));
+    }
+    else
+    {
+        int size = GetRows() * GetCols() * GetDims();
+
+        for (int i = 0; i < size; i++)
+        {
+            this->data[i] *= value;
+        }
     }
 }
 
@@ -608,7 +637,7 @@ void Matrix<rows, cols, dims, GPU>::PrintSize() const
     std::cout << "(" << GetRows() << "," << GetCols() << "," << GetDims() << ")" << std::endl;
 }
 
-template <int rows, int cols, int dims, bool GPU>
+/*template <int rows, int cols, int dims, bool GPU>
 float& Matrix<rows, cols, dims, GPU>::operator[](int index) requires(!GPU)
 {
 #if SAFE
@@ -631,10 +660,15 @@ const float& Matrix<rows, cols, dims, GPU>::operator[](int index) const requires
         throw std::out_of_range("Matrix : Index out of bounds");
     }
 #endif
-
+    if constexpr (GPU)
+    {
+        float val;
+        checkCUDA(cudaMemcpy(&val, data_d + index, sizeof(float), cudaMemcpyDeviceToHost));
+        return val;
+    }
 
     return this->data[index];
-}
+}*/
 
 /*template <int rows, int cols, int dims, bool GPU>
 const float& Matrix<rows, cols, dims, GPU>::operator()(int _rows, int _cols) const
@@ -734,12 +768,21 @@ Matrix<rows, cols, dims, GPU>* Matrix<rows, cols, dims, GPU>::operator+(const Ma
     }
 #endif
 
-    auto* result = new Matrix<rows, cols, dims, GPU>();
-    for (int i = 0; i < this->GetCols() * this->GetRows(); i++)
+    auto* result = new Matrix();
+    if constexpr (GPU)
     {
-        result->operator[](i) = other.data[i] + this->data[i];
+        checkCUBLAS(
+            cublasSgeam(cuda->cublasHandle, CUBLAS_OP_N, CUBLAS_OP_N, rows, cols,
+                &cuda->one, data_d, rows, &cuda->one, other.data_d, rows, result->data_d, rows));
     }
-    return result;
+    else
+    {
+        for (int i = 0; i < this->GetCols() * this->GetRows(); i++)
+        {
+            result->operator[](i) = other.data[i] + this->data[i];
+        }
+    }
+        return result;
 }
 
 template <int rows, int cols, int dims, bool GPU>
@@ -753,10 +796,19 @@ Matrix<rows, cols, dims, GPU>* Matrix<rows, cols, dims, GPU>::operator-(const Ma
     }
 #endif
 
-    auto* result = new Matrix<rows, cols, dims, GPU>();
-    for (int i = 0; i < this->GetCols() * this->GetRows(); i++)
+    auto* result = new Matrix();
+    if constexpr (GPU)
     {
-        result->operator[](i) = this->data[i] - other.data[i];
+        checkCUBLAS(
+            cublasSgeam(cuda->cublasHandle, CUBLAS_OP_N, CUBLAS_OP_N, rows, cols,
+                &cuda->one, data_d, rows, &cuda->minus_one, other.data_d, rows, result->data_d, rows));
+    }
+    else
+    {
+        for (int i = 0; i < this->GetCols() * this->GetRows(); i++)
+        {
+            result->operator[](i) = this->data[i] - other.data[i];
+        }
     }
     return result;
 }
@@ -785,9 +837,17 @@ template <int rows, int cols, int dims, bool GPU>
 Matrix<rows, cols, dims, GPU>* Matrix<rows, cols, dims, GPU>::operator*(const float& other)
 {
     auto* result = new Matrix<rows, cols, dims, GPU>();
-    for (int i = 0; i < this->GetCols() * this->GetRows(); i++)
+
+    if constexpr (GPU)
     {
-        result->data[i] = this->data[i] * other;
+        checkKernel((scalarMult_kernel<<<CUDA_KERNEL_ARGS(cuda, GetMatrixSize())>>>(data_d, other, result->data_d, result->GetMatrixSize())));
+    }
+    else
+    {
+        for (int i = 0; i < this->GetCols() * this->GetRows(); i++)
+        {
+            result->data[i] = this->data[i] * other;
+        }
     }
     return result;
 }
@@ -813,7 +873,7 @@ Matrix<rows, cols, dims, GPU>* Matrix<rows, cols, dims, GPU>::operator-=(const M
 
 
 template <int rows, int cols, int dims, bool GPU>
-float Matrix<rows, cols, dims, GPU>::get(int index)
+float Matrix<rows, cols, dims, GPU>::get(const int index) const
 {
 #if SAFE
     if (index >= this->rows * this->cols * this->dim)
@@ -830,6 +890,63 @@ float Matrix<rows, cols, dims, GPU>::get(int index)
     }
 
     return this->data[index];
+}
+
+template <int rows, int cols, int dims, bool GPU>
+void Matrix<rows, cols, dims, GPU>::set(const int index, const float value)
+{
+#if SAFE
+    if (index >= this->rows * this->cols * this->dim)
+    {
+        throw std::out_of_range("Matrix : Index out of bounds");
+    }
+#endif
+
+    if constexpr (GPU)
+    {
+        checkCUDA(cudaMemcpy(data_d + index, &value, sizeof(float), cudaMemcpyHostToDevice));
+    }
+
+    else
+        {this->data[index] = value;}
+}
+
+template <int rows, int cols, int dims, bool GPU>
+float Matrix<rows, cols, dims, GPU>::get(const int _rows, const int _cols) const
+{
+#if SAFE
+    if (rows_ >= this->rows || cols_ >= this->cols)
+    {
+        throw std::out_of_range("Matrix : Index out of bounds");
+    }
+#endif
+
+    if constexpr (GPU)
+    {
+        float val;
+        checkCUDA(cudaMemcpy(&val, data_d + _rows * this->GetCols() + _cols, sizeof(float), cudaMemcpyDeviceToHost));
+        return val;
+    }
+
+    return data[_rows * this->GetCols() + _cols];
+}
+
+template <int rows, int cols, int dims, bool GPU>
+void Matrix<rows, cols, dims, GPU>::set(const int _rows, const int _cols, const float value)
+{
+#if SAFE
+    if (rows_ >= this->rows || cols_ >= this->cols)
+    {
+        throw std::out_of_range("Matrix : Index out of bounds");
+    }
+#endif
+
+    if constexpr (GPU)
+    {
+        checkCUDA(cudaMemcpy(data_d + _rows * this->GetCols() + _cols, &value, sizeof(float), cudaMemcpyHostToDevice));
+    }
+    else
+    {data[_rows * this->GetCols() + _cols] = value;}
 }
 
 template <int rows, int cols, int dims, bool GPU>
@@ -1241,11 +1358,11 @@ void Matrix<rows, cols, dims, GPU>::FullConvolution(const Matrix<rows, cols>* m,
                     const int inputCol = j + l - c;
                     if (inputRow >= 0 && inputRow < inputRows && inputCol >= 0 && inputCol < inputCols)
                     {
-                        sum += (*m)(inputRow, inputCol) * (*filter)(k, l);
+                        sum += m->get(inputRow, inputCol) * filter->get(k, l);
                     }
                 }
             }
-            (*output)(i, j) = sum;
+            output->set(i, j, sum);
         }
     }
 }
@@ -1357,10 +1474,10 @@ void Matrix<rows, cols, dims, GPU>::AveragePool(const Matrix<rows, cols, dims, G
                         const int inputRow = i * stride + k;
                         const int inputCol = j * stride + l;
                         if (inputRow >= 0 && inputRow < inputRows && inputCol >= 0 && inputCol < inputCols)
-                            sum += (*a)(inputRow, inputCol);
+                            sum += a->get(inputRow, inputCol);
                     }
                 }
-                (*output)(i, j) = sum / fsSquare;
+                output->set(i, j, sum / fsSquare);
             }
         }
         a->GoToNextMatrix();
@@ -1400,10 +1517,10 @@ void Matrix<rows, cols, dims, GPU>::Convolution(
             {
                 for (int l = 0; l < filter->GetRows(); l++)
                 {
-                    sum += (*input)(i * stride + k, j * stride + l) * (*filter)(k, l);
+                    sum += input->get(i * stride + k, j * stride + l) * filter->get(k, l);
                 }
             }
-            (*output)(i, j) = sum;
+            output->set(i, j, sum);
         }
     }
 }
@@ -1519,10 +1636,10 @@ void Matrix<rows, cols, dims, GPU>::MaxPool(const Matrix<rows, cols, dims, GPU>*
                         const int inputRow = i * stride + k;
                         const int inputCol = j * stride + l;
                         if (inputRow >= 0 && inputRow < inputRows && inputCol >= 0 && inputCol < inputCols)
-                            max = std::max(max, (*a)(inputRow, inputCol));
+                            max = std::max(max, a->get(inputRow, inputCol));
                     }
                 }
-                (*output)(i, j) = max;
+                output->set(i, j, max);
             }
         }
         a->GoToNextMatrix();

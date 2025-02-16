@@ -23,8 +23,7 @@ public:
         if constexpr (GPU)
         {
             const int numBlocks = (gradient->GetSize() + cuda->threadsPerBlock - 1) / cuda->threadsPerBlock;
-            ConstantComputeKernel<<<numBlocks, cuda->threadsPerBlock>>>(gradient->GetData() + offset, parameters->GetData() + offset, gradient->GetSize(), lr);
-            checkCUDA(cudaDeviceSynchronize());
+            checkKernel((ConstantComputeKernel<<<numBlocks, cuda->threadsPerBlock>>>(gradient->GetData() + offset, parameters->GetData() + offset, gradient->GetSize(), lr)));
         }
         else
         {

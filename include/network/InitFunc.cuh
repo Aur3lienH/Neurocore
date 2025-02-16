@@ -37,14 +37,14 @@ void WeightsInit::XavierInit(const int inputSize, MAT<x, y, z>* weights)
     {
         Matrix<x,y,z, false> m;
         for (int i = 0; i < weights->GetSize(); i++)
-            m[i] = lower + (rand() / ((float)RAND_MAX) * (upper - (lower)));
+            m.set(i, lower + (rand() / ((float)RAND_MAX) * (upper - (lower))));
         checkCUDA(cudaMemcpy(weights->GetData(), m.GetData(), weights->GetSize() * sizeof(float), cudaMemcpyHostToDevice));
         return;
     }
     else
     {
         for (int i = 0; i < weights->GetSize(); i++)
-            weights[0][i] = lower + (rand() / ((float) RAND_MAX) * (upper - (lower)));
+            weights->set(i, lower + (rand() / ((float) RAND_MAX) * (upper - (lower))));
     }
 };
 
@@ -82,7 +82,7 @@ void WeightsInit::HeUniform(const int inputSize, MAT<x, y, z, GPU>* weights)
         // Create a CPU matrix and then copy its data in GPU weights data
         Matrix <x, y, z, false> m;
         for (int i = 0; i < weights->GetSize(); i++)
-            m[i] = distribution(rng);
+            m.set(i, distribution(rng));
 
         checkCUDA(
             cudaMemcpy(weights->GetData(), m.GetData(), weights->GetSize() * sizeof(float), cudaMemcpyHostToDevice));
@@ -90,6 +90,6 @@ void WeightsInit::HeUniform(const int inputSize, MAT<x, y, z, GPU>* weights)
     else
     {
         for (int i = 0; i < weights->GetSize(); i++)
-            (*weights)[i] = distribution(rng);
+            weights->set(i, distribution(rng));
     }
 };

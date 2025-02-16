@@ -51,14 +51,12 @@ public:
         float* res_d;
         checkCUDA(cudaMalloc(&res_d, output->GetSize() * sizeof(float)));
 
-        CrossEntropyKernel<<<Matrix_GPU::cuda->threadsPerBlock, Matrix_GPU::cuda->threadsPerBlock>>>
-            (output->GetData(), target->GetData(), res_d, output->GetSize());
-        checkCUDA(cudaDeviceSynchronize());
+        checkKernel((CrossEntropyKernel<<<Matrix_GPU::cuda->threadsPerBlock, Matrix_GPU::cuda->threadsPerBlock>>>
+            (output->GetData(), target->GetData(), res_d, output->GetSize())));
 
         float* r;
         checkCUDA(cudaMalloc(&r, sizeof(float)));
-        SumKernel<<<1, 1>>>(res_d, output->GetSize(), r);
-        checkCUDA(cudaDeviceSynchronize());
+        checkKernel((SumKernel<<<1, 1>>>(res_d, output->GetSize(), r)));
 
         float* r_h = new float[1];
         checkCUDA(cudaMemcpy(r_h, r, sizeof(float), cudaMemcpyDeviceToHost));
@@ -85,9 +83,8 @@ public:
 #if USE_GPU
         const int blocksPerGrid =
             (output->GetSize() + Matrix_GPU::cuda->threadsPerBlock - 1) / Matrix_GPU::cuda->threadsPerBlock;
-        CostDerivativeKernel<<<blocksPerGrid, Matrix_GPU::cuda->threadsPerBlock>>>
-            (output->GetData(), target->GetData(), result->GetData(), output->GetSize());
-        checkCUDA(cudaDeviceSynchronize());
+        checkKernel((CostDerivativeKernel<<<blocksPerGrid, Matrix_GPU::cuda->threadsPerBlock>>>
+            (output->GetData(), target->GetData(), result->GetData(), output->GetSize())));
 #else
         for (int i = 0; i < output->GetRows() * output->GetCols(); i++) {
             if (target[0][i] == 1) {

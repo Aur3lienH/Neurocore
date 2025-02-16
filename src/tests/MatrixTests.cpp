@@ -1,6 +1,7 @@
 #include "tests/MatrixTests.h"
 #include "matrix/Matrix.cuh"
 #include <cmath>
+#include <tuple>
 
 
 bool MatrixTests::ExecuteTests()
@@ -70,8 +71,8 @@ bool MatrixTests::TestConstructors() {
     //Matrix::Matrix(float)
     Matrix<3,3> matValue(5.0f);
     for(int i = 0; i < 9; i++) {
-        if (std::abs(matValue[i] - 5.0f) > 1e-6) {
-            std::cout << "matrix value is " << matValue[i] << " and should be 5 \n";
+        if (std::abs(matValue.get(i) - 5.0f) > 1e-6) {
+            std::cout << "matrix value is " << matValue.get(i) << " and should be 5 \n";
             return false;
         }
     }
@@ -80,15 +81,15 @@ bool MatrixTests::TestConstructors() {
     float data[] = {1.0f, 2.0f, 3.0f, 4.0f};
     Matrix<2,2> matData({1.0f, 2.0f, 3.0f, 4.0f});
     for(int i = 0; i < 4; i++) {
-        if (std::abs(matData[i] - data[i]) > 1e-6) {
+        if (std::abs(matData.get(i) - data[i]) > 1e-6) {
             return false;
         }
     }
 
     // Test Matrix::Matrix(float*, bool)
-    Matrix<2,2> matData2(data, false);
+    Matrix<2,2> matData2({1.0f, 2.0f, 3.0f, 4.0f});
     for(int i = 0; i < 4; i++) {
-        if (std::abs(matData2[i] - data[i]) > 1e-6) {
+        if (std::abs(matData2.get(i) - data[i]) > 1e-6) {
             return false;
         }
     }
@@ -110,7 +111,7 @@ bool MatrixTests::TestBasicOperations() {
     mat1.Add(&mat2, &result);
 
     for(int i = 0; i < 4; i++) {
-        if (std::abs(result[i] - 3.0f) > 1e-6) {
+        if (std::abs(result.get(i) - 3.0f) > 1e-6) {
             return false;
         }
     }
@@ -122,7 +123,7 @@ bool MatrixTests::TestBasicOperations() {
     mat3.Substract(&mat4, &subResult);
 
     for(int i = 0; i < 4; i++) {
-        if (std::abs(subResult[i] - 2.0f) > 1e-6) {
+        if (std::abs(subResult.get(i) - 2.0f) > 1e-6) {
             return false;
         }
     }
@@ -132,7 +133,7 @@ bool MatrixTests::TestBasicOperations() {
     matMul.MultiplyAllDims(3.0f);
 
     for(int i = 0; i < 4; i++) {
-        if (std::abs(matMul[i] - 6.0f) > 1e-6) {
+        if (std::abs(matMul.get(i) - 6.0f) > 1e-6) {
             return false;
         }
     }
@@ -150,10 +151,10 @@ bool MatrixTests::TestMatrixMultiplication() {
 
     mat1.MatrixMultiplication(&mat2, &result);
 
-    if (std::abs(result(0,0) - 4.0f) > 1e-6 ||
-        std::abs(result(0,1) - 4.0f) > 1e-6 ||
-        std::abs(result(1,0) - 10.0f) > 1e-6 ||
-        std::abs(result(1,1) - 8.0f) > 1e-6) {
+    if (std::abs(result.get(0,0) - 4.0f) > 1e-6 ||
+        std::abs(result.get(0,1) - 4.0f) > 1e-6 ||
+        std::abs(result.get(1,0) - 10.0f) > 1e-6 ||
+        std::abs(result.get(1,1) - 8.0f) > 1e-6) {
         return false;
     }
 
@@ -173,7 +174,7 @@ bool MatrixTests::TestConvolution() {
     Matrix<3,3>::FullConvolution(&input, &filter, &output);
 
     // Vérifiez quelques valeurs spécifiques de la convolution
-    if (std::abs(output(1,1) - 12.0f) > 1e-6) {
+    if (std::abs(output.get(1,1) - 12.0f) > 1e-6) {
         return false;
     }
 
@@ -184,10 +185,10 @@ bool MatrixTests::TestConvolution() {
 
     Matrix<3,3>::Convolution<2,1>(&input2, &filter2, &output2);
 
-    if (std::abs(output2(0,0) - 12.0f) > 1e-6 ||
-        std::abs(output2(0,1) - 16.0f) > 1e-6 ||
-        std::abs(output2(1,0) - 24.0f) > 1e-6 ||
-        std::abs(output2(1,1) - 28.0f) > 1e-6) {
+    if (std::abs(output2.get(0,0) - 12.0f) > 1e-6 ||
+        std::abs(output2.get(0,1) - 16.0f) > 1e-6 ||
+        std::abs(output2.get(1,0) - 24.0f) > 1e-6 ||
+        std::abs(output2.get(1,1) - 28.0f) > 1e-6) {
         return false;
     }
 
@@ -210,10 +211,10 @@ bool MatrixTests::TestPooling() {
 
     Matrix<4,4>::MaxPool<2,2>(&input, &output);
 
-    if (std::abs(output(0,0) - 6.0f) > 1e-6 ||
-        std::abs(output(0,1) - 8.0f) > 1e-6 ||
-        std::abs(output(1,0) - 14.0f) > 1e-6 ||
-        std::abs(output(1,1) - 16.0f) > 1e-6) {
+    if (std::abs(output.get(0,0) - 6.0f) > 1e-6 ||
+        std::abs(output.get(0,1) - 8.0f) > 1e-6 ||
+        std::abs(output.get(1,0) - 14.0f) > 1e-6 ||
+        std::abs(output.get(1,1) - 16.0f) > 1e-6) {
         return false;
     }
 
@@ -227,10 +228,10 @@ bool MatrixTests::TestPooling() {
     Matrix<2,2> output2;
 
     Matrix<4,4>::AveragePool<2,2>(&input2, &output2);
-    if (std::abs(output2(0,0) - 3.5f) > 1e-6 ||
-        std::abs(output2(0,1) - 5.5f) > 1e-6 ||
-        std::abs(output2(1,0) - 11.5f) > 1e-6 ||
-        std::abs(output2(1,1) - 13.5f) > 1e-6) {
+    if (std::abs(output2.get(0,0) - 3.5f) > 1e-6 ||
+        std::abs(output2.get(0,1) - 5.5f) > 1e-6 ||
+        std::abs(output2.get(1,0) - 11.5f) > 1e-6 ||
+        std::abs(output2.get(1,1) - 13.5f) > 1e-6) {
         return false;
     }
 
@@ -242,12 +243,12 @@ bool MatrixTests::TestTranspose() {
     Matrix<2,3> mat({1,2,3,4,5,6});
     Matrix<3,2>* transposed = mat.Transpose();
 
-    bool success = (std::abs((*transposed)(0,0) - 1.0f) < 1e-6 &&
-                   std::abs((*transposed)(0,1) - 4.0f) < 1e-6 &&
-                   std::abs((*transposed)(1,0) - 2.0f) < 1e-6 &&
-                   std::abs((*transposed)(1,1) - 5.0f) < 1e-6 &&
-                   std::abs((*transposed)(2,0) - 3.0f) < 1e-6 &&
-                   std::abs((*transposed)(2,1) - 6.0f) < 1e-6);
+    bool success = (std::abs(transposed->get(0,0) - 1.0f) < 1e-6 &&
+                   std::abs(transposed->get(0,1) - 4.0f) < 1e-6 &&
+                   std::abs(transposed->get(1,0) - 2.0f) < 1e-6 &&
+                   std::abs(transposed->get(1,1) - 5.0f) < 1e-6 &&
+                   std::abs(transposed->get(2,0) - 3.0f) < 1e-6 &&
+                   std::abs(transposed->get(2,1) - 6.0f) < 1e-6);
 
     delete transposed;
     return success;
@@ -282,8 +283,8 @@ bool MatrixTests::TestOperators() {
 
     bool success = true;
     for(int i = 0; i < 4; i++) {
-        if (std::abs((*addResult)[i] - 3.0f) > 1e-6) {
-            std::cout << "value is " << (*addResult)[i] << " and should be 3 \n";
+        if (std::abs((*addResult).get(i) - 3.0f) > 1e-6) {
+            std::cout << "value is " << (*addResult).get(i) << " and should be 3 \n";
             success = false;
             break;
         }
@@ -297,7 +298,7 @@ bool MatrixTests::TestOperators() {
     Matrix<2,2>* subResult = mat3 - mat4;
 
     for(int i = 0; i < 4; i++) {
-        if (std::abs((*subResult)[i] - 2.0f) > 1e-6) {
+        if (std::abs((*subResult).get(i) - 2.0f) > 1e-6) {
 
             success = false;
             break;
@@ -309,7 +310,7 @@ bool MatrixTests::TestOperators() {
     Matrix<2,2>* mulResult = mat5 * 3.0f;
 
     for(int i = 0; i < 4; i++) {
-        if (std::abs((*mulResult)[i] - (i + 1) * 3.0f) > 1e-6) {
+        if (std::abs((*mulResult).get(i) - (i + 1) * 3.0f) > 1e-6) {
             success = false;
             break;
         }

@@ -30,7 +30,9 @@ pkg_check_modules(CAIRO REQUIRED cairo)
 file(GLOB_RECURSE TEST_SOURCES
         "${CMAKE_SOURCE_DIR}/src/network/*.cpp"
         "${CMAKE_SOURCE_DIR}/src/tests/ActivationTests.cpp"
+        "${CMAKE_SOURCE_DIR}/src/tests/MatrixTests.cpp"
         "${CMAKE_SOURCE_DIR}/src/tests/Tests.cpp"
+        "${CMAKE_SOURCE_DIR}/src/gpuComputation/CUDA.cu"
         "${CMAKE_SOURCE_DIR}/src/main.cpp"
         "${CMAKE_SOURCE_DIR}/include/*.h"
         "${CMAKE_SOURCE_DIR}/include/*.hpp"
@@ -55,6 +57,7 @@ endif()
 set_source_files_properties(
         "${CMAKE_SOURCE_DIR}/src/GPUmain.cpp"
         "${CMAKE_SOURCE_DIR}/src/tests/ActivationTests.cpp"
+        "${CMAKE_SOURCE_DIR}/src/tests/MatrixTests.cpp"
         "${CMAKE_SOURCE_DIR}/src/tests/Tests.cpp"
         "${CMAKE_SOURCE_DIR}/src/main.cpp"
         PROPERTIES LANGUAGE CUDA

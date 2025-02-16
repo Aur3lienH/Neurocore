@@ -67,15 +67,12 @@ public:
             // Utilisation d'un kernel CUDA pour le calcul de la dérivée
             const int blocksPerGrid = (output->GetSize() + cuda->threadsPerBlock - 1) / cuda->threadsPerBlock;
 
-            MSEDerivativeKernel<<<blocksPerGrid, cuda->threadsPerBlock>>>(
+            checkKernel((MSEDerivativeKernel<<<blocksPerGrid, cuda->threadsPerBlock>>>(
                 output->GetData(),
                 target->GetData(),
                 result->GetData(),
                 output->GetSize()
-            );
-
-            // Synchronisation pour s'assurer que le kernel est terminé
-            checkCUDA(cudaDeviceSynchronize());
+            )));
         }
         else
         {
