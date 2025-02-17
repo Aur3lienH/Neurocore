@@ -6,7 +6,7 @@
 #include "network/Operations.h"
 #include "matrix/Matrix.cuh"
 
-template<typename activation,typename prevLayerShape,typename layerShape, typename filterShape, typename optimizer, bool test = false>
+template<typename activation,typename prevLayerShape,typename layerShape, typename filterShape, typename optimizer = Optimizer<Constant<0.001>>, bool test = false>
 class ConvLayer final
 {
 

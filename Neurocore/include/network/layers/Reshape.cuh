@@ -10,17 +10,21 @@ public:
 
     using Shape = LayerShape;
 
-    Reshape() {
-        output
+    Reshape() 
+    {
+        output = new LMAT<LayerShape>(nullptr);
+        newDelta = new LMAT<PrevLayerShape>(nullptr);
     }
 
     const LMAT<LayerShape>* FeedForward(const LMAT<PrevLayerShape>* _input)
     {
+        output->data = _input->data;
         return output;
     }
 
     const LMAT<PrevLayerShape>* BackPropagate(const LMAT<LayerShape>* delta, const LMAT<PrevLayerShape>* pastActivation)
     {
+        newDelta->data = delta->data;
         return newDelta;
     }
 

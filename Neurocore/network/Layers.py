@@ -50,14 +50,13 @@ class FCL(Layer):
 
 class ConvLayer(Layer):
 
-    def __init__(self, layerShape: LayerShape, activation, kernelShape: LayerShape, optimizer):
+    def __init__(self, layerShape: LayerShape, activation, kernelShape: LayerShape):
         self.layerShape = layerShape
         self.activation = activation
         self.kernelShape = kernelShape
-        self.optimizer = optimizer
 
     def get_code(self, prevLayerShape: LayerShape):
-        return f'ConvLayer<{self.activation.get_code(self.layerShape)},{prevLayerShape.get_code()},{self.layerShape.get_code()},{self.optimizer.get_code()}>'
+        return f'ConvLayer<{self.activation.get_code(self.layerShape,prevLayerShape)},{prevLayerShape.get_code()},{self.layerShape.get_code()},{self.kernelShape.get_code()}>'
 
     def get_layer_shape(self):
         return self.layerShape
