@@ -106,7 +106,7 @@ void ReLU<rows, prev_rows, cols, dims, GPU>::Derivative(const MAT<rows,cols,dims
         // Process any remaining values
         for (; i < x_->GetSize(); ++i)
         {
-            dx_->set(i, (dx_->data[i] > 0) ? 1.0 : 0.0);
+            dx_->set(i, (x_->data[i] > 0) ? 1.0 : 0.0);
         }
     }
 }

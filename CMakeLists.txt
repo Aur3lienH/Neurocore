@@ -31,6 +31,7 @@ file(GLOB_RECURSE TEST_SOURCES
         "${CMAKE_SOURCE_DIR}/src/tests/*.cpp"
         "${CMAKE_SOURCE_DIR}/src/network/*.cpp"
         "${CMAKE_SOURCE_DIR}/src/tests/*.cu"
+        "${CMAKE_SOURCE_DIR}/src/*.cu"
         "${CMAKE_SOURCE_DIR}/src/main.cpp"
         "${CMAKE_SOURCE_DIR}/include/*.h"
         "${CMAKE_SOURCE_DIR}/include/*.hpp"
@@ -42,7 +43,7 @@ add_executable(${PROJECT_NAME} ${TEST_SOURCES})
 
 set(CMAKE_VERBOSE_MAKEFILE ON)
 
-set (USE_GPU false)
+set (USE_GPU true)
 
 if (USE_GPU)
     target_compile_definitions(${PROJECT_NAME} PRIVATE USE_GPU)

@@ -244,7 +244,7 @@ const MAT<prevLayerShape::x>* FCL<activation,prevLayerShape,layershape,optimizer
     else
     {
         //newDelta->Flatten();
-        activation::Derivative(z, deltaActivation, lastDelta, z);
+        activation::Derivative(z, deltaActivation, lastDelta, Result);
         deltaActivation->operator*=(lastDelta);
 
         DeltaBiases->Add(deltaActivation, DeltaBiases);
