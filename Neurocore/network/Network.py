@@ -60,6 +60,7 @@ class Network:
             os.chdir(original_dir)
     
     def Compile(self, loss: Loss):
+        print("started compiling !")
         build_dir = GetBuildDir()
 
         self.loss = loss
@@ -114,6 +115,7 @@ class Network:
         last_layer = self.layers[-1].get_layer_shape()
         PreCompileMatrix(first_layer.x,first_layer.y,first_layer.z)
         PreCompileMatrix(last_layer.x,last_layer.y,last_layer.z)
+        print("finshed compiling")
         self.cpp_network.Compile()
         
         

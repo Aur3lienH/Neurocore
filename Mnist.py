@@ -10,6 +10,7 @@ from sklearn.model_selection import train_test_split
 
 #Set the verbose
 Config.VERBOSE = True
+Config.USE_GPU = True
 
 # Load MNIST dataset from scikit-learn
 print("Loading MNIST dataset...")

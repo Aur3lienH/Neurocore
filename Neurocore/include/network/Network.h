@@ -306,6 +306,7 @@ public:
             throw std::invalid_argument("First layer must be an input layer");
         */
         compiled = true;
+
     }
 
     //Load network from a file
