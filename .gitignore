@@ -1,11 +1,8 @@
-.vscode/
-build/
-__pycache__/
+./build/
 .idea/
 cmake-build-debug/
 cmake-build-release/
 old_save/**
-Neurocore.egg-info/
 # Prerequisites
 *.d
 

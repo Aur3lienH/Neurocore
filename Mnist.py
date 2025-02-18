@@ -9,7 +9,7 @@ from sklearn.datasets import fetch_openml
 from sklearn.model_selection import train_test_split
 
 #Set the verbose
-#Config.VERBOSE = True
+Config.VERBOSE = True
 
 # Load MNIST dataset from scikit-learn
 print("Loading MNIST dataset...")

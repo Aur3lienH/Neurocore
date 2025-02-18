@@ -11,18 +11,19 @@
 #include <fstream>
 #include <emmintrin.h>
 #include <cmath>
+#include <functional>
 
-template<int rows, int prev_rows,int cols, int dims>
+template<int rows, int prev_rows,int cols, int dims, bool GPU>
 class Sigmoid;
-template<int rows, int prev_rows,int cols, int dims>
+template<int rows, int prev_rows,int cols, int dims, bool GPU>
 class SigmoidPrime;
-template<int rows, int prev_rows,int cols, int dims>
+template<int rows, int prev_rows,int cols, int dims, bool GPU>
 class ReLU;
-template<int rows, int prev_rows, float def_val,int cols, int dims>
+template<int rows, int prev_rows, float def_val,int cols, int dims, bool GPU>
 class LeakyReLU;
 template<int rows, int prev_rows,int cols, int dims>
 class SoftMax;
-template<int rows, int prev_rows,int cols, int dims>
+template<int rows, int prev_rows,int cols, int dims, bool GPU>
 class Tanh;
 
 template <typename... Args>
@@ -41,13 +42,13 @@ struct ActivationID<SigmoidPrime<rows,prev_rows,cols,dims>> {
     static constexpr uint value = 1;
 };
 
-template <int rows,int prev_rows ,int cols, int dims>
-struct ActivationID<ReLU<rows,prev_rows,cols, dims>> {
+template <int rows,int prev_rows ,int cols, int dims, bool GPU>
+struct ActivationID<ReLU<rows,prev_rows,cols, dims, GPU>> {
     static constexpr uint value = 2;
 };
 
-template<int rows, int prev_rows, float def_val,int cols, int dims>
-struct ActivationID<LeakyReLU<rows,prev_rows,def_val,cols,dims>> {
+template<int rows, int prev_rows, float def_val,int cols, int dims, bool GPU>
+struct ActivationID<LeakyReLU<rows,prev_rows,def_val,cols,dims, GPU>> {
     static constexpr uint value = 3;
 };
 
@@ -71,32 +72,19 @@ class Activation final
     std::tuple<Args...> params;
     unsigned int id;
 public:
-    virtual ~Activation() = default;
+    ~Activation() = default;
 
-#if USE_GPU
-
-    virtual void FeedForward(const MAT* input, const cudnnTensorDescriptor_t& inputDesc, MAT* output,
-                             const cudnnTensorDescriptor_t& outputDesc);
-
-    virtual void Derivative(const MAT* input, const cudnnTensorDescriptor_t& inputDesc, const MAT* lastDelta,
-                            const cudnnTensorDescriptor_t& lastDeltaDesc, const MAT* z,
-                            const cudnnTensorDescriptor_t& zDesc,
-                            MAT* output, const cudnnTensorDescriptor_t& outputDesc);
-
-#else
-
-    template<int x=1, int y=1, int z=1>
-    static void FeedForward(const MAT<x,y,z>* input, MAT<x,y,z>* output)
+    template<int x=1, int y=1, int z=1, bool GPU=GPU_DEFAULT>
+    static void FeedForward(const MAT<x,y,z,GPU>* input, MAT<x,y,z,GPU>* output)
     {
         Derived::FeedForward(input, output);
     }
 
-    static void Derivative(const MAT<Derived::Rows,Derived::Cols,Derived::Dims>* input, MAT<Derived::Rows,Derived::Cols,Derived::Dims>* output)
+    static void Derivative(const MAT<Derived::Rows,Derived::Cols,Derived::Dims>* x_, MAT<Derived::Rows,Derived::Cols,Derived::Dims>* dx_, const MAT<Derived::Rows,Derived::Cols,Derived::Dims>* dy_, const MAT<Derived::Rows,Derived::Cols,Derived::Dims>* y_)
     {
-        Derived::Derivative(input, output);
+        Derived::Derivative(x_, dx_, dy_, y_);
     }
 
-#endif
     static MAT<Derived::Rows,Derived::PrevRows,Derived::Dims>* InitWeights()
     {
         return Derived::InitWeights();
@@ -123,31 +111,13 @@ public:
 
 protected:
     Activation();
-
-#if USE_GPU
-
-    void Function(const MAT& input, const cudnnTensorDescriptor_t& inputDesc, MAT& output,
-                  const cudnnTensorDescriptor_t& outputDesc);
-
-#else
-
-#endif
-
-#if USE_GPU
-    cudnnActivationDescriptor_t activationDesc;
-#endif
 };
 
+typedef double(*ActivationFunc)(double);
+typedef double(*DerivativeFunc)(double);
 
-#if USE_GPU
-template<typename ... Args>
-voidActivation<Args...>::FeedForward(const MAT* input, const cudnnTensorDescriptor_t& inputDesc, MAT* output,
-                             const cudnnTensorDescriptor_t& outputDesc)
-#else
-
-template<int x=1, int y=1, int z=1>
-void DefaultFeedForward(const MAT<x,y,z>* input, MAT<x,y,z>* output, double (*Function)(double))
-#endif
+template<int x=1, int y=1, int z=1, bool GPU=GPU_DEFAULT>
+void DefaultFeedForward(const MAT<x,y,z>* input, MAT<x,y,z>* output, void *function)
 {
 #if SAFE
     if (input->GetCols() != output->GetCols() || input->GetRows() != output->GetRows() ||
@@ -157,51 +127,52 @@ void DefaultFeedForward(const MAT<x,y,z>* input, MAT<x,y,z>* output, double (*Fu
     }
 #endif
 
-#if USE_GPU
-    checkCUDNN(cudnnActivationForward(Matrix_GPU::cuda->cudnnHandle, activationDesc, &Matrix_GPU::cuda->one,
-                                      inputDesc, input->GetData(), &Matrix_GPU::cuda->zero,
-                                      outputDesc, output->GetData()));
-#else
-    for (int i = 0; i < input->GetSize(); i++)
+    if constexpr (GPU)
     {
-        output[0][i] = Function(input[0][i]);
+        cudnnActivationDescriptor_t* activationDesc = static_cast<cudnnActivationDescriptor_t*>(function);
+        checkCUDNN(cudnnActivationForward(cuda->cudnnHandle, *activationDesc, &cuda->one,
+                                         input->desc, input->GetData(), &cuda->zero,
+                                         output->desc, output->GetData()));
     }
-#endif
+    else
+    {
+        for (int i = 0; i < input->GetSize(); i++)
+        {
+            ActivationFunc Func = reinterpret_cast<ActivationFunc>(function);
+            output->data[i] = Func(input->data[i]);
+        }
+    }
 }
 
-
-#if USE_GPU
-
-voidActivation<Args...>::Derivative(const MAT* input, const cudnnTensorDescriptor_t& inputDesc, const MAT* lastDelta,
-                            const cudnnTensorDescriptor_t& lastDeltaDesc, const MAT* z,
-                            const cudnnTensorDescriptor_t& zDesc,
-                            MAT* output, const cudnnTensorDescriptor_t& outputDesc)
-#else
-
-template<int x=1, int y=1, int z=1>
-void DefaultDerivative(const MAT<x,y,z>* input, MAT<x,y,z>* output, double (*Derive)(double))
-#endif
+template<int x=1, int y=1, int z=1, bool GPU=GPU_DEFAULT>
+void DefaultDerivative(const MAT<x,y,z>* x_, MAT<x,y,z>* dx_, void* derivative, const Matrix<x,y,z>* dy_, const Matrix<x,y,z>* y_)
 {
-#if USE_GPU
-    checkCUDNN(cudnnActivationBackward(Matrix_GPU::cuda->cudnnHandle, activationDesc, &Matrix_GPU::cuda->one,
-                                       inputDesc, input->GetData(),
-                                       lastDeltaDesc,
-                                       lastDelta->GetData(), zDesc, z->GetData(),
-                                       &Matrix_GPU::cuda->zero, outputDesc, output->GetData()));
-
-#else
-
+#if SAFE
     if (input->GetCols() != output->GetCols() || input->GetRows() != output->GetRows() ||
         input->GetDims() != output->GetDims())
     {
         throw std::invalid_argument("activation::Derivative() : Both matrix must have the same shape !");
     }
-
-    for (int i = 0; i < input->GetSize(); i++)
-    {
-        output[0][i] = Derive(input[0][i]);
-    }
 #endif
+
+    if constexpr (GPU)
+    {
+        cudnnActivationDescriptor_t* activationDesc = static_cast<cudnnActivationDescriptor_t*>(derivative);
+        checkCUDNN(cudnnActivationBackward(cuda->cudnnHandle, *activationDesc, &cuda->one,
+                                       y_->desc, y_->GetData(),
+                                       dy_->desc, dy_->GetData(),
+                                       x_->desc, x_->GetData(),
+                                       &cuda->zero,
+                                       dx_->desc, dx_->GetData()));
+    }
+    else
+    {
+        for (int i = 0; i < x_->GetSize(); i++)
+        {
+            DerivativeFunc Derive = reinterpret_cast<DerivativeFunc>(derivative);
+            dx_->data[i] = Derive(x_->data[i]);
+        }
+    }
 }
 
 
@@ -271,19 +242,6 @@ Activation<Args>* Activation<Derived,Args...>::Read(std::ifstream& reader)
     }
 }
 */
-
-
-#if USE_GPU
-
-void Activation<Args...>::Function(const MAT& input, const cudnnTensorDescriptor_t& inputDesc, MAT& output,
-                          const cudnnTensorDescriptor_t& outputDesc)
-{
-    checkCUDNN(cudnnActivationForward(Matrix_GPU::cuda->cudnnHandle, activationDesc, &Matrix_GPU::cuda->one,
-                                      inputDesc, input.GetData(), &Matrix_GPU::cuda->zero,
-                                      outputDesc, output.GetData()));
-}
-
-#endif
 
 
 

@@ -2,7 +2,8 @@ from Neurocore.network.Activation import Activation
 from Neurocore.network.Loss import Loss
 from Neurocore.network.Layers import Layer
 from Neurocore.network.Matrix import Matrix
-from Neurocore.network.CompilationTools import RunCommand, ImportLib, GetBuildDir, GetTemplateDir, GetPybindDir, GetIncludeDir
+from Neurocore.network.CompilationTools import RunCommand, ImportLib, GetBuildDir, GetTemplateDir, GetPybindDir, \
+    GetIncludeDir, GetCompilationCommand
 import numpy as np
 import numpy.typing as npt
 from Neurocore.network.MatrixTypes import MatrixTypes
@@ -39,12 +40,8 @@ class Network:
             cmake_list_path = os.path.join(GetTemplateDir(),'CMakeLists.txt')
             source_path = os.path.join(build_dir,'network.cpp')
             out_path = os.path.join(build_dir,'neurocore.so')
-            pybind_include = os.path.join(GetPybindDir(),'include')
-            cmd = f"g++ -O3 -shared -std=c++20 -fPIC -flto=auto "\
-          f" `python3 -m pybind11 --includes`"\
-          f" -I{pybind_include} -I{GetIncludeDir()} "\
-          f"{source_path} "\
-          f"-o {out_path}"
+            cmd = GetCompilationCommand(source_path, out_path)
+
             #RunCommand(f'cp {cmake_list_path} {build_dir}')
             #RunCommand(f'cmake -DPYBIND11_ROOT={GetPybindDir()} -DINCLUDE_DIR={GetIncludeDir()} -DNETWORK_FILE={source_path} -S {build_dir} -B {build_dir} -DPython3_FIND_STRATEGY=LOCATION')
             #RunCommand(f'cd {build_dir} && make')

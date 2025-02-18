@@ -8,7 +8,7 @@
 #include "network/LayerShape.cuh"
 #include "matrix/Matrix.cuh"
 
-
+namespace py = pybind11;
 template<typename Network>
 class DataLoader
 {
@@ -26,7 +26,7 @@ public:
         rng = std::mt19937(rd());
     }
 
-    DataLoader(const py::object& inputs_capsule, const py::object& outputs_capsule, size_t dataLength)
+        DataLoader(const py::object& inputs_capsule, const py::object& outputs_capsule, size_t dataLength)
     {
         InputShape* inputs = static_cast<InputShape*>(inputs_capsule.cast<py::capsule>().get_pointer());
         OutputShape* outputs = static_cast<OutputShape*>(outputs_capsule.cast<py::capsule>().get_pointer());

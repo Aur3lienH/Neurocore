@@ -3,7 +3,7 @@
 #include "matrix/Matrix.cuh"
 #include "network/InitFunc.cuh"
 
-template<int rows,int prev_rows, int cols = 1, int dims = 1>
+template<int rows,int prev_rows, int cols = 1, int dims = 1, bool GPU=GPU_DEFAULT>
 class Sigmoid final
 {
 public:
@@ -14,32 +14,43 @@ public:
     static constexpr int PrevRows = prev_rows;
 
 
-    Sigmoid() {
-#if USE_GPU
-        checkCUDNN(cudnnCreateActivationDescriptor(&activationDesc));
-        checkCUDNN(
-                cudnnSetActivationDescriptor(activationDesc, CUDNN_ACTIVATION_SIGMOID, CUDNN_NOT_PROPAGATE_NAN, 0));
-#endif
-    }
-
-
-    static double Function(double input) {
+    static double Function(double input) requires(!GPU) {
         return 1 / (1 + exp(-input));
     }
 
-    static double Derive(double input)
+    static double Derive(double input) requires(!GPU)
     {
         return exp(-input) / pow(1 + exp(-input), 2);
     }
 
     static void FeedForward(const MAT<rows,cols,dims>* input, MAT<rows,cols,dims>* output)
     {
-        DefaultFeedForward<rows,cols,dims>(input, output, Function);
+        if constexpr (GPU)
+        {
+            cudnnActivationDescriptor_t activationDesc;
+            checkCUDNN(cudnnCreateActivationDescriptor(&activationDesc));
+            checkCUDNN(
+                    cudnnSetActivationDescriptor(activationDesc, CUDNN_ACTIVATION_SIGMOID, CUDNN_NOT_PROPAGATE_NAN, 0));
+            DefaultFeedForward(input, output, &activationDesc);
+            return;
+        }
+        else
+            {DefaultFeedForward<rows,cols,dims>(input, output, (void*)Function);}
     }
 
-    static void Derivative(const MAT<rows,cols,dims>* input, MAT<rows,cols,dims>* output)
+    static void Derivative(const MAT<rows,cols,dims>* x_, MAT<rows,cols,dims>* dx_, const Matrix<rows,cols,dims>* dy_, const Matrix<rows,cols,dims>* y_)
     {
-        DefaultDerivative<rows,cols,dims>(input, output, Derive);
+        if constexpr (GPU)
+        {
+            cudnnActivationDescriptor_t activationDesc; // Todo: move that elsewhere in a proper way
+            checkCUDNN(cudnnCreateActivationDescriptor(&activationDesc));
+            checkCUDNN(
+                cudnnSetActivationDescriptor(activationDesc, CUDNN_ACTIVATION_SIGMOID, CUDNN_NOT_PROPAGATE_NAN, 0));
+            DefaultDerivative(x_, dx_, &activationDesc, dy_, y_);
+            return;
+        }
+        else
+            {DefaultDerivative<rows,cols,dims>(x_, dx_, (void*)Derive, dy_, y_);}
     }
 
     static MAT<rows,prev_rows>* InitWeights()
@@ -53,4 +64,9 @@ public:
     {
         return "Sigmoid";
     }
+
+private:
+#if USE_GPU
+    cudnnActivationDescriptor_t activationDesc;
+#endif
 };

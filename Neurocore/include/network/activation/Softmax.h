@@ -3,7 +3,7 @@
 #include "matrix/Matrix.cuh"
 
 
-template<int rows,int prev_rows, int cols = 1, int dims = 1>
+template<int rows,int prev_rows, int cols = 1, int dims = 1, bool GPU = GPU_DEFAULT>
 class Softmax final
 {
 public:
@@ -15,22 +15,9 @@ public:
 
     Softmax();
 
-#if USE_GPU
+    static void Derivative(const MAT<rows,cols,dims>* input, MAT<rows,cols,dims>* output, const Matrix<rows,cols,dims>* lastDelta, const Matrix<rows,cols,dims>* z);
 
-    static void FeedForward(const MAT* input, const cudnnTensorDescriptor_t& inputDesc, MAT* output,
-                     const cudnnTensorDescriptor_t& outputDesc) override;
-
-    static void Derivative(const MAT* input, const cudnnTensorDescriptor_t& inputDesc, const MAT* lastDelta,
-                    const cudnnTensorDescriptor_t& lastDeltaDesc, const MAT* z, const cudnnTensorDescriptor_t& zDesc,
-                    MAT* output, const cudnnTensorDescriptor_t& outputDesc) override;
-
-#else
-
-    static void FeedForward(const MAT<rows,cols,dims>* input, MAT<rows,cols,dims>* output);
-
-    static void Derivative(const MAT<rows,cols,dims>* input, MAT<rows,cols,dims>* output);
-
-#endif
+    static void FeedForward(const MAT<rows, cols, dims>* input, MAT<rows, cols, dims>* output);
 
     static MAT<rows,prev_rows,dims>* InitWeights();
 
@@ -40,81 +27,72 @@ public:
     }
 
 };
-template<int rows,int prev_rows, int cols, int dims>
-Softmax<rows,prev_rows,cols,dims>::Softmax()
+template<int rows,int prev_rows, int cols, int dims, bool GPU>
+Softmax<rows,prev_rows,cols,dims, GPU>::Softmax()
 {
 }
 
-#if USE_GPU
+template<int rows,int prev_rows, int cols, int dims, bool GPU>
+void Softmax<rows,prev_rows,cols,dims, GPU>::FeedForward(const MAT<rows,cols,dims>* input, MAT<rows,cols,dims>* output)
 
-void Softmax::FeedForward(const MAT* input, const cudnnTensorDescriptor_t& inputDesc, MAT* output,
-                          const cudnnTensorDescriptor_t& outputDesc)
-#else
-template<int rows,int prev_rows, int cols, int dims>
-void Softmax<rows,prev_rows,cols,dims>::FeedForward(const MAT<rows,cols,dims>* input, MAT<rows,cols,dims>* output)
-#endif
 {
-#if USE_GPU
-    checkCUDNN(cudnnSoftmaxForward(Matrix_GPU::cuda->cudnnHandle, CUDNN_SOFTMAX_ACCURATE, CUDNN_SOFTMAX_MODE_INSTANCE,
-                                   &Matrix_GPU::cuda->one, inputDesc, input->GetData(),
-                                   &Matrix_GPU::cuda->zero, outputDesc, output->GetData()));
-#else
-    double sum = 0;
-    double max = input[0][0];
-    for (int i = 0; i < input->GetSize(); i++)
+    if constexpr (GPU)
     {
-        if (input[0][i] > max)
+        cudnnSoftmaxForward(cuda->cudnnHandle, CUDNN_SOFTMAX_FAST, CUDNN_SOFTMAX_MODE_INSTANCE, &cuda->one, input->desc, input->GetData(), &cuda->zero, output->desc, output->GetData());
+        return;
+    }
+    else
+    {
+        double sum = 0;
+        double max = input->data[0];
+        for (int i = 0; i < input->GetSize(); i++)
         {
-            max = input[0][i];
+            if (input->data[i] > max)
+            {
+                max = input->data[i];
+            }
+        }
+
+        for (int i = 0; i < input->GetSize(); i++)
+        {
+            sum += exp(input->data[i] - max);
+        }
+        for (int i = 0; i < input->GetSize(); i++)
+        {
+            output->data[i] = exp(input->data[i] - max) / sum;
         }
     }
-
-    for (int i = 0; i < input->GetSize(); i++)
-    {
-        sum += exp(input[0][i] - max);
-    }
-    for (int i = 0; i < input->GetSize(); i++)
-    {
-        output[0][i] = exp(input[0][i] - max) / sum;
-    }
-#endif
 }
 
-template<int rows,int prev_rows, int cols, int dims>
-MAT<rows,prev_rows,dims>* Softmax<rows,prev_rows,cols,dims>::InitWeights()
+template<int rows,int prev_rows, int cols, int dims, bool GPU>
+MAT<rows,prev_rows,dims>* Softmax<rows,prev_rows,cols,dims, GPU>::InitWeights()
 {
     MAT<rows,prev_rows,dims>* weights = new MAT<rows,prev_rows,dims>();
     WeightsInit::XavierInit(prev_rows, weights);
     return weights;
 }
 
-#if USE_GPU
-
-void Softmax::Derivative(const MAT* input, const cudnnTensorDescriptor_t& inputDesc, const MAT* lastDelta,
-                         const cudnnTensorDescriptor_t& lastDeltaDesc, const MAT* z,
-                         const cudnnTensorDescriptor_t& zDesc,
-                         MAT* output, const cudnnTensorDescriptor_t& outputDesc)
+template<int rows,int prev_rows, int cols, int dims, bool GPU>
+void Softmax<rows,prev_rows,cols,dims, GPU>::Derivative(const MAT<rows,cols,dims>* input, MAT<rows,cols,dims>* output, [[maybe_unused]] const Matrix<rows,cols,dims>* lastDelta, [[maybe_unused]] const Matrix<rows,cols,dims>* z)
 {
-    /*checkCUDNN(cudnnSoftmaxBackward(Matrix_GPU::cuda->cudnnHandle, CUDNN_SOFTMAX_ACCURATE, CUDNN_SOFTMAX_MODE_INSTANCE,
-                                    &Matrix_GPU::cuda->one, *input->GetDescriptor_1D(), input->GetData(),
-                                    *lastDelta->GetDescriptor_1D(), lastDelta->GetData(), &Matrix_GPU::cuda->zero,
-                                    *output->GetDescriptor_1D(), output->GetData()));*/
-
-    // The CPU version sets all values of output to one, but as the GPU version of Derivative also multiplies output
-    // by lastDelta, we can just copy lastDelta to output
-    checkCUDA(cudaMemcpy(output->GetData(), lastDelta->GetData(), output->GetSize() * sizeof(float),
-                         cudaMemcpyHostToDevice));
-}
-
-#else
-
-template<int rows,int prev_rows, int cols, int dims>
-void Softmax<rows,prev_rows,cols,dims>::Derivative(const MAT<rows,cols,dims>* input, MAT<rows,cols,dims>* output)
-{
-    for (int i = 0; i < input->GetSize(); i++)
+    if constexpr (GPU)
     {
-        output[0][i] = 1;
+        /*checkCUDNN(cudnnSoftmaxBackward(Matrix_GPU::cuda->cudnnHandle, CUDNN_SOFTMAX_ACCURATE, CUDNN_SOFTMAX_MODE_INSTANCE,
+                                        &Matrix_GPU::cuda->one, *input->GetDescriptor_1D(), input->GetData(),
+                                        *lastDelta->GetDescriptor_1D(), lastDelta->GetData(), &Matrix_GPU::cuda->zero,
+                                        *output->GetDescriptor_1D(), output->GetData()));*/
+
+        // The CPU version sets all values of output to one, but as the GPU version of Derivative also multiplies output
+        // by lastDelta, we can just copy lastDelta to output
+        checkCUDA(cudaMemcpy(output->GetData(), lastDelta->GetData(), output->GetSize() * sizeof(float),
+                             cudaMemcpyHostToDevice));
+        return;
+    }
+    else
+    {
+        for (int i = 0; i < input->GetSize(); i++)
+        {
+            output->data[i] = 1;
+        }
     }
 }
-
-#endif

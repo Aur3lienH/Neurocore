@@ -2,9 +2,10 @@
 #include <cmath>
 #include "matrix/Matrix.cuh"
 #include "network/InitFunc.cuh"
+#include "Activation.cuh"
 
 
-template<int rows,int prev_rows, int cols = 1, int dims = 1>
+template<int rows,int prev_rows, int cols = 1, int dims = 1, bool GPU = GPU_DEFAULT>
 class Tanh final
 {
 public:
@@ -16,11 +17,7 @@ public:
 
     Tanh();
 
-#if not USE_GPU
-
-    static double Function(double input);
-
-#endif
+    static double Function(double input) requires(!GPU);
 
     static double Derive(double input);
 
@@ -29,12 +26,30 @@ public:
 
     static void FeedForward(const MAT<rows,cols,dims>* input, MAT<rows,cols,dims>* output)
     {
-        DefaultFeedForward(input, output, Function);
+        if constexpr(GPU)
+        {
+            cudnnActivationDescriptor_t activationDesc;
+            checkCUDNN(cudnnCreateActivationDescriptor(&activationDesc));
+            checkCUDNN(cudnnSetActivationDescriptor(activationDesc, CUDNN_ACTIVATION_TANH, CUDNN_NOT_PROPAGATE_NAN, 0));
+            DefaultFeedForward(input, output, &activationDesc);
+            return;
+        }
+        else
+            DefaultFeedForward(input, output, (void*)Function);
     }
 
-    static void Derivative(const MAT<rows,cols,dims>* input, MAT<rows,cols,dims>* output)
+    static void Derivative(const MAT<rows,cols,dims>* x_, MAT<rows,cols,dims>* dx_, const Matrix<rows,cols,dims>* dy_, const Matrix<rows,cols,dims>* y_)
     {
-        DefaultDerivative(input, output, Derive);
+        if constexpr (GPU)
+        {
+            cudnnActivationDescriptor_t activationDesc; // Todo: move that elsewhere in a proper way
+            checkCUDNN(cudnnCreateActivationDescriptor(&activationDesc));
+            checkCUDNN(
+                cudnnSetActivationDescriptor(activationDesc, CUDNN_ACTIVATION_TANH, CUDNN_NOT_PROPAGATE_NAN, 0));
+            DefaultDerivative(x_, dx_, &activationDesc, dy_, y_);
+            return;
+        }
+        DefaultDerivative(x_, dx_, (void*)Derive, dy_, y_);
     }
 
     static std::string getName()
@@ -43,30 +58,25 @@ public:
     }
 };
 
-template<int rows,int prev_rows, int cols, int dims>
-Tanh<rows,prev_rows,cols,dims>::Tanh()
+template<int rows,int prev_rows, int cols, int dims, bool GPU>
+Tanh<rows,prev_rows,cols,dims, GPU>::Tanh()
 {
-#if USE_GPU
-    checkCUDNN(cudnnCreateActivationDescriptor(&activationDesc));
-    checkCUDNN(cudnnSetActivationDescriptor(activationDesc, CUDNN_ACTIVATION_TANH, CUDNN_NOT_PROPAGATE_NAN, 0));
-#endif
+
 }
 
-#if not USE_GPU
-template<int rows,int prev_rows, int cols, int dims>
-double Tanh<rows,prev_rows,cols,dims>::Function(const double input)
+template<int rows,int prev_rows, int cols, int dims, bool GPU>
+double Tanh<rows,prev_rows,cols,dims, GPU>::Function(const double input) requires(!GPU)
 {
     return tanh(input);
 }
 
-#endif
-template<int rows,int prev_rows, int cols, int dims>
-double Tanh<rows,prev_rows,cols,dims>::Derive(const double input)
+template<int rows,int prev_rows, int cols, int dims, bool GPU>
+double Tanh<rows,prev_rows,cols,dims, GPU>::Derive(const double input)
 {
     return 1 - tanh(input) * tanh(input);
 }
-template<int rows,int prev_rows, int cols, int dims>
-MAT<rows,prev_rows,dims>* Tanh<rows,prev_rows,cols,dims>::InitWeights()
+template<int rows,int prev_rows, int cols, int dims, bool GPU>
+MAT<rows,prev_rows,dims>* Tanh<rows,prev_rows,cols,dims, GPU>::InitWeights()
 {
     auto* weights = new MAT<rows,prev_rows,dims>();
 

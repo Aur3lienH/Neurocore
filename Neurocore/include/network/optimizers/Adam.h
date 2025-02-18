@@ -56,7 +56,7 @@ public:
 
 #if USE_GPU
         const int numBlocks = (gradient->GetSize() + Matrix_GPU::cuda->threadsPerBlock - 1) / Matrix_GPU::cuda->threadsPerBlock;
-        AdamComputeKernel<<<numBlocks, Matrix_GPU::cuda->threadsPerBlock>>>(gradient->GetData() + offset, parameters->GetData() + offset, _momentum1, _momentum2, _biasCorrectedMomentum1, _biasCorrectedMomentum2, gradient->GetSize(), alpha, gamma, beta1, beta2, State::adjBeta1, State::adjBeta2);
+        checkKernel((AdamComputeKernel<<<numBlocks, Matrix_GPU::cuda->threadsPerBlock>>>(gradient->GetData() + offset, parameters->GetData() + offset, _momentum1, _momentum2, _biasCorrectedMomentum1, _biasCorrectedMomentum2, gradient->GetSize(), alpha, gamma, beta1, beta2, State::adjBeta1, State::adjBeta2)));
 #else
         for (int i = 0; i < gradient->GetSize(); i++) {
             const double g = (*gradient)[i];

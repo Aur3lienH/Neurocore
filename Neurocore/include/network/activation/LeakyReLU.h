@@ -1,7 +1,8 @@
 #pragma once
+
 #include <matrix/Matrix.cuh>
 #include <network/InitFunc.cuh>
-template<int rows,int prev_rows, float def_val = 0.01f, int cols = 1, int dims = 1>
+template<int rows,int prev_rows, float def_val = 0.01f, int cols = 1, int dims = 1, bool GPU = GPU_DEFAULT>
 class LeakyReLU final
 {
 public:
@@ -13,12 +14,9 @@ public:
 
     LeakyReLU();
 
-#if not USE_GPU
+    static double Function(double input) requires(!GPU);
 
-    static double Function(double input);
-
-#endif
-    static double Derive(double input);
+    static double Derive(double input) requires(!GPU);
 
     static MAT<rows,prev_rows,dims>* InitWeights();
 
@@ -26,12 +24,18 @@ public:
 
     static void FeedForward(const MAT<rows,cols,dims>* input, MAT<rows,cols,dims>* output)
     {
-		DefaultFeedForward(input, output, Function);
+        if constexpr (GPU)
+            {checkKernel((leakyReluFeedForward<<<CUDA_KERNEL_ARGS(cuda, input->GetSize())>>>(input->data_d, output->data_d,input->GetSize(), def_val)));}
+        else
+		    {DefaultFeedForward(input, output, (void*)Function);}
     }
 
-    static void Derivative(const MAT<rows,cols,dims>* input, MAT<rows,cols,dims>* output)
+    static void Derivative(const MAT<rows,cols,dims>* x, MAT<rows,cols,dims>* dx_, const Matrix<rows,cols,dims>* dy_, const Matrix<rows,cols,dims>* y_)
     {
-        DefaultDerivative(input, output, Derive);
+        if constexpr (GPU)
+            {checkKernel((leakyReluDerivative<<<CUDA_KERNEL_ARGS(cuda, x->GetSize())>>>(x->data_d, dx_->data_d, x->GetSize(), def_val)));}
+        else
+            {DefaultDerivative<rows,cols,dims>(x, dx_, (void*)Derive, dy_, y_);}
     }
 
     static std::string getName()
@@ -41,25 +45,20 @@ public:
 };
 
 
-template<int rows,int prev_rows, float def_val, int cols, int dims>
-LeakyReLU<rows,prev_rows,def_val,cols,dims>::LeakyReLU()
+template<int rows,int prev_rows, float def_val, int cols, int dims, bool GPU>
+LeakyReLU<rows,prev_rows,def_val,cols,dims,GPU>::LeakyReLU()
 {
-#if USE_GPU
-    throw std::runtime_error("LeakyReLU is not implemented on GPU");
-#endif
+
 }
 
-#if not USE_GPU
-
-template<int rows,int prev_rows, float def_val, int cols, int dims>
-double LeakyReLU<rows,prev_rows,def_val,cols,dims>::Function(const double input)
+template<int rows,int prev_rows, float def_val, int cols, int dims, bool GPU>
+double LeakyReLU<rows,prev_rows,def_val,cols,dims,GPU>::Function(const double input) requires(!GPU)
 {
     return input > 0 ? input : def_val * input;
 }
 
-#endif
-template<int rows,int prev_rows, float def_val, int cols, int dims>
-double LeakyReLU<rows,prev_rows,def_val,cols,dims>::Derive(const double input)
+template<int rows,int prev_rows, float def_val, int cols, int dims, bool GPU>
+double LeakyReLU<rows,prev_rows,def_val,cols,dims,GPU>::Derive(const double input) requires(!GPU)
 {
     return input > 0 ? 1 : def_val;
 }
@@ -70,8 +69,8 @@ void LeakyReLU::Save(std::ofstream& writer)
     writer.write(reinterpret_cast<char*>(&alpha), sizeof(float));
 }
 */
-template<int rows,int prev_rows, float def_val, int cols, int dims>
-MAT<rows,prev_rows,dims>* LeakyReLU<rows,prev_rows,def_val,cols,dims>::InitWeights()
+template<int rows,int prev_rows, float def_val, int cols, int dims, bool GPU>
+MAT<rows,prev_rows,dims>* LeakyReLU<rows,prev_rows,def_val,cols,dims,GPU>::InitWeights()
 {
 
     auto* weights = new Matrix<rows,prev_rows,dims>();

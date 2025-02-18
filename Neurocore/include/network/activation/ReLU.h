@@ -1,10 +1,12 @@
 #pragma once
 #include <cmath>
 #include <emmintrin.h>
+
+#include "Activation.cuh"
 #include "matrix/Matrix.cuh"
 #include "network/InitFunc.cuh"
 
-template<int rows,int prev_rows, int cols = 1, int dims = 1>
+template <int rows, int prev_rows, int cols = 1, int dims = 1, bool GPU = GPU_DEFAULT>
 class ReLU final
 {
 public:
@@ -12,50 +14,47 @@ public:
     static constexpr int Cols = cols;
     static constexpr int Dims = dims;
     static constexpr int PrevRows = prev_rows;
+
 public:
     ReLU();
+    static void Derivative(const MAT<rows,cols,dims>* input, MAT<rows,cols,dims>* output, const Matrix<rows,cols,dims>* lastDelta, const Matrix<rows,cols,dims>* z);
 
-#if not USE_GPU
+    static double Function(double input) requires(!GPU);
 
-    static void Derivative(const MAT<rows,cols,dims>* input, MAT<rows,cols,dims>* output);
-
-    static double Function(double input);
-
-    static void FeedForward(const MAT<rows,cols,dims>* input, MAT<rows,cols,dims>* output);
-
-#endif
+    static void FeedForward(const MAT<rows, cols, dims>* input, MAT<rows, cols, dims>* output);
 
     static double Derive(double input);
 
-    static MAT<rows,prev_rows,dims>* InitWeights();
+    static MAT<rows, prev_rows, dims>* InitWeights();
 
-    static MAT<rows,cols,dims>* InitBiases();
+    static MAT<rows, cols, dims>* InitBiases();
 
     static std::string getName()
     {
         return "ReLU";
     }
-
-
 };
 
-
-template<int rows, int prev_rows, int cols, int dims>
-ReLU<rows,prev_rows,cols,dims>::ReLU()
+template <int rows, int prev_rows, int cols, int dims, bool GPU>
+ReLU<rows, prev_rows, cols, dims, GPU>::ReLU()
 {
-#if USE_GPU
-    checkCUDNN(cudnnCreateActivationDescriptor(&activationDesc));
-    checkCUDNN(
-            cudnnSetActivationDescriptor(activationDesc, CUDNN_ACTIVATION_RELU, CUDNN_NOT_PROPAGATE_NAN, 0));
-#endif
 }
 
-#if not USE_GPU
-
-template<int rows, int prev_rows, int cols, int dims>
-void ReLU<rows,prev_rows,cols,dims>::FeedForward(const MAT<rows,cols,dims>* input, MAT<rows,cols,dims>* output)
+template <int rows, int prev_rows, int cols, int dims, bool GPU>
+void ReLU<rows, prev_rows, cols, dims, GPU>::FeedForward(const MAT<rows, cols, dims>* input,
+                                                         MAT<rows, cols, dims>* output)
 {
-    __m128 zero = _mm_setzero_ps();
+    if constexpr (GPU)
+    {
+        cudnnActivationDescriptor_t activationDesc; // Todo: move that elsewhere in a proper way
+        checkCUDNN(cudnnCreateActivationDescriptor(&activationDesc));
+        checkCUDNN(
+            cudnnSetActivationDescriptor(activationDesc, CUDNN_ACTIVATION_RELU, CUDNN_NOT_PROPAGATE_NAN, 0));
+        DefaultFeedForward(input, output, &activationDesc);
+        return;
+    }
+    else
+    {__m128 zero = _mm_setzero_ps();
 
     size_t i = 0;
     size_t s = input->GetSize();
@@ -63,48 +62,56 @@ void ReLU<rows,prev_rows,cols,dims>::FeedForward(const MAT<rows,cols,dims>* inpu
     {
         for (; i <= s - 4; i += 4)
         {
-            __m128 vals = _mm_loadu_ps(&((*input)[i]));
+            __m128 vals = _mm_loadu_ps(input->data + i);
             __m128 result = _mm_max_ps(zero, vals);
-            _mm_storeu_ps(&((*output)[i]), result);
+            _mm_storeu_ps(output->data + i, result);
         }
     }
 
     // Process any remaining values
     for (; i < s; ++i)
     {
-        if ((*input)[i] < 0) (*output)[i] = 0;
-        else (*output)[i] = (*input)[i];
-    }
+        if (input->data[i] < 0) output->data[i] = 0;
+        else output->data[i] = input->data[i];
+    }}
 }
 
-#endif
-
-#if not USE_GPU
-
-template<int rows, int prev_rows, int cols, int dims>
-void ReLU<rows,prev_rows,cols,dims>::Derivative(const MAT<rows,cols,dims>* input, MAT<rows,cols,dims>* output)
+template<int rows, int prev_rows, int cols, int dims, bool GPU>
+void ReLU<rows, prev_rows, cols, dims, GPU>::Derivative(const MAT<rows,cols,dims>* x_, MAT<rows,cols,dims>* dx_, const Matrix<rows,cols,dims>* dy_, const Matrix<rows,cols,dims>* y_)
 {
-    __m128 zero = _mm_setzero_ps();
-    __m128 one = _mm_set1_ps(1.0);
-
-    int i;
-    for (i = 0; i <= input->GetSize() - 4; i += 4)
+    if constexpr (GPU)
     {
-        __m128 vals = _mm_loadu_ps(&((*input)[i]));
-        __m128 mask = _mm_cmpgt_ps(vals,
-                                   zero); // Create a mask where each element is either 0xFFFFFFFFFFFFFFFF if vals > 0 or 0x0 otherwise
-        __m128 result = _mm_and_ps(one, mask);  // Set to 1.0 where mask is true
-        _mm_storeu_ps(&((*output)[i]), result);
+        cudnnActivationDescriptor_t activationDesc; // Todo: move that elsewhere in a proper way
+        checkCUDNN(cudnnCreateActivationDescriptor(&activationDesc));
+        checkCUDNN(
+            cudnnSetActivationDescriptor(activationDesc, CUDNN_ACTIVATION_RELU, CUDNN_NOT_PROPAGATE_NAN, 0));
+        DefaultDerivative(x_, dx_, &activationDesc, dy_, y_);
+        return;
     }
-
-    // Process any remaining values
-    for (; i < input->GetSize(); ++i)
+    else
     {
-        (*output)[i] = ((*input)[i] > 0) ? 1.0 : 0.0;
+        __m128 zero = _mm_setzero_ps();
+        __m128 one = _mm_set1_ps(1.0);
+
+        int i;
+        for (i = 0; i <= x_->GetSize() - 4; i += 4)
+        {
+            __m128 vals = _mm_loadu_ps(x_->data + i);
+            __m128 mask = _mm_cmpgt_ps(vals,
+                                       zero); // Create a mask where each element is either 0xFFFFFFFFFFFFFFFF if vals > 0 or 0x0 otherwise
+            __m128 result = _mm_and_ps(one, mask);  // Set to 1.0 where mask is true
+            _mm_storeu_ps(dx_->data + i, result);
+        }
+
+        // Process any remaining values
+        for (; i < x_->GetSize(); ++i)
+        {
+            dx_->set(i, (x_->data[i] > 0) ? 1.0 : 0.0);
+        }
     }
 }
-template<int rows, int prev_rows, int cols, int dims>
-double ReLU<rows,prev_rows,cols,dims>::Function(const double input)
+template<int rows, int prev_rows, int cols, int dims, bool GPU>
+double ReLU<rows,prev_rows,cols,dims, GPU>::Function(const double input) requires(!GPU)
 {
     if (input > 0)
     {
@@ -116,9 +123,9 @@ double ReLU<rows,prev_rows,cols,dims>::Function(const double input)
     }
 }
 
-#endif
-template<int rows, int prev_rows, int cols, int dims>
-double ReLU<rows,prev_rows,cols,dims>::Derive(const double input)
+
+template <int rows, int prev_rows, int cols, int dims, bool GPU>
+double ReLU<rows, prev_rows, cols, dims, GPU>::Derive(const double input)
 {
     if (input > 0)
     {
@@ -130,28 +137,16 @@ double ReLU<rows,prev_rows,cols,dims>::Derive(const double input)
     }
 }
 
-template<int rows, int prev_rows, int cols, int dims>
-MAT<rows,prev_rows,dims>* ReLU<rows,prev_rows,cols,dims>::InitWeights()
+template <int rows, int prev_rows, int cols, int dims, bool GPU>
+MAT<rows, prev_rows, dims>* ReLU<rows, prev_rows, cols, dims, GPU>::InitWeights()
 {
-    auto* weights = new MAT<rows,prev_rows,dims>();
-    WeightsInit::HeUniform<rows,prev_rows,dims>(prev_rows, weights);
+    auto* weights = new MAT<rows, prev_rows, dims, GPU>();
+    WeightsInit::HeUniform<rows, prev_rows, dims>(prev_rows, weights);
     return weights;
 }
 
-template<int rows, int prev_rows, int cols, int dims>
-MAT<rows,cols,dims>* ReLU<rows,prev_rows,cols,dims>::InitBiases()
+template <int rows, int prev_rows, int cols, int dims, bool GPU>
+MAT<rows, cols, dims>* ReLU<rows, prev_rows, cols, dims, GPU>::InitBiases()
 {
-#if USE_GPU
-    float* biases = new float[outputSize];
-    for (int i = 0; i < outputSize; i++)
-        biases[i] = 0.01f;
-
-    Matrix_GPU* res = new Matrix_GPU(outputSize, 1);
-    checkCUDA(cudaMemcpy(res->GetData(), biases, outputSize * sizeof(float), cudaMemcpyHostToDevice));
-    delete[] biases;
-
-    return res;
-#else
-    return new MAT<rows,cols,dims>(0.01f);
-#endif
+    return new MAT<rows, cols, dims>(0.01f);
 }

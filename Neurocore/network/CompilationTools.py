@@ -5,6 +5,7 @@ import os
 import sys
 import tempfile
 from pathlib import Path
+from ctypes.util import find_library
 from Neurocore.network.Config import Config
 
 build_dir = os.path.join(tempfile.mkdtemp(prefix='Neurocore'),'build')
@@ -28,6 +29,28 @@ def GetPybindDir():
 def GetTemplateDir():
     neurocore_path = Path(__file__).parent.parent.absolute()
     return os.path.join(neurocore_path,'templates')
+
+def GetCudaDir():
+    cuda_path = find_library('cudart')
+    if cuda_path is None:
+        raise ValueError("CUDA not found")
+    return os.path.dirname(cuda_path)
+
+def GetCompilationCommand(source_path, out_path):
+    pybind_include = os.path.join(GetPybindDir(),'include')
+    str = f"nvcc -O3 -shared -std=c++20 " \
+           f"-I{GetCudaDir()}/include " \
+           f"-Xcompiler -fPIC " \
+           f"-x cu " \
+           f" -arch=sm_75 " \
+           f" `python3 -m pybind11 --includes`" \
+           f" -I{pybind_include} -I{GetIncludeDir()} " \
+           f" -L{GetCudaDir()}/lib64 -lcudart -lcublas -lcudnn " \
+           f" `python3 -m pybind11 --includes` "
+    if Config.USE_GPU:
+        str += "-DUSE_GPU "
+    str += f"{source_path} -o {out_path}"
+    return str
 
 
 def RunCommand(command):

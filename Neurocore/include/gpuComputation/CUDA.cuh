@@ -1,14 +1,19 @@
-//
-// Created by mat on 19/08/23.
-//
-
 #ifndef DEEPLEARNING_CUDA_CUH
 #define DEEPLEARNING_CUDA_CUH
 
-#if USE_GPU
 
 #include "cudnn.h"
 #include "cublas_v2.h"
+#include <cuda_runtime.h>
+#include "device_launch_parameters.h"
+#include <cstdio>
+#include <iostream>
+
+#ifdef USE_GPU
+constexpr bool GPU_DEFAULT = true;
+#else
+constexpr bool GPU_DEFAULT = false;
+#endif
 
 #define checkCUDNN(expression) \
 { \
@@ -67,6 +72,16 @@ static const char* cublasGetErrorEnum(cublasStatus_t error)
  }                                                                 \
 }
 
+
+#define checkKernel(kernel_expression) { \
+    (kernel_expression); \
+    cudaError_t err = cudaDeviceSynchronize(); \
+    if (err != cudaSuccess) { \
+        std::cerr << "CUDA Kernel Execution Failed: " << cudaGetErrorString(err) << std::endl; \
+        exit(0); \
+    } \
+}
+
 #define checkCUBLAS(expression)                                                                        \
     {                                                                                                 \
         if (expression != CUBLAS_STATUS_SUCCESS)                                                             \
@@ -76,6 +91,8 @@ static const char* cublasGetErrorEnum(cublasStatus_t error)
             exit(-1);                                                                                 \
         }                                                                                             \
     }
+
+#define CUDA_KERNEL_ARGS(cuda, data_length) (data_length + cuda->threadsPerBlock - 1) / cuda->threadsPerBlock, cuda->threadsPerBlock
 
 class CUDA
 {
@@ -94,10 +111,122 @@ public:
 
     cudnnHandle_t cudnnHandle;
     cublasHandle_t cublasHandle;
-    const float one = 1.0f, zero = 0.0f;
+    const float one = 1.0f, zero = 0.0f, minus_one = -1.0f;
     const int threadsPerBlock = 256;
 };
 
+inline CUDA* cuda = new CUDA();
+
+__global__ static void initializeArray_kernel(float *array, float value, int n);
+__global__ static void scalarMult_kernel(float* arr, float val, float* res, int n);
+__global__ static void transpose_kernel(float *A, float *A_T, int rows, int cols);
+__global__ static void leakyReluFeedForward(float* input, float *output, int n, float alpha);
+__global__ static void leakyReluDerivative(float *input, float* output, int n, float alpha);
+__global__ static void CrossEntropyKernel(const float* output, const float* target, float* result, int size, float EPSILON);
+__global__ static void CostDerivativeKernel(const float* output, const float* target, float* result, int size);
+__global__ static void SumKernel(float* arr, int len, float* res);
+__global__ static void MSEDerivativeKernel(const float* output, const float* target, float* result, int size);
+__global__ static void ConstantComputeKernel(const float* gradient, float* parameters, int size, double learningRate);
+
+__global__ static void initializeArray_kernel(float* array, float value, int n)
+{
+    int idx = blockIdx.x * blockDim.x + threadIdx.x;
+    if (idx < n)
+    {
+        array[idx] = value;
+    }
+}
+
+__global__ static void scalarMult_kernel(float* arr, float val, float* res, int n)
+{
+    int idx = blockIdx.x * blockDim.x + threadIdx.x;
+    if (idx >= n)
+        return;
+
+    res[idx] = arr[idx] * val;
+}
+
+__global__ static void transpose_kernel(float* A, float* A_T, int rows, int cols)
+{
+    int x = blockIdx.x * blockDim.x + threadIdx.x;
+    int y = blockIdx.y * blockDim.y + threadIdx.y;
+    if (x < cols && y < rows)
+    {
+        A_T[x * rows + y] = A[y * cols + x];
+    }
+}
+
+__global__ static void leakyReluFeedForward(float* input, float* output, int n, float alpha)
+{
+    int idx = blockIdx.x * blockDim.x + threadIdx.x;
+    if (idx < n)
+    {
+        output[idx] = input[idx] < 0 ? alpha * input[idx] : input[idx];;
+    }
+}
+
+__global__ static void leakyReluDerivative(float* input, float* output, int n, float alpha)
+{
+    int idx = blockIdx.x * blockDim.x + threadIdx.x;
+    if (idx < n)
+    {
+        output[idx] = input[idx] < 0 ? alpha : 1;;
+    }
+}
+
+__global__ static void CrossEntropyKernel(const float* output, const float* target, float* result, const int size,
+                                   float EPSILON)
+{
+    const int i = blockIdx.x * blockDim.x + threadIdx.x;
+    if (i < size)
+    {
+        result[i] = target[i] * logf(output[i] + EPSILON) +
+            (1.0f - target[i]) * logf(1.0f - output[i] + EPSILON);
+    }
+}
+
+__global__ static void CostDerivativeKernel(const float* output, const float* target, float* result, const int size)
+{
+    const int i = blockIdx.x * blockDim.x + threadIdx.x;
+    if (i < size)
+    {
+        if (target[i] == 1)
+        {
+            result[i] = -1 + output[i];
+        }
+        else
+        {
+            result[i] = output[i];
+        }
+    }
+}
+
+__global__ static void SumKernel(float* arr, const int len, float* res)
+{
+    for (int i = 0; i < len; i++)
+    {
+        *res += arr[i];
+    }
+}
+
+__global__
+static void MSEDerivativeKernel(const float* output, const float* target,
+                         float* result, const int size)
+{
+    const int idx = blockIdx.x * blockDim.x + threadIdx.x;
+    if (idx < size)
+    {
+        result[idx] = output[idx] - target[idx];
+    }
+}
+
+__global__
+static void ConstantComputeKernel(const float* gradient, float* parameters, const int size, const double learningRate)
+{
+    const int i = blockIdx.x * blockDim.x + threadIdx.x;
+    if (i < size)
+        parameters[i] -= gradient[i] * learningRate;
+
+}
 
 #endif
-#endif //DEEPLEARNING_CUDA_CUH

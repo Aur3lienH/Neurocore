@@ -1,7 +1,5 @@
 #include "network/Operations.h"
 #include <immintrin.h>
-#include <emmintrin.h>
-#include <iostream>
 
 Add::Add(float* a, float* b,float* out, unsigned int length)
 {

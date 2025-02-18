@@ -1,5 +1,4 @@
 #pragma once
-#include "matrix/Matrix.cuh"
 
 class MatrixTests {
 public:
