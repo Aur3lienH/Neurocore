@@ -48,7 +48,7 @@ private:
 
 #if not USE_GPU
     void FlipAndCenterFilter();
-    void GetOperationsForFullConvolution();
+    //void GetOperationsForFullConvolution();
 #endif
     //Result from the previous layer (don't initialize when compiling the layer)
     static const uint filterCount = filterShape::z;
@@ -300,7 +300,7 @@ void ConvLayer<activation, prevLayerShape, layerShape, filterShape, optimizer, t
     {
         for (int i = 0; i < filterCount; i++)
         {
-            GetOperationsForFullConvolution();
+            //GetOperationsForFullConvolution();
             filters->GoToNextMatrix();
             previousDeltaMultiplied->GoToNextMatrix();
         }
@@ -618,7 +618,7 @@ std::string ConvLayer<activation, prevLayerShape, layerShape, filterShape, optim
 //}
 
 #if not USE_GPU
-
+/*
 template<typename activation,typename prevLayerShape,typename layerShape, typename filterShape, typename optimizer, bool test>
 void ConvLayer<activation, prevLayerShape, layerShape, filterShape, optimizer, test>::GetOperationsForFullConvolution()
 {
@@ -656,7 +656,7 @@ void ConvLayer<activation, prevLayerShape, layerShape, filterShape, optimizer, t
         }
     }
 }
-
+*/
 #endif
 
 template<typename activation,typename prevLayerShape,typename layerShape, typename filterShape, typename optimizer, bool test>

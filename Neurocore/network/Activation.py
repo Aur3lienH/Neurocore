@@ -4,7 +4,7 @@ from Neurocore.network.Layers import LayerShape
 
 class Activation:
     def get_code(self,layerShape: LayerShape, prevLayerShape: LayerShape):
-        return f'{self.__class__.__name__}<{layerShape.x},{prevLayerShape.x},{layerShape.z},{layerShape.a}>'
+        return f'{self.__class__.__name__}<{layerShape.x},{prevLayerShape.x},{layerShape.y},{layerShape.z}>'
         
 
 class LeakyReLU(Activation):
