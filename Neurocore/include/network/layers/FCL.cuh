@@ -472,9 +472,6 @@ void FCL<activation,prevLayerShape,layershape,optimizer,test>::UpdateWeights(con
 {
     optimizer::Compute(Delta, Weights);
     optimizer::Compute(DeltaBiases, Biases, Weights->GetSize());
-
-    Delta->Zero();
-    DeltaBiases->Zero();
 }
 template<typename activation,typename prevLayerShape,typename layershape,typename optimizer,bool test>
 void FCL<activation,prevLayerShape,layershape,optimizer,test>::AddDeltaFrom(Layer<FCL<activation,prevLayerShape,layershape,optimizer,test>>* otherLayer)

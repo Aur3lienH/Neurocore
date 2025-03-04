@@ -121,8 +121,8 @@ public:
     //FullConvolution FS4 = Filter Size 4
     //static void FullConvolutionFS4(const Matrix* m, const Matrix* filter, Matrix* output);
 
-    template<int filterSize, int stride>
-    static void Convolution(const Matrix<rows, cols, dim>* input,const Matrix<filterSize, filterSize, dim>* filter,Matrix<(rows - filterSize) / stride + 1, (cols - filterSize) / stride + 1, dim>* output);
+    template<int filterSize, int stride, int new_dim>
+    static void Convolution(const Matrix<rows, cols, dim>* input,const Matrix<filterSize, filterSize, dim>* filter,Matrix<(rows - filterSize) / stride + 1, (cols - filterSize) / stride + 1, new_dim>* output);
 
 
 
@@ -1067,11 +1067,10 @@ Matrix<rows,cols,dim>* Matrix<rows,cols,dim>::CopyWithSameData()
 template<int rows, int cols, int dim>
 void Matrix<rows,cols,dim>::Flip180(const Matrix* input, Matrix* output)
 {
-    for (int i = 0; i < input->GetCols() / 2; ++i)
+    for (int i = 0; i < input->GetCols(); ++i)
     {
-        for (int j = 0; j < input->GetRows() / 2; ++j)
+        for (int j = 0; j < input->GetRows(); ++j)
         {
-            //UGLY
             (*output)(i, j) = (*input)(input->GetRows() - 1 - j, input->GetCols() - 1 - i);
         }
     }
@@ -1272,11 +1271,11 @@ void Matrix<rows,cols,dim>::AveragePool(const Matrix<rows,cols,dim>* a, Matrix<(
 }
 
 template<int rows, int cols, int dim>
-template<int filterSize, int stride>
+template<int filterSize, int stride, int new_dims>
 void Matrix<rows, cols, dim>::Convolution(
     const Matrix<rows, cols, dim>* input,
     const Matrix<filterSize, filterSize, dim>* filter,
-    Matrix<(rows - filterSize) / stride + 1, (cols - filterSize) / stride + 1, dim>* output)
+    Matrix<(rows - filterSize) / stride + 1, (cols - filterSize) / stride + 1, new_dims>* output)
 {
 
 #if SAFE
@@ -1474,3 +1473,4 @@ bool Matrix<rows,cols,dim>::IsNull(const Matrix* matrix)
     return isNull;
 
 }
+

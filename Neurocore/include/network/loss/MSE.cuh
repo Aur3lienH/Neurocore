@@ -41,6 +41,7 @@ public:
             const double diff = output[0][i] - target[0][i];
             cost += diff * diff;
         }
+
 #endif
         // Division par 2*N pour obtenir la moyenne
         return cost / (2.0 * output->GetRows());

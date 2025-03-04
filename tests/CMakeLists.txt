@@ -28,7 +28,7 @@ set(CMAKE_CXX_FLAGS "-fPIC -O3 -mavx -march=native")
 file(GLOB_RECURSE TEST_SOURCES
         "${CMAKE_SOURCE_DIR}/tests/*.cpp"
         "${CMAKE_SOURCE_DIR}/network/*.cpp"
-        "${CMAKE_SOURCE_DIR}/*.cu"
+        #"${CMAKE_SOURCE_DIR}/*.cu"
         "${CMAKE_SOURCE_DIR}/main.cpp"
         "${CMAKE_SOURCE_DIR}/../Neurocore/include/*.h"
         "${CMAKE_SOURCE_DIR}/../Neurocore/include/*.hpp"

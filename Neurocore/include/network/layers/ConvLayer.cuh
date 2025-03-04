@@ -44,6 +44,26 @@ public:
 
     void SetBiases(MAT<filterShape::z * prevLayerShape::z>* biases) requires(test);
 
+
+    // !!! Only for tests  !!!
+
+    const LMAT<filterShape>* getFilters() const requires(test)
+    {
+        return filters;
+    }
+
+    const LMAT<layerShape>* getBias() const requires(test)
+    {
+        return bias;
+    }
+
+    const LMAT<filterShape>* getDelta() const requires(test)
+    {
+        return delta;
+    }
+
+
+
 private:
 
 #if not USE_GPU
@@ -311,12 +331,12 @@ void ConvLayer<activation, prevLayerShape, layerShape, filterShape, optimizer, t
     nextLayerDelta->ResetOffset();
 
 
-    std::cout << "number of operations : " << FullConvOperations.size() << " \n";
-
     std::cout << "compiled !\n";
 
 #endif
 }
+
+
 
 template<typename activation,typename prevLayerShape,typename layerShape, typename filterShape, typename optimizer, bool test>
 LMAT<layerShape>* ConvLayer<activation, prevLayerShape, layerShape, filterShape, optimizer, test>::FeedForward(const LMAT<prevLayerShape>* input)
@@ -354,7 +374,7 @@ LMAT<layerShape>* ConvLayer<activation, prevLayerShape, layerShape, filterShape,
         for (int i = 0; i < filterCount; i++)
         {
             //Apply convolution between input and filters and output it in z
-            LMAT<prevLayerShape>::template Convolution<filterShape::x, 1>(input, filters, z);
+            LMAT<prevLayerShape>::template Convolution<filterShape::x, 1, Shape::z >(input, filters, z);
 
             //Add the bias to the result
             for (int k = 0; k < layerShape::x * layerShape::y; k++)
@@ -375,6 +395,7 @@ LMAT<layerShape>* ConvLayer<activation, prevLayerShape, layerShape, filterShape,
     input->ResetOffset();
     bias->ResetOffset();
     z->ResetOffset();
+
 
 #endif
 
@@ -463,10 +484,6 @@ LMAT<prevLayerShape>* ConvLayer<activation, prevLayerShape, layerShape, filterSh
     //Multiply the partial derivative of the activation function with the partial derivative of the previous layer
     lastDelta->MultiplyAllDims(activationDelta, previousDeltaMultiplied);
 
-    for (int k = 0; k < FullConvOperations.size(); k++)
-    {
-        FullConvOperations[k]->Compute();
-    }
 
     //Loop through all the dimensions of the previous layer
     for (uint i = 0; i < preivousDimCount; i++)
@@ -478,11 +495,10 @@ LMAT<prevLayerShape>* ConvLayer<activation, prevLayerShape, layerShape, filterSh
             LMAT<filterShape>::Flip180(filters, rotatedFilter);
 
             //Calculate the partial derivative for the previous layer
-            //Matrix::FullConvolution(rotatedFilter,previousDeltaMultiplied,nextLayerDeltaTemp);
+            LMAT<filterShape>::FullConvolution(rotatedFilter,previousDeltaMultiplied,nextLayerDeltaTemp);
 
             //Accumulate the result of the partial derivative
-            //nextLayerDelta->Add(nextLayerDeltaTemp,nextLayerDelta);
-
+            nextLayerDelta->Add(nextLayerDeltaTemp,nextLayerDelta);
 
 
             //Calculate the partial derivative of the weights
@@ -553,8 +569,9 @@ void ConvLayer<activation, prevLayerShape, layerShape, filterShape, optimizer, t
     deltaBias->ResetOffset();
     delta->ResetOffset();
 #endif
+    //Offset is the size of delta because it's stored just after delta
+    optimizer::Compute(deltaBias, bias, delta->GetSize());
 
-    optimizer::Compute(deltaBias, bias, bias->GetSize());
 }
 
 template<typename activation,typename prevLayerShape,typename layerShape, typename filterShape, typename optimizer, bool test>

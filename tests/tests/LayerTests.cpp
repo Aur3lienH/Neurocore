@@ -90,18 +90,54 @@ bool LayerTests::TestInputLayer()
 
 bool LayerTests::TestCNNLayer()
 {
-    ConvLayer<Activation<ReLU<1,3>>, LayerShape<3,3>, LayerShape<1,1>, LayerShape<3,3>, Constant<1.0>, true> cnn;
+    ConvLayer<Activation<ReLU<1,3>>, LayerShape<3,3>, LayerShape<1,1>, LayerShape<3,3>, Constant<0.01>, true> cnn;
     cnn.Compile();
+
     Matrix<3,3> filters({0,0,0,0,1,0,0,0,0});
     cnn.SetWeights(&filters);
+
     Matrix<1,1> biases(0.);
     cnn.SetBiases(&biases);
-    Matrix<3,3> input({1,1,1,1,2,1,1,1,1,1});
+
+    Matrix<3,3> input({1,1,1,1,2,1,1,1,1});
+
     Matrix<1,1>* out = cnn.FeedForward(&input);
-    Matrix<1,1> delta(1);
+    input.Print();
+    filters.Print();
+    out->Print();
+
+    bool forwardPassCorrect = (std::abs((*out)(0,0) - 2.0) < 1e-6);
+
+    if (!forwardPassCorrect)
+    {
+        std::cout << "we are here, over there" << std::endl;
+        out->Print();
+        return false;
+    }
+
+    Matrix<1,1> delta(1.0);
+
+
     Matrix<3,3>* bout = cnn.BackPropagate(&delta, &input);
-    
-    return true;
+
+
+
+
+    bool backwardPassCorrect = true;
+    for (int i = 0; i < 3; i++) {
+        for (int j = 0; j < 3; j++) {
+            float expected = (i == 1 && j == 1) ? 1.0 : 0.0;
+            if (std::abs((*bout)(i,j) - expected) > 1e-6) {
+                backwardPassCorrect = false;
+                break;
+            }
+        }
+    }
+
+    cnn.getFilters()->Print();
+
+
+    return backwardPassCorrect;
 }
 
 
