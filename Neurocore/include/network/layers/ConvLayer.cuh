@@ -503,7 +503,7 @@ LMAT<prevLayerShape>* ConvLayer<activation, prevLayerShape, layerShape, filterSh
 
 
             //Calculate the partial derivative of the weights
-            LMAT<prevLayerShape>::template Convolution<layerShape::x, 1>(prevLayerOutput, previousDeltaMultiplied, preDelta);
+            LMAT<prevLayerShape>::template Convolution<layerShape::x, 1, filterShape::z>(prevLayerOutput, previousDeltaMultiplied, preDelta);
 
             //Accumulate the result
             delta->Add(preDelta, delta);

@@ -113,8 +113,8 @@ public:
 public:
     static void Flip180(const Matrix* input, Matrix* output);
 
-    template<int filter_rows, int filter_cols>
-    static void FullConvolution(const Matrix<rows,cols>* m, const Matrix<filter_rows,filter_cols>* filter, Matrix<rows+filter_rows-1,cols+filter_cols-1,dim>* output);
+    template<int filter_rows, int filter_cols, int prev_dim>
+    static void FullConvolution(const Matrix<rows,cols,dim>* m, const Matrix<filter_rows,filter_cols,dim>* filter, Matrix<rows+filter_rows-1,cols+filter_cols-1,prev_dim>* output);
 
     //static void FullConvolutionAVX2(const Matrix* m, const Matrix* filter, Matrix* output);
 
@@ -122,7 +122,7 @@ public:
     //static void FullConvolutionFS4(const Matrix* m, const Matrix* filter, Matrix* output);
 
     template<int filterSize, int stride, int new_dim>
-    static void Convolution(const Matrix<rows, cols, dim>* input,const Matrix<filterSize, filterSize, dim>* filter,Matrix<(rows - filterSize) / stride + 1, (cols - filterSize) / stride + 1, new_dim>* output);
+    static void Convolution(const Matrix<rows, cols, dim>* input,const Matrix<filterSize, filterSize, new_dim>* filter,Matrix<(rows - filterSize) / stride + 1, (cols - filterSize) / stride + 1, new_dim>* output);
 
 
 
@@ -504,7 +504,7 @@ void Matrix<rows,cols,dim>::DivideAllDims(float value)
 template<int rows, int cols, int dim>
 void Matrix<rows,cols,dim>::Zero()
 {
-    for (int i = 0; i < GetRows() * GetCols(); i++)
+    for (int i = 0; i < GetRows() * GetCols() * GetDims(); i++)
     {
         this->data[i] = 0;
     }
@@ -1107,8 +1107,8 @@ int Matrix<rows,cols,dim>::GetOffset() const
 
 
 template<int rows, int cols, int dim>
-template<int filter_rows, int filter_cols>
-void Matrix<rows,cols,dim>::FullConvolution(const Matrix<rows,cols>* m, const Matrix<filter_rows,filter_cols>* filter, Matrix<rows+filter_rows-1,cols+filter_cols-1,dim>* output)
+template<int filter_rows, int filter_cols, int prev_dim>
+void Matrix<rows,cols,dim>::FullConvolution(const Matrix<rows,cols,dim>* m, const Matrix<filter_rows,filter_cols,dim>* filter, Matrix<rows+filter_rows-1,cols+filter_cols-1,prev_dim>* output)
 {
     const int outputCols = m->GetCols() + filter->GetCols() - 1;
     const int outputRows = m->GetRows() + filter->GetRows() - 1;
@@ -1274,7 +1274,7 @@ template<int rows, int cols, int dim>
 template<int filterSize, int stride, int new_dims>
 void Matrix<rows, cols, dim>::Convolution(
     const Matrix<rows, cols, dim>* input,
-    const Matrix<filterSize, filterSize, dim>* filter,
+    const Matrix<filterSize, filterSize, new_dims>* filter,
     Matrix<(rows - filterSize) / stride + 1, (cols - filterSize) / stride + 1, new_dims>* output)
 {
 
