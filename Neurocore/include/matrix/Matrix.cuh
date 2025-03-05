@@ -113,16 +113,16 @@ public:
 public:
     static void Flip180(const Matrix* input, Matrix* output);
 
-    template<int filter_rows, int filter_cols, int prev_dim>
-    static void FullConvolution(const Matrix<rows,cols,dim>* m, const Matrix<filter_rows,filter_cols,dim>* filter, Matrix<rows+filter_rows-1,cols+filter_cols-1,prev_dim>* output);
+    template<int filter_rows, int filter_cols, int dim1, int dim2, int dim3>
+    static void FullConvolution(const Matrix<rows,cols,dim1>* m, const Matrix<filter_rows,filter_cols,dim2>* filter, Matrix<rows+filter_rows-1,cols+filter_cols-1,dim3>* output);
 
     //static void FullConvolutionAVX2(const Matrix* m, const Matrix* filter, Matrix* output);
 
     //FullConvolution FS4 = Filter Size 4
     //static void FullConvolutionFS4(const Matrix* m, const Matrix* filter, Matrix* output);
 
-    template<int filterSize, int stride, int new_dim>
-    static void Convolution(const Matrix<rows, cols, dim>* input,const Matrix<filterSize, filterSize, new_dim>* filter,Matrix<(rows - filterSize) / stride + 1, (cols - filterSize) / stride + 1, new_dim>* output);
+    template<int filterSize, int stride, int dim1, int dim2, int dim3>
+    static void Convolution(const Matrix<rows, cols, dim1>* input,const Matrix<filterSize, filterSize, dim2>* filter,Matrix<(rows - filterSize) / stride + 1, (cols - filterSize) / stride + 1, dim3>* output);
 
 
 
@@ -153,8 +153,8 @@ public:
 
     //Cannot happen either !
     //void Reshape(int rows_, int cols_, int dims) const;
-
-    void Add(Matrix* other, Matrix* result);
+    template<int dim1, int dim2>
+    void Add(Matrix<rows,cols,dim1>* other, Matrix<rows,cols,dim2>* result);
 
     void AddAllDims(Matrix* other, Matrix* result);
 
@@ -345,7 +345,8 @@ bool Matrix<rows,cols,size>::IsColumnMajor() const
 
 //Add two matrix using SSE2 SMID instructions
 template<int rows, int cols, int dim>
-void Matrix<rows,cols,dim>::Add(Matrix* other, Matrix* result)
+template<int dim1, int dim2>
+void Matrix<rows,cols,dim>::Add(Matrix<rows,cols,dim1>* other, Matrix<rows,cols,dim2>* result)
 {
 
 #if SAFE
@@ -1107,8 +1108,8 @@ int Matrix<rows,cols,dim>::GetOffset() const
 
 
 template<int rows, int cols, int dim>
-template<int filter_rows, int filter_cols, int prev_dim>
-void Matrix<rows,cols,dim>::FullConvolution(const Matrix<rows,cols,dim>* m, const Matrix<filter_rows,filter_cols,dim>* filter, Matrix<rows+filter_rows-1,cols+filter_cols-1,prev_dim>* output)
+template<int filter_rows, int filter_cols, int dim1, int dim2, int dim3>
+void Matrix<rows,cols,dim>::FullConvolution(const Matrix<rows,cols,dim1>* m, const Matrix<filter_rows,filter_cols,dim2>* filter, Matrix<rows+filter_rows-1,cols+filter_cols-1,dim3>* output)
 {
     const int outputCols = m->GetCols() + filter->GetCols() - 1;
     const int outputRows = m->GetRows() + filter->GetRows() - 1;
@@ -1271,11 +1272,11 @@ void Matrix<rows,cols,dim>::AveragePool(const Matrix<rows,cols,dim>* a, Matrix<(
 }
 
 template<int rows, int cols, int dim>
-template<int filterSize, int stride, int new_dims>
+template<int filterSize, int stride, int dim1, int dim2, int dim3>
 void Matrix<rows, cols, dim>::Convolution(
-    const Matrix<rows, cols, dim>* input,
-    const Matrix<filterSize, filterSize, new_dims>* filter,
-    Matrix<(rows - filterSize) / stride + 1, (cols - filterSize) / stride + 1, new_dims>* output)
+    const Matrix<rows, cols, dim1>* input,
+    const Matrix<filterSize, filterSize, dim2>* filter,
+    Matrix<(rows - filterSize) / stride + 1, (cols - filterSize) / stride + 1, dim3>* output)
 {
 
 #if SAFE

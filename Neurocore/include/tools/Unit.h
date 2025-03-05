@@ -23,22 +23,22 @@ namespace Tools
 
 namespace Tools
 {
-    Unit::Unit(const std::string& _unitName)
+    inline Unit::Unit(const std::string& _unitName)
     {
         unitName = _unitName;
         value = 0;
     }
 
-    Unit::Unit(const std::string& _unitName, double _value)
+    inline Unit::Unit(const std::string& _unitName, double _value)
     {
         unitName = _unitName;
         value = _value;
     }
 
-    Unit::~Unit()
+    inline Unit::~Unit()
     = default;
 
-    std::ostream& operator<<(std::ostream& os, const Unit& unit)
+    inline std::ostream& operator<<(std::ostream& os, const Unit& unit)
     {
         double outputValue = unit.value;
         std::string unitExtension;

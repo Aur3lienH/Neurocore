@@ -111,23 +111,23 @@ namespace Tools
 
 namespace Tools
 {
-    ProgressBar::ProgressBar(const std::string& _name)
+    inline ProgressBar::ProgressBar(const std::string& _name)
     {
         name = _name;
 
     }
 
-    ProgressBar::~ProgressBar()
+    inline ProgressBar::~ProgressBar()
     {
         std::cout << "\n";
     }
 
-    void ProgressBar::InitProgress()
+    inline void ProgressBar::InitProgress()
     {
         std::cout << name << " 0%";
     }
 
-    void ProgressBar::EndProgress()
+    inline void ProgressBar::EndProgress()
     {
         std::cout << "\r\n";
     }
@@ -160,7 +160,7 @@ namespace Tools
 #endif
     }
 
-    void ProgressBar::PrintProgressPart(const int size) const
+    inline void ProgressBar::PrintProgressPart(const int size) const
     {
         std::cout << "[";
         for (int i = 0; i < size - 2; i++)
@@ -177,21 +177,21 @@ namespace Tools
     }
 
 
-    ClasProBar::ClasProBar(std::string _name, const float _maxValue) : ProgressBar(_name)
+    inline ClasProBar::ClasProBar(std::string _name, const float _maxValue) : ProgressBar(_name)
     {
         maxValue = _maxValue;
     }
 
-    ClasProBar::~ClasProBar()
+    inline ClasProBar::~ClasProBar()
     {
     }
 
-    void ClasProBar::ChangeProgress(const float value)
+    inline void ClasProBar::ChangeProgress(const float value)
     {
         PrintProgressBar(value);
     }
 
-    void ClasProBar::PrintProgressBar(float newProgress)
+    inline void ClasProBar::PrintProgressBar(float newProgress)
     {
         newProgress = newProgress / maxValue;
         if ((int) (newProgress * 100) == (int) (progress * 100))
@@ -218,43 +218,43 @@ namespace Tools
         std::cout.flush();
     }
 
-    void ClasProBar::EndProgress()
+    inline void ClasProBar::EndProgress()
     {
         std::cout << "\n";
     }
 
-    void ClasProBar::InitProgress()
+    inline void ClasProBar::InitProgress()
     {
         PrintProgressBar(0);
     }
 
 
-    NetProBar::NetProBar(const std::string& _name, int totalBytes) : ProgressBar(_name)
+    inline NetProBar::NetProBar(const std::string& _name, int totalBytes) : ProgressBar(_name)
     {
         bytesToDownload = totalBytes;
         std::cout << std::fixed << std::setprecision(1);
     }
 
-    NetProBar::~NetProBar()
+    inline NetProBar::~NetProBar()
     = default;
 
-    void NetProBar::InitProgress()
+    inline void NetProBar::InitProgress()
     {
         PrintProgressBar(0);
     }
 
-    void NetProBar::EndProgress()
+    inline void NetProBar::EndProgress()
     {
         std::cout << "\n";
     }
 
     //Change progress and print the progress bar and calculate the speed of transfer
-    void NetProBar::ChangeProgress(uint64_t ByteSent)
+    inline void NetProBar::ChangeProgress(uint64_t ByteSent)
     {
         PrintProgressBar(ByteSent / (float) bytesToDownload);
     }
 
-    void NetProBar::PrintProgressBar(float newProgress)
+    inline void NetProBar::PrintProgressBar(float newProgress)
     {
         byteDiff += 1024;
         if ((int) (newProgress * 100) == (int) (progress * 100))
@@ -292,13 +292,13 @@ namespace Tools
     }
 
 
-    TrainBar::TrainBar(const int _totalEpochs) : ProgressBar("Train")
+    inline TrainBar::TrainBar(const int _totalEpochs) : ProgressBar("Train")
     {
         totalEpochs = _totalEpochs;
         startTime = std::chrono::high_resolution_clock::now();
     }
 
-    void TrainBar::ChangeProgress(const int EpochsDone, const float _loss)
+    inline void TrainBar::ChangeProgress(const int EpochsDone, const float _loss)
     {
         progress = static_cast<float>(EpochsDone) / static_cast<float>(totalEpochs);
         epochs = EpochsDone;
@@ -306,7 +306,7 @@ namespace Tools
         Print();
     }
 
-    void TrainBar::Print()
+    inline void TrainBar::Print()
     {
         std::cout << "\r";
         const int Width = GetConsoleWidth();
