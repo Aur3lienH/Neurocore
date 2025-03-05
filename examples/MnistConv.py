@@ -9,7 +9,8 @@ from sklearn.datasets import fetch_openml
 from sklearn.model_selection import train_test_split
 
 #Set the verbose
-Config.VERBOSE = False
+Config.VERBOSE = True
+Config.DEBUG = True
 
 # Load MNIST dataset from scikit-learn
 print("Loading MNIST dataset...")
@@ -40,8 +41,8 @@ y_test = to_one_hot(y_test)
 # Create and configure the network
 net = Network()
 net.AddLayer(InputLayer(layerShape=LayerShape(28,28)))
-net.AddLayer(ConvLayer(layerShape=LayerShape(26,26, 16),activation=ReLU(),kernelShape=LayerShape(3,3,16)))
-net.AddLayer(Reshape(LayerShape(10816),LayerShape(26,26, 16)))
+net.AddLayer(ConvLayer(layerShape=LayerShape(26,26, 1),activation=ReLU(),kernelShape=LayerShape(3,3,1)))
+net.AddLayer(Reshape(LayerShape(26*26),LayerShape(26,26, 1)))
 net.AddLayer(FCL(10, ReLU()))
 net.Compile(MSE())
 net.Print()

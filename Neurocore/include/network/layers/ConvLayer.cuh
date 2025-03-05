@@ -85,11 +85,11 @@ private:
     //Delta for next layer
     LMAT<filterShape>* delta = nullptr;
     LMAT<filterShape>* preDelta = nullptr;
-    LMAT<layerShape>* activationDelta;
-    LMAT<layerShape>* z;
-    LMAT<layerShape>* previousDeltaMultiplied;
-    MAT<1,1,dimCount>* bias;
-    MAT<1,1,dimCount>* deltaBias;
+    LMAT<layerShape>*activationDelta = nullptr;
+    LMAT<layerShape>*z = nullptr;
+    LMAT<layerShape>*previousDeltaMultiplied = nullptr;
+    MAT<1,1,dimCount>*bias = nullptr;
+    MAT<1,1,dimCount>*deltaBias = nullptr;
 
     LMAT<prevLayerShape>* nextLayerDelta = nullptr;
     LMAT<prevLayerShape>* nextLayerDeltaTemp = nullptr;
@@ -376,6 +376,7 @@ LMAT<layerShape>* ConvLayer<activation, prevLayerShape, layerShape, filterShape,
             //Apply convolution between input and filters and output it in z
             LMAT<prevLayerShape>::template Convolution<filterShape::x, 1, Shape::z >(input, filters, z);
 
+
             //Add the bias to the result
             for (int k = 0; k < layerShape::x * layerShape::y; k++)
             {
@@ -558,7 +559,7 @@ void ConvLayer<activation, prevLayerShape, layerShape, filterShape, optimizer, t
 #else
     for (int i = 0; i < deltaBias->GetDims(); i++)
     {
-        for (int j = 0; j < layerShape::x * layerShape::y; j++)
+        for (int j = 0; j < filterShape::x * filterShape::y; j++)
         {
             (*deltaBias)[0] += (*delta)[j];
         }

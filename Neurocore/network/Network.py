@@ -1,3 +1,5 @@
+from email.errors import NonPrintableDefect
+
 from Neurocore.network.Activation import Activation
 from Neurocore.network.Loss import Loss
 from Neurocore.network.Layers import Layer
@@ -41,7 +43,8 @@ class Network:
             out_path = os.path.join(build_dir,'neurocore.so')
             pybind_include = os.path.join(GetPybindDir(),'include')
             cmd = f"g++ -O3 -shared -std=c++20 -fPIC -flto=auto "\
-          f" `python3 -m pybind11 --includes`"\
+          f" `python3 -m pybind11 --includes`" \
+          f" {'-static-libasan' if Config.DEBUG else '' }" \
           f" -I{pybind_include} -I{GetIncludeDir()} "\
           f"{source_path} "\
           f"-o {out_path}"

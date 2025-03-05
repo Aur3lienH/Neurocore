@@ -24,7 +24,10 @@ public:
 
     const LMAT<PrevLayerShape>* BackPropagate(const LMAT<LayerShape>* delta, const LMAT<PrevLayerShape>* pastActivation)
     {
+        //delta->Print();
         newDelta->data = delta->data;
+        //newDelta->Print();
+        //throw std::runtime_error("There is an error here ! \n");
         return newDelta;
     }
 
