@@ -10,7 +10,7 @@ from sklearn.model_selection import train_test_split
 
 #Set the verbose
 Config.VERBOSE = True
-Config.DEBUG = True
+Config.DEBUG = False
 
 # Load MNIST dataset from scikit-learn
 print("Loading MNIST dataset...")
@@ -43,7 +43,8 @@ net = Network()
 net.AddLayer(InputLayer(layerShape=LayerShape(28,28)))
 net.AddLayer(ConvLayer(layerShape=LayerShape(26,26, 16),activation=ReLU(),kernelShape=LayerShape(3,3,16)))
 net.AddLayer(ConvLayer(layerShape=LayerShape(24,24, 10), activation=ReLU(), kernelShape=LayerShape(3,3,10)))
-net.AddLayer(Reshape(LayerShape(24*24*10),LayerShape(24,24, 10)))
+net.AddLayer(MaxPooling(layerShape=LayerShape(12,12),filterSize=2,stride=2))
+net.AddLayer(Reshape(LayerShape(12*12*10),LayerShape(12,12, 10)))
 net.AddLayer(FCL(10, ReLU()))
 net.Compile(MSE())
 net.Print()

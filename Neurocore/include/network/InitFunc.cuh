@@ -91,6 +91,10 @@ void WeightsInit::HeUniform(const int inputSize, MAT<x,y,z>* weights)
 #endif
     }
 
+    //std::cout << "return from the uniform function !\n";
+    //if (z != 1)
+        //weights->Print();
+
 #if USE_GPU
     checkCUDA(cudaMemcpy(weights->GetData(), m.GetData(), weights->GetSize() * sizeof(float), cudaMemcpyHostToDevice));
 #endif

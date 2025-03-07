@@ -15,6 +15,11 @@ public:
         newDelta = new LMAT<PrevLayerShape>();
     }
 
+    ~AveragePoolLayer() {
+        delete output;
+        delete newDelta;
+    }
+
     //static Layer* Load(std::ifstream& reader);
 
     const LMAT<LayerShape>* FeedForward(const LMAT<PrevLayerShape>* input)

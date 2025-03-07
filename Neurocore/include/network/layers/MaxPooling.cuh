@@ -16,6 +16,11 @@ public:
         newDelta = new LMAT<PrevLayerShape>();
     }
 
+    ~MaxPoolLayer() {
+        delete output;
+        delete newDelta;
+    }
+
     void Compile() {
 
     }
