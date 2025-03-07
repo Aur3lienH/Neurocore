@@ -233,9 +233,7 @@ bool LayerTests::TestCNNMultiple()
     //auto* z = conv2.getZ();
     //The delta is
     float sum = 0;
-    //for (size_t i = 0; i < ; i++) {
 
-    //}
 
     return true;
 }

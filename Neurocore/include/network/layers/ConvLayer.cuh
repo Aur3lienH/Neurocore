@@ -83,9 +83,9 @@ private:
     //Optimizer* optimizer = nullptr;
 
     LMAT<layerShape>* result = nullptr;
-    LMAT<filterShape>* filters = nullptr;
+    MAT<filterShape::x, filterShape::y, dimCount>* filters = nullptr;
     //Delta for next layer
-    LMAT<filterShape>* delta = nullptr;
+    MAT<filterShape::x, filterShape::y, dimCount>* delta = nullptr;
     LMAT<filterShape>* preDelta = nullptr;
     LMAT<layerShape>*activationDelta = nullptr;
     LMAT<layerShape>*z = nullptr;
@@ -114,7 +114,7 @@ private:
 
     cudnnTensorDescriptor_t forwardInputDesc, forwardOutputDesc, biasDesc;
 #else
-    LMAT<filterShape>* rotatedFilter = nullptr;
+    MAT<filterShape::x, filterShape::y, dimCount>* rotatedFilter = nullptr;
 #endif
 };
 
@@ -151,7 +151,7 @@ void ConvLayer<activation, prevLayerShape, layerShape, filterShape, optimizer, t
     //If the filters has no been initialized, create it and initialize it with random values
     if (filters == nullptr)
     {
-        filters = new MAT<filterShape::x, filterShape::y, filterShape::z>();
+        filters = new MAT<filterShape::x, filterShape::y, dimCount>();
         //Function to init the filters with random values
         WeightsInit::HeUniform(filterShape::x * filterShape::y, filters);
     }
@@ -379,12 +379,13 @@ LMAT<layerShape>* ConvLayer<activation, prevLayerShape, layerShape, filterShape,
         for (int i = 0; i < preivousDimCount; i++)
         {
             //Apply convolution between input and filters and output it in z
-            std::cout << filters->GetOffset() / filters->GetMatrixSize() << " " << input->GetOffset() / input->GetMatrixSize() << " \n";
+            filters->Print();
             LMAT<prevLayerShape>::template Convolution<filterShape::x, 1>(input, filters, tempZ);
             z->Add(tempZ, z);
 
 
             //Filters and bias are moved to the next matrix
+            filters->GoToNextMatrix();
             input->GoToNextMatrix();
         }
         //Add the bias to the result
@@ -393,7 +394,6 @@ LMAT<layerShape>* ConvLayer<activation, prevLayerShape, layerShape, filterShape,
             (*z)[k] = bias[0][0] + (*z)[k];
         }
         //Input is moved to the next matrix
-        filters->GoToNextMatrix();
         bias->GoToNextMatrix();
         z->GoToNextMatrix();
         input->ResetOffset();
@@ -403,6 +403,8 @@ LMAT<layerShape>* ConvLayer<activation, prevLayerShape, layerShape, filterShape,
     input->ResetOffset();
     bias->ResetOffset();
     z->ResetOffset();
+
+
 
 
 #endif
@@ -494,13 +496,13 @@ LMAT<prevLayerShape>* ConvLayer<activation, prevLayerShape, layerShape, filterSh
 
 
     //Loop through all the dimensions of the previous layer
-    for (uint i = 0; i < preivousDimCount; i++)
+    for (uint i = 0; i < filterCount; i++)
     {
         //Loop through all the dimensions of the actual layer
-        for (uint j = 0; j < filterCount; j++)
+        for (uint j = 0; j < preivousDimCount; j++)
         {
             //Flip the filter
-            LMAT<filterShape>::Flip180(filters, rotatedFilter);
+            MAT<filterShape::x, filterShape::y, dimCount>::Flip180(filters, rotatedFilter);
 
             //Calculate the partial derivative for the previous layer
             LMAT<filterShape>::FullConvolution(rotatedFilter,previousDeltaMultiplied,nextLayerDeltaTemp);
@@ -510,7 +512,7 @@ LMAT<prevLayerShape>* ConvLayer<activation, prevLayerShape, layerShape, filterSh
 
 
             //Calculate the partial derivative of the weights
-            LMAT<prevLayerShape>::template Convolution<layerShape::x, 1, filterShape::z>(prevLayerOutput, previousDeltaMultiplied, preDelta);
+            LMAT<prevLayerShape>::template Convolution<layerShape::x, 1>(prevLayerOutput, previousDeltaMultiplied, preDelta);
 
             //Accumulate the result
             delta->Add(preDelta, delta);
@@ -518,13 +520,12 @@ LMAT<prevLayerShape>* ConvLayer<activation, prevLayerShape, layerShape, filterSh
             //Filters, rotatedFilter, previousDeltaMultiplied and delta are moved to the next matrix
             filters->GoToNextMatrix();
             rotatedFilter->GoToNextMatrix();
-            previousDeltaMultiplied->GoToNextMatrix();
             delta->GoToNextMatrix();
+            prevLayerOutput->GoToNextMatrix();
         }
         // Input and nextLayerDelta are moved to the next matrix
-        prevLayerOutput->GoToNextMatrix();
-        nextLayerDelta->GoToNextMatrix();
-        filters->ResetOffset();
+        previousDeltaMultiplied->GoToNextMatrix();
+        prevLayerOutput->ResetOffset();
     }
     //Resetting all the matrix offset
     nextLayerDelta->ResetOffset();
