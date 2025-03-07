@@ -362,6 +362,20 @@ public:
         return &std::get<I>(layers);
     }
 
+    //Compute values and loss
+    double FeedForward(LMAT<InputShape>* input, LMAT<OutputShape>* desiredOutput)
+    {
+        return FeedForwardLearnRecu(input,desiredOutput);
+        // output = input;
+        // for (int i = 0; i < layersCount; i++)
+        // {
+        //     //std::cout << "feedforward : " << i << "\n";
+        //     output = layers[i]->FeedForward(output);
+        // }
+        // //std::cout << *output;
+        // return Loss::Cost(output, desiredOutput);
+    }
+
 
 private:
 
@@ -397,19 +411,7 @@ auto FeedForwardLearnRecu(const LMAT<InputShapeL>* input, const LMAT<OutputShape
         return FeedForwardLearnRecu<CurrentLayerShape, OutputShapeL, I + 1>(layerOutput, desiredOutput);
     }
 }
-    //Compute values and loss
-    double FeedForward(LMAT<InputShape>* input, LMAT<OutputShape>* desiredOutput)
-    {
-        return FeedForwardLearnRecu(input,desiredOutput);
-        // output = input;
-        // for (int i = 0; i < layersCount; i++)
-        // {
-        //     //std::cout << "feedforward : " << i << "\n";
-        //     output = layers[i]->FeedForward(output);
-        // }
-        // //std::cout << *output;
-        // return Loss::Cost(output, desiredOutput);
-    }
+
 
     //The output of the network
     const LMAT<OutputShape>* output = nullptr;

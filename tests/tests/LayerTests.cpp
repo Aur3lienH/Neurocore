@@ -141,6 +141,11 @@ bool LayerTests::TestCNNLayer()
     return backwardPassCorrect;
 }
 
+bool LayerTests::TestCNNLayerWeightsInit()
+{
+    typedef ConvLayer<Activation<ReLU<3,3,3,3>>, LayerShape<3,3,2>, LayerShape<3,3,3>, LayerShape<1,1,3>, Constant<0.01>, true> cnn2;
+}
+
 bool LayerTests::TestCNNMultiple()
 {
     typedef ConvLayer<Activation<ReLU<3,3,3,2>>, LayerShape<3,3>, LayerShape<3,3,2>, LayerShape<1,1,2>, Constant<0.01>, true> cnn1;

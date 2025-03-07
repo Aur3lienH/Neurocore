@@ -9,6 +9,10 @@
 #include <iostream>
 #include <functional>
 
+#include "network/layers/ConvLayer.cuh"
+#include "network/layers/MaxPooling.cuh"
+#include "network/layers/Reshape.cuh"
+
 
 bool NetworkTests::ExecuteTests()
 {
@@ -17,6 +21,7 @@ bool NetworkTests::ExecuteTests()
     functions.push_back(std::tuple((void*)BasicFFNFeedForward,std::string("Basic FFN")));
     functions.emplace_back((void*)DataLoaderTest,std::string("DataLoader"));
     functions.emplace_back((void*)BasicFFNLearn,std::string("Basic FFN Learn"));
+    functions.emplace_back((void*)CNNMaxPoolTest, std::string("CNN MaxPool \"Mnist\""));
     bool* array = new bool[functions.size()];
 
 
@@ -116,6 +121,27 @@ bool NetworkTests::BasicFFNLearn()
     }
 
     return true;
+}
+
+bool NetworkTests::CNNMaxPoolTest()
+{
+    typedef Network<
+        MSE<10,1,1>,
+        InputLayer<LayerShape<28,28,1,1>>,
+        ConvLayer<ReLU<26,28,26,16>,LayerShape<28,28,1,1>,LayerShape<26,26,16,1>,LayerShape<3,3,16,1>>,
+        ConvLayer<ReLU<24,26,24,10>,LayerShape<26,26,16,1>,LayerShape<24,24,10,1>,LayerShape<3,3,10,1>>,
+        MaxPoolLayer<LayerShape<12,12,10,1>,LayerShape<24,24,10,1>,2,2>,
+        Reshape<LayerShape<1440,1,1,1>,LayerShape<12,12,10,1>>,
+        FCL<ReLU<10,1440,1,1>,LayerShape<1440,1,1,1>,LayerShape<10,1,1,1>>
+> NETWORK;
+    NETWORK net;
+    net.Compile();
+    auto* input = Matrix<28,28,1>::Random();
+    auto* output = new Matrix<10,1,1>({0,0,0,0,0,0,0,0,0,1});
+    DataLoader<NETWORK> data = DataLoader<NETWORK>(input,output,1);
+    net.Learn(1000,0.001,&data);
+    double loss = net.FeedForward(input, output);
+    return loss < 1e-3;
 }
 
 bool NetworkTests::DataLoaderTest() {

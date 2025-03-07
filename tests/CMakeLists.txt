@@ -16,9 +16,9 @@ set(CMAKE_CXX_STANDARD_REQUIRED True)
 set(CMAKE_CUDA_ARCHITECTURES "75;86")
 
 # Compiler flags
-set(CMAKE_C_FLAGS "-fPIC -O0 -ffast-math")
-set(CMAKE_CXX_FLAGS "-fPIC -O0 -mavx -march=native -fsanitize=address -g -fno-omit-frame-pointer -rdynamic")
-set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -fsanitize=address -g -fno-omit-frame-pointer -rdynamic")
+set(CMAKE_C_FLAGS "-fPIC -O3 -ffast-math")
+set(CMAKE_CXX_FLAGS "-fPIC -O3 -mavx -march=native")
+set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ")
 
 # Find packages
 #find_package(PkgConfig REQUIRED)

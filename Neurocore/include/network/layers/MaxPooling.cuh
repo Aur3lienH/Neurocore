@@ -17,12 +17,26 @@ public:
     }
 
     ~MaxPoolLayer() {
-        delete output;
-        delete newDelta;
+        //delete output;
+        //delete newDelta;
     }
 
     void Compile() {
 
+    }
+
+    void ClearDelta()
+    {
+
+    }
+
+    void UpdateWeights(double learning_rate, int batch_size) {
+
+    }
+
+    LMAT<LayerShape>* getResult()
+    {
+        return output;
     }
 
     //static Layer* Load(std::ifstream& reader);

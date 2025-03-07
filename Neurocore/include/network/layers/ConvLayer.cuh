@@ -12,6 +12,9 @@ class ConvLayer final
 
 public:
 
+    using KernelShape = filterShape;
+
+
     //Result from the previous layer (don't initialize when compiling the layer)
     static const uint filterCount = filterShape::z;
     static const uint preivousDimCount = prevLayerShape::z;
@@ -37,7 +40,9 @@ public:
 
     void UpdateWeights(double learningRate, int batchSize);
 
-    //void SpecificSave(std::ofstream& writer);
+    void Save(std::ofstream& writer);
+
+    void Load(std::ifstream& reader);
 
     //static Layer<ConvLayer>* Load(std::ifstream& reader);
 
@@ -615,18 +620,16 @@ void ConvLayer<activation, prevLayerShape, layerShape, filterShape, optimizer, t
 #endif
 }
 
-//template<typename activation,typename prevLayerShape,typename layerShape, typename filterShape, typename optimizer, bool test>
-//Layer<ConvLayer<activation, prevLayerShape, layerShape, filterShape, optimizer>>* ConvLayer<activation, prevLayerShape, layerShape, filterShape, optimizer, test>::Load(std::ifstream& reader)
-//{
-//#if USE_GPU
-//    throw std::runtime_error("ConvLayer::Load is not implmentedd on GPU");
-//#else
-//    Matrix* filters = Matrix::Read(reader);
-//    LayerShape* filterShape = LayerShape::Load(reader);
-//    Activation<Args>* activation = Activation<Args>::Read(reader);
-//    return new ConvLayer(filters, filterShape, activation);
-//#endif
-//}
+template<typename activation,typename prevLayerShape,typename layerShape, typename filterShape, typename optimizer, bool test>
+void ConvLayer<activation, prevLayerShape, layerShape, filterShape, optimizer, test>::Load(std::ifstream &reader)
+{
+#if USE_GPU
+    throw std::runtime_error("ConvLayer::Load is not implmentedd on GPU");
+#else
+    this->filters = LMAT<filterShape>::Read(reader);
+    this->bias = MAT<1,1,layerShape::z>::Read(reader);
+#endif
+}
 
 template<typename activation,typename prevLayerShape,typename layerShape, typename filterShape, typename optimizer, bool test>
 void ConvLayer<activation, prevLayerShape, layerShape, filterShape, optimizer, test>::ClearDelta()
@@ -647,13 +650,12 @@ std::string ConvLayer<activation, prevLayerShape, layerShape, filterShape, optim
 }
 
 
-//template<typename activation,typename prevLayerShape,typename layerShape, typename filterShape, typename optimizer, bool test>
-//void ConvLayer<activation, prevLayerShape, layerShape, filterShape, optimizer, test>::SpecificSave(std::ofstream& writer)
-//{
-//    filters->Save(writer);
-//    filterShape->Save(writer);
-//    activation->Save(writer);
-//}
+template<typename activation,typename prevLayerShape,typename layerShape, typename filterShape, typename optimizer, bool test>
+void ConvLayer<activation, prevLayerShape, layerShape, filterShape, optimizer, test>::Save(std::ofstream& writer)
+{
+    filters->Save(writer);
+    bias->Save(writer);
+}
 
 #if not USE_GPU
 /*

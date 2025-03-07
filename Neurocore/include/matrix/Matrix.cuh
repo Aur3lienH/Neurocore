@@ -145,12 +145,12 @@ public:
 
 
     template<int filterSize, int stride>
-    static void MaxPool(const Matrix<rows,cols,dim>* a, Matrix<(rows - filterSize) / stride + 1,(cols - filterSize) / stride + 1>* output);
+    static void MaxPool(const Matrix<rows,cols,dim>* a, Matrix<(rows - filterSize) / stride + 1,(cols - filterSize) / stride + 1, dim>* output);
 
     template<int filterSize, int stride>
     static void AveragePool(const Matrix<rows,cols,dim>* a, Matrix<(rows - filterSize) / stride + 1,(cols - filterSize) / stride + 1>* output);
 
-    static Matrix Random();
+    static Matrix* Random();
 
     Matrix<cols,rows,dim>* Transpose() const;
 
@@ -1336,7 +1336,7 @@ Matrix<rows,cols,dim>* Matrix<rows,cols,dim>::Copy(const Matrix* a)
 
 template<int rows, int cols, int dim>
 template<int filterSize, int stride>
-void Matrix<rows,cols,dim>::MaxPool(const Matrix<rows,cols,dim>* a, Matrix<(rows - filterSize) / stride + 1,(cols - filterSize) / stride + 1>* output)
+void Matrix<rows,cols,dim>::MaxPool(const Matrix<rows,cols,dim>* a, Matrix<(rows - filterSize) / stride + 1,(cols - filterSize) / stride + 1, dim>* output)
 {
     const int inputCols = a->GetCols();
     const int inputRows = a->GetRows();
@@ -1372,11 +1372,11 @@ void Matrix<rows,cols,dim>::MaxPool(const Matrix<rows,cols,dim>* a, Matrix<(rows
 }
 
 template<int rows, int cols, int dim>
-Matrix<rows,cols,dim> Matrix<rows,cols,dim>::Random()
+Matrix<rows,cols,dim>* Matrix<rows,cols,dim>::Random()
 {
-    Matrix res(rows, cols);
+    auto* res = new MAT<rows,cols,dim>();
     for (int i = 0; i < rows * cols; i++)
-        res[i] = (float) rand() / RAND_MAX * 2 - 1;
+        (*res)[i] = (float) rand() / RAND_MAX * 2 - 1;
 
     return res;
 }

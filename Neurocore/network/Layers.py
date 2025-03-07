@@ -124,13 +124,15 @@ class AveragePooling(Layer):
 
 class MaxPooling(Layer):
 
-    def __init__(self, layerShape: LayerShape, filterSize, stride):
+    def __init__(self, layerShape: LayerShape, filterSize: int, stride: int):
         self.layerShape = layerShape
         self.filterSize = filterSize
         self.stride = stride
 
     def get_code(self, prevLayerShape: LayerShape):
-        return f'MaxPooling<{self.layerShape.get_code()},{self.filterSize},{self.stride}>'
+        if prevLayerShape.z != self.layerShape.z:
+            raise ValueError('MaxPooling: Number of input and output channels must be the same !')
+        return f'MaxPoolLayer<{self.layerShape.get_code()},{prevLayerShape.get_code()},{self.filterSize},{self.stride}>'
 
     def get_layer_shape(self):
         return self.layerShape
