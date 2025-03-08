@@ -6,10 +6,18 @@ template<typename LayerShape,typename PrevLayerShape,int filterSize, int stride>
 class AveragePoolLayer final
 {
 public:
+
+    using Shape = LayerShape;
+    
     AveragePoolLayer(): fs_2(filterSize * filterSize)
     {
         output = new LMAT<LayerShape>();
         newDelta = new LMAT<PrevLayerShape>();
+    }
+
+    ~AveragePoolLayer() {
+        delete output;
+        delete newDelta;
     }
 
     //static Layer* Load(std::ifstream& reader);

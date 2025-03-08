@@ -34,13 +34,16 @@ public:
 #else
         // Version CPU directe
         double cost = 0.0;
-        const int totalSize = output->GetRows() * output->GetCols();
+        const int totalSize = output->GetSize();
 
-        #pragma omp parallel for reduction(+:cost)
+        //#pragma omp parallel for reduction(+:cost)
         for (int i = 0; i < totalSize; i++) {
             const double diff = output[0][i] - target[0][i];
             cost += diff * diff;
         }
+        
+
+
 #endif
         // Division par 2*N pour obtenir la moyenne
         return cost / (2.0 * output->GetRows());
@@ -64,7 +67,7 @@ public:
         checkCUDA(cudaDeviceSynchronize());
 #else
         // Version CPU avec potentielle vectorisation
-        const int totalSize = output->GetRows() * output->GetCols();
+        const int totalSize = output->GetSize();
 
         #pragma omp parallel for
         for (int i = 0; i < totalSize; i++) {

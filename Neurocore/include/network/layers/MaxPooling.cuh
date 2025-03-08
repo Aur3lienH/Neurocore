@@ -8,14 +8,35 @@ class MaxPoolLayer final
 {
 
 public:
+    using Shape = LayerShape;
+
     MaxPoolLayer()
     {
         output = new LMAT<LayerShape>();
         newDelta = new LMAT<PrevLayerShape>();
     }
 
+    ~MaxPoolLayer() {
+        //delete output;
+        //delete newDelta;
+    }
+
     void Compile() {
 
+    }
+
+    void ClearDelta()
+    {
+
+    }
+
+    void UpdateWeights(double learning_rate, int batch_size) {
+
+    }
+
+    LMAT<LayerShape>* getResult()
+    {
+        return output;
     }
 
     //static Layer* Load(std::ifstream& reader);

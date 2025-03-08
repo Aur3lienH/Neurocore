@@ -1,3 +1,4 @@
+#pragma once
 #include "matrix/Matrix.cuh"
 #include <pybind11/pybind11.h>
 #include <pybind11/numpy.h>
@@ -15,6 +16,6 @@ PYBIND11_MODULE(matrix_##ROWS##x##COLS##x##DIMS, m) { \
         .def("to_numpy", &MAT<ROWS,COLS,DIMS>::ToNumpy) \
         .def("get_rows", &MAT<ROWS,COLS,DIMS>::GetRows) \
         .def("get_cols", &MAT<ROWS,COLS,DIMS>::GetCols) \
-        .def("print", &MAT<ROWS,COLS,DIMS>::Print) \
+        .def("print", static_cast<void (MAT<ROWS,COLS,DIMS>::*)() const>(&MAT<ROWS,COLS,DIMS>::Print)) \
         .def("convert_to_array", &MAT<ROWS,COLS,DIMS>::ConvertToArray,py::return_value_policy::take_ownership); \
 }

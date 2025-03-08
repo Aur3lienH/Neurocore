@@ -94,6 +94,7 @@ public:
             {
                 globalLoss += BackPropagate(data_loader->inputs + i, data_loader->outputs + i);
                 UpdateWeights(learningRate, 1);
+                ClearDelta();
                 Bar.ChangeProgress(e+1, globalLoss / (i + 1));
             }
         }
@@ -257,11 +258,14 @@ public:
         */
     }
 
-    //Clear all delta from all layers (partial derivative)
+    template<size_t I = 0>
     void ClearDelta()
     {
-        for (int i = 0; i < layersCount; i++)
-            layers[i]->ClearDelta();
+        if constexpr(I < layersCount)
+        {
+            std::get<I>(layers).ClearDelta();
+            ClearDelta<I+1>();
+        }
     }
 
     template<size_t I = 0>
@@ -292,8 +296,6 @@ public:
     //Initialize variable and check for error in the architecture of the model
     void Compile()
     {
-
-
 
         for_each_tuple<decltype(layers)>(layers);
 
@@ -360,6 +362,20 @@ public:
         return &std::get<I>(layers);
     }
 
+    //Compute values and loss
+    double FeedForward(LMAT<InputShape>* input, LMAT<OutputShape>* desiredOutput)
+    {
+        return FeedForwardLearnRecu(input,desiredOutput);
+        // output = input;
+        // for (int i = 0; i < layersCount; i++)
+        // {
+        //     //std::cout << "feedforward : " << i << "\n";
+        //     output = layers[i]->FeedForward(output);
+        // }
+        // //std::cout << *output;
+        // return Loss::Cost(output, desiredOutput);
+    }
+
 
 private:
 
@@ -395,19 +411,7 @@ auto FeedForwardLearnRecu(const LMAT<InputShapeL>* input, const LMAT<OutputShape
         return FeedForwardLearnRecu<CurrentLayerShape, OutputShapeL, I + 1>(layerOutput, desiredOutput);
     }
 }
-    //Compute values and loss
-    double FeedForward(LMAT<InputShape>* input, LMAT<OutputShape>* desiredOutput)
-    {
-        return FeedForwardLearnRecu(input,desiredOutput);
-        // output = input;
-        // for (int i = 0; i < layersCount; i++)
-        // {
-        //     //std::cout << "feedforward : " << i << "\n";
-        //     output = layers[i]->FeedForward(output);
-        // }
-        // //std::cout << *output;
-        // return Loss::Cost(output, desiredOutput);
-    }
+
 
     //The output of the network
     const LMAT<OutputShape>* output = nullptr;

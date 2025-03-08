@@ -1,3 +1,5 @@
+from email.errors import NonPrintableDefect
+
 from Neurocore.network.Activation import Activation
 from Neurocore.network.Loss import Loss
 from Neurocore.network.Layers import Layer
@@ -41,7 +43,8 @@ class Network:
             out_path = os.path.join(build_dir,'neurocore.so')
             pybind_include = os.path.join(GetPybindDir(),'include')
             cmd = f"g++ -O3 -shared -std=c++20 -fPIC -flto=auto "\
-          f" `python3 -m pybind11 --includes`"\
+          f" `python3 -m pybind11 --includes`" \
+          f" {'-static-libasan' if Config.DEBUG else '' }" \
           f" -I{pybind_include} -I{GetIncludeDir()} "\
           f"{source_path} "\
           f"-o {out_path}"
@@ -73,6 +76,11 @@ class Network:
         string += '#include "network/layers/FCL.cuh"\n'
         string += '#include "network/activation/ReLU.h"\n'
         string += '#include "network/layers/InputLayer.cuh"\n'
+        string += '#include "network/layers/Reshape.cuh"\n'
+        string += '#include "network/layers/ConvLayer.cuh"\n'
+        string += '#include "network/layers/MaxPooling.cuh"\n'
+        string += '#include "network/layers/AveragePooling.cuh"\n'
+        string += '#include "network/layers/DropoutFCL.cuh"\n'
         string += '#include "datasetsBehaviour/DataLoader.h"\n'
         string += '#include "network/loss/MSE.cuh"\n'
         string += '#include "network/loss/Loss.h"\n'

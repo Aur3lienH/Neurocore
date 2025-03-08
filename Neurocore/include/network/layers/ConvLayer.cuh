@@ -6,11 +6,22 @@
 #include "network/Operations.h"
 #include "matrix/Matrix.cuh"
 
-template<typename activation,typename prevLayerShape,typename layerShape, typename filterShape, typename optimizer, bool test = false>
+template<typename activation,typename prevLayerShape,typename layerShape, typename filterShape, typename optimizer = Optimizer<Constant<0.001>>, bool test = false>
 class ConvLayer final
 {
 
 public:
+
+    using KernelShape = filterShape;
+
+
+    //Result from the previous layer (don't initialize when compiling the layer)
+    static const uint filterCount = filterShape::z;
+    static const uint preivousDimCount = prevLayerShape::z;
+    static const uint dimCount = filterCount * preivousDimCount;
+
+    using Shape = layerShape;
+
     ~ConvLayer();
 
     LMAT<layerShape>* FeedForward(const LMAT<prevLayerShape>* input);
@@ -29,7 +40,9 @@ public:
 
     void UpdateWeights(double learningRate, int batchSize);
 
-    //void SpecificSave(std::ofstream& writer);
+    void Save(std::ofstream& writer);
+
+    void Load(std::ifstream& reader);
 
     //static Layer<ConvLayer>* Load(std::ifstream& reader);
 
@@ -37,20 +50,44 @@ public:
 
     Layer<ConvLayer>* Clone();
 
-    void SetWeights(LMAT<filterShape>* weights) requires(test);
+    LMAT<filterShape> getZ() requires(test);
 
-    void SetBiases(MAT<filterShape::z * prevLayerShape::z>* biases) requires(test);
+    void SetWeights(MAT<filterShape::x, filterShape::y, dimCount>* weights) requires(test);
+
+    void SetBiases(MAT<1,1,filterShape::z>* biases) requires(test);
+
+
+    // !!! Only for tests  !!!
+
+    const LMAT<filterShape>* getFilters() const requires(test)
+    {
+        return filters;
+    }
+
+    const LMAT<layerShape>* getBias() const requires(test)
+    {
+        return bias;
+    }
+
+    const MAT<filterShape::x, filterShape::y, dimCount>* getDelta() const requires(test)
+    {
+        return delta;
+    }
+
+    const MAT<1,1,filterShape::z>* getDeltaBias() const requires(test)
+    {
+        return deltaBias;
+    }
+
+
 
 private:
 
 #if not USE_GPU
     void FlipAndCenterFilter();
-    void GetOperationsForFullConvolution();
+    //void GetOperationsForFullConvolution();
 #endif
-    //Result from the previous layer (don't initialize when compiling the layer)
-    static const uint filterCount = filterShape::z;
-    static const uint preivousDimCount = prevLayerShape::z;
-    static const uint dimCount = filterCount * preivousDimCount;
+
     uint offset = 0;
 
     std::vector<Operation*> FullConvOperations = std::vector<Operation*>();
@@ -58,15 +95,16 @@ private:
     //Optimizer* optimizer = nullptr;
 
     LMAT<layerShape>* result = nullptr;
-    LMAT<filterShape>* filters = nullptr;
+    MAT<filterShape::x, filterShape::y, dimCount>* filters = nullptr;
     //Delta for next layer
-    LMAT<filterShape>* delta = nullptr;
-    LMAT<filterShape>* preDelta = nullptr;
-    LMAT<layerShape>* activationDelta;
-    LMAT<layerShape>* z;
-    LMAT<layerShape>* previousDeltaMultiplied;
-    MAT<1,1,dimCount>* bias;
-    MAT<1,1,dimCount>* deltaBias;
+    MAT<filterShape::x, filterShape::y, dimCount>* delta = nullptr;
+    MAT<filterShape::x, filterShape::y, dimCount>* preDelta = nullptr;
+    LMAT<layerShape>*activationDelta = nullptr;
+    LMAT<layerShape>*z = nullptr;
+    MAT<layerShape::x,layerShape::y,1>* tempZ = nullptr;
+    LMAT<layerShape>*previousDeltaMultiplied = nullptr;
+    MAT<1,1,filterShape::z>*bias = nullptr;
+    MAT<1,1,filterShape::z>*deltaBias = nullptr;
 
     LMAT<prevLayerShape>* nextLayerDelta = nullptr;
     LMAT<prevLayerShape>* nextLayerDeltaTemp = nullptr;
@@ -88,19 +126,19 @@ private:
 
     cudnnTensorDescriptor_t forwardInputDesc, forwardOutputDesc, biasDesc;
 #else
-    LMAT<filterShape>* rotatedFilter = nullptr;
+    MAT<filterShape::x, filterShape::y, dimCount>* rotatedFilter = nullptr;
 #endif
 };
 
 template<typename activation,typename prevLayerShape,typename layerShape, typename filterShape, typename optimizer, bool test>
-void ConvLayer<activation, prevLayerShape, layerShape, filterShape, optimizer, test>::SetWeights(LMAT<filterShape>* weights) requires(test)
+void ConvLayer<activation, prevLayerShape, layerShape, filterShape, optimizer, test>::SetWeights(MAT<filterShape::x, filterShape::y, dimCount>* weights) requires(test)
 {
     delete filters;
     filters = weights->Copy();
 }
 
 template<typename activation,typename prevLayerShape,typename layerShape, typename filterShape, typename optimizer, bool test>
-void ConvLayer<activation, prevLayerShape, layerShape, filterShape, optimizer, test>::SetBiases(MAT<filterShape::z * prevLayerShape::z>* biases) requires(test)
+void ConvLayer<activation, prevLayerShape, layerShape, filterShape, optimizer, test>::SetBiases(MAT<1,1,filterShape::z>* biases) requires(test)
 {
     delete bias;
     bias = biases->Copy();
@@ -123,21 +161,24 @@ void ConvLayer<activation, prevLayerShape, layerShape, filterShape, optimizer, t
     //dimCount = filterCount * preivousDimCount;
 
     //If the filters has no been initialized, create it and initialize it with random values
+    std::cout << filters << " this is filters ! \n";
     if (filters == nullptr)
     {
-        filters = new MAT<filterShape::x, filterShape::y, (int) dimCount>();
+        filters = new MAT<filterShape::x, filterShape::y, dimCount>();
         //Function to init the filters with random values
-        WeightsInit::HeUniform(filterShape::x * filterShape::y, filters);
+        WeightsInit::HeUniform(prevLayerShape::x * prevLayerShape::y * prevLayerShape::z, filters);
     }
 
     nextLayerDelta = new LMAT<prevLayerShape>();
 
-    nextLayerDeltaTemp = new MAT<prevLayerShape::x, prevLayerShape::y>();
+    nextLayerDeltaTemp = new LMAT<prevLayerShape>();
 
 
     delta = filters->Copy();
     delta->Zero();
-    preDelta = new LMAT<filterShape>();
+    preDelta = filters->Copy();
+    preDelta->Zero();
+    tempZ = new MAT<layerShape::x, layerShape::y, 1>();
 
 
 //    layerShape = new LayerShape(previousLayer::x - filters::GetRows() + 1, previousLayer::y -
@@ -152,7 +193,7 @@ void ConvLayer<activation, prevLayerShape, layerShape, filterShape, optimizer, t
     offset = layerShape::x - 1; // previousDeltaMultiplied.rows -
     activationDelta = result->Copy();
 
-    bias = new MAT<1, 1, (int) dimCount>();
+    bias = new MAT<1, 1, filterShape::z>();
 #if USE_GPU
     float* biasValues = new float[bias->GetSize()];
     for (int i = 0; i < bias->GetSize(); i++)
@@ -166,7 +207,7 @@ void ConvLayer<activation, prevLayerShape, layerShape, filterShape, optimizer, t
         (*bias)[i] = 0.01;
     }
 #endif
-    deltaBias = new MAT<1, 1, (int) dimCount>();
+    deltaBias = new MAT<1, 1, filterShape::z>();
 
     optimizer::Compile(filters->GetSize() + bias->GetSize());
 
@@ -297,7 +338,7 @@ void ConvLayer<activation, prevLayerShape, layerShape, filterShape, optimizer, t
     {
         for (int i = 0; i < filterCount; i++)
         {
-            GetOperationsForFullConvolution();
+            //GetOperationsForFullConvolution();
             filters->GoToNextMatrix();
             previousDeltaMultiplied->GoToNextMatrix();
         }
@@ -308,12 +349,12 @@ void ConvLayer<activation, prevLayerShape, layerShape, filterShape, optimizer, t
     nextLayerDelta->ResetOffset();
 
 
-    std::cout << "number of operations : " << FullConvOperations.size() << " \n";
-
     std::cout << "compiled !\n";
 
 #endif
 }
+
+
 
 template<typename activation,typename prevLayerShape,typename layerShape, typename filterShape, typename optimizer, bool test>
 LMAT<layerShape>* ConvLayer<activation, prevLayerShape, layerShape, filterShape, optimizer, test>::FeedForward(const LMAT<prevLayerShape>* input)
@@ -345,33 +386,38 @@ LMAT<layerShape>* ConvLayer<activation, prevLayerShape, layerShape, filterShape,
     // result->Reshape(layerShape->dimensions[0], layerShape->dimensions[1], layerShape->dimensions[2]);
     //result->PrintSize();
     //Loop through all the dimensions of the previous layer
-    for (uint j = 0; j < preivousDimCount; j++)
+    z->Zero();
+    for (uint j = 0; j < filterShape::z; j++)
     {
         //Loop through all the dimensions of the actual layer
-        for (int i = 0; i < filterCount; i++)
+        for (int i = 0; i < preivousDimCount; i++)
         {
             //Apply convolution between input and filters and output it in z
-            LMAT<prevLayerShape>::template Convolution<filterShape::x, 1>(input, filters, z);
+            LMAT<prevLayerShape>::template Convolution<filterShape::x, 1>(input, filters, tempZ);
+            z->Add(tempZ, z);
 
-            //Add the bias to the result
-            for (int k = 0; k < layerShape::x * layerShape::y; k++)
-            {
-                (*z)[k] = bias[0][0] + (*z)[k];
-            }
 
             //Filters and bias are moved to the next matrix
             filters->GoToNextMatrix();
-            bias->GoToNextMatrix();
-            z->GoToNextMatrix();
+            input->GoToNextMatrix();
+        }
+        //Add the bias to the result
+        for (int k = 0; k < layerShape::x * layerShape::y; k++)
+        {
+            (*z)[k] = bias[0][0] + (*z)[k];
         }
         //Input is moved to the next matrix
-        input->GoToNextMatrix();
+        bias->GoToNextMatrix();
+        z->GoToNextMatrix();
+        input->ResetOffset();
     }
     //All the matrix offset are reset
     filters->ResetOffset();
     input->ResetOffset();
     bias->ResetOffset();
     z->ResetOffset();
+
+
 
 #endif
 
@@ -460,26 +506,21 @@ LMAT<prevLayerShape>* ConvLayer<activation, prevLayerShape, layerShape, filterSh
     //Multiply the partial derivative of the activation function with the partial derivative of the previous layer
     lastDelta->MultiplyAllDims(activationDelta, previousDeltaMultiplied);
 
-    for (int k = 0; k < FullConvOperations.size(); k++)
-    {
-        FullConvOperations[k]->Compute();
-    }
 
     //Loop through all the dimensions of the previous layer
-    for (uint i = 0; i < preivousDimCount; i++)
+    for (uint i = 0; i < filterCount; i++)
     {
         //Loop through all the dimensions of the actual layer
-        for (uint j = 0; j < filterCount; j++)
+        for (uint j = 0; j < preivousDimCount; j++)
         {
             //Flip the filter
-            LMAT<filterShape>::Flip180(filters, rotatedFilter);
+            MAT<filterShape::x, filterShape::y, dimCount>::Flip180(filters, rotatedFilter);
 
             //Calculate the partial derivative for the previous layer
-            //Matrix::FullConvolution(rotatedFilter,previousDeltaMultiplied,nextLayerDeltaTemp);
+            LMAT<filterShape>::FullConvolution(rotatedFilter,previousDeltaMultiplied,nextLayerDeltaTemp);
 
             //Accumulate the result of the partial derivative
-            //nextLayerDelta->Add(nextLayerDeltaTemp,nextLayerDelta);
-
+            nextLayerDelta->Add(nextLayerDeltaTemp,nextLayerDelta);
 
 
             //Calculate the partial derivative of the weights
@@ -488,23 +529,38 @@ LMAT<prevLayerShape>* ConvLayer<activation, prevLayerShape, layerShape, filterSh
             //Accumulate the result
             delta->Add(preDelta, delta);
 
+
             //Filters, rotatedFilter, previousDeltaMultiplied and delta are moved to the next matrix
             filters->GoToNextMatrix();
             rotatedFilter->GoToNextMatrix();
-            previousDeltaMultiplied->GoToNextMatrix();
             delta->GoToNextMatrix();
+            prevLayerOutput->GoToNextMatrix();
         }
         // Input and nextLayerDelta are moved to the next matrix
-        prevLayerOutput->GoToNextMatrix();
-        nextLayerDelta->GoToNextMatrix();
+        previousDeltaMultiplied->GoToNextMatrix();
+        prevLayerOutput->ResetOffset();
     }
     //Resetting all the matrix offset
+    filters->ResetOffset();
     nextLayerDelta->ResetOffset();
     delta->ResetOffset();
-    filters->ResetOffset();
     rotatedFilter->ResetOffset();
     previousDeltaMultiplied->ResetOffset();
     prevLayerOutput->ResetOffset();
+
+    for (int i = 0; i < filterCount; i++)
+    {
+        for (int j = 0; j < previousDeltaMultiplied->GetMatrixSize(); j++)
+        {
+            (*deltaBias)[0] += (*previousDeltaMultiplied)[j];
+        }
+        deltaBias->GoToNextMatrix();
+        previousDeltaMultiplied->GoToNextMatrix();
+    }
+
+    deltaBias->ResetOffset();
+    previousDeltaMultiplied->ResetOffset();
+    //throw std::runtime_error("Do not work over there ! ");
 #endif
 
     //Return the partial derivative for the previous layer
@@ -537,21 +593,11 @@ void ConvLayer<activation, prevLayerShape, layerShape, filterShape, optimizer, t
     checkCUDA(cudaMemcpy(deltaBias->GetData(), deltaBiasCPU.GetData(), deltaBias->GetSize() * sizeof(float),
                          cudaMemcpyHostToDevice));
 #else
-    for (int i = 0; i < deltaBias->GetDims(); i++)
-    {
-        for (int j = 0; j < layerShape::x * layerShape::y; j++)
-        {
-            (*deltaBias)[0] += (*delta)[j];
-        }
-        deltaBias->GoToNextMatrix();
-        delta->GoToNextMatrix();
-    }
 
-    deltaBias->ResetOffset();
-    delta->ResetOffset();
 #endif
+    //Offset is the size of delta because it's stored just after delta
+    optimizer::Compute(deltaBias, bias, delta->GetSize());
 
-    optimizer::Compute(deltaBias, bias, bias->GetSize());
 }
 
 template<typename activation,typename prevLayerShape,typename layerShape, typename filterShape, typename optimizer, bool test>
@@ -574,18 +620,16 @@ void ConvLayer<activation, prevLayerShape, layerShape, filterShape, optimizer, t
 #endif
 }
 
-//template<typename activation,typename prevLayerShape,typename layerShape, typename filterShape, typename optimizer, bool test>
-//Layer<ConvLayer<activation, prevLayerShape, layerShape, filterShape, optimizer>>* ConvLayer<activation, prevLayerShape, layerShape, filterShape, optimizer, test>::Load(std::ifstream& reader)
-//{
-//#if USE_GPU
-//    throw std::runtime_error("ConvLayer::Load is not implmentedd on GPU");
-//#else
-//    Matrix* filters = Matrix::Read(reader);
-//    LayerShape* filterShape = LayerShape::Load(reader);
-//    Activation<Args>* activation = Activation<Args>::Read(reader);
-//    return new ConvLayer(filters, filterShape, activation);
-//#endif
-//}
+template<typename activation,typename prevLayerShape,typename layerShape, typename filterShape, typename optimizer, bool test>
+void ConvLayer<activation, prevLayerShape, layerShape, filterShape, optimizer, test>::Load(std::ifstream &reader)
+{
+#if USE_GPU
+    throw std::runtime_error("ConvLayer::Load is not implmentedd on GPU");
+#else
+    this->filters = LMAT<filterShape>::Read(reader);
+    this->bias = MAT<1,1,layerShape::z>::Read(reader);
+#endif
+}
 
 template<typename activation,typename prevLayerShape,typename layerShape, typename filterShape, typename optimizer, bool test>
 void ConvLayer<activation, prevLayerShape, layerShape, filterShape, optimizer, test>::ClearDelta()
@@ -606,16 +650,15 @@ std::string ConvLayer<activation, prevLayerShape, layerShape, filterShape, optim
 }
 
 
-//template<typename activation,typename prevLayerShape,typename layerShape, typename filterShape, typename optimizer, bool test>
-//void ConvLayer<activation, prevLayerShape, layerShape, filterShape, optimizer, test>::SpecificSave(std::ofstream& writer)
-//{
-//    filters->Save(writer);
-//    filterShape->Save(writer);
-//    activation->Save(writer);
-//}
+template<typename activation,typename prevLayerShape,typename layerShape, typename filterShape, typename optimizer, bool test>
+void ConvLayer<activation, prevLayerShape, layerShape, filterShape, optimizer, test>::Save(std::ofstream& writer)
+{
+    filters->Save(writer);
+    bias->Save(writer);
+}
 
 #if not USE_GPU
-
+/*
 template<typename activation,typename prevLayerShape,typename layerShape, typename filterShape, typename optimizer, bool test>
 void ConvLayer<activation, prevLayerShape, layerShape, filterShape, optimizer, test>::GetOperationsForFullConvolution()
 {
@@ -653,7 +696,7 @@ void ConvLayer<activation, prevLayerShape, layerShape, filterShape, optimizer, t
         }
     }
 }
-
+*/
 #endif
 
 template<typename activation,typename prevLayerShape,typename layerShape, typename filterShape, typename optimizer, bool test>
@@ -682,10 +725,14 @@ ConvLayer<activation, prevLayerShape, layerShape, filterShape, optimizer, test>:
     delete result;
     delete z;
     delete delta;
+    delete deltaBias;
     delete preDelta;
     delete previousDeltaMultiplied;
     delete activationDelta;
     delete nextLayerDelta;
+    delete tempZ;
+    delete bias;
+    delete nextLayerDeltaTemp;
 #if USE_GPU
     checkCUDNN(cudnnDestroyTensorDescriptor(forwardInputDesc));
     checkCUDNN(cudnnDestroyTensorDescriptor(forwardOutputDesc));
