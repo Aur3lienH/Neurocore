@@ -53,15 +53,7 @@ public:
     {
         if constexpr (GPU)
         {
-            // Utilisation d'un kernel CUDA pour le calcul de la dérivée
-            const int blocksPerGrid = (output->GetSize() + cuda->threadsPerBlock - 1) / cuda->threadsPerBlock;
-
-            checkKernel((MSEDerivativeKernel<<<blocksPerGrid, cuda->threadsPerBlock>>>(
-                output->GetData(),
-                target->GetData(),
-                result->GetData(),
-                output->GetSize()
-            )));
+            output->SubstractAllDims(target, result);
         }
         else
         {

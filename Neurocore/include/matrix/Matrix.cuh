@@ -514,10 +514,26 @@ void Matrix<rows, cols, dims, GPU>::SubstractAllDims(const Matrix *other, Matrix
         return;
     }
 #endif
-    int size = GetRows() * GetCols() * GetDims();
+    if constexpr (GPU)
+    {
+        for (auto i =0; i < GetDims(); i++)
+        {
+            Substract(other, result);
+            GoToNextMatrix();
+            other->GoToNextMatrix();
+            result->GoToNextMatrix();
+        }
+        ResetOffset();
+        other->ResetOffset();
+        result->ResetOffset();
+    }
+    else
+    {
+        int size = GetRows() * GetCols() * GetDims();
 
-    for (int i = 0; i < size; i++) {
-        result->data[i] = this->data[i] - other->data[i];
+        for (int i = 0; i < size; i++) {
+            result->data[i] = this->data[i] - other->data[i];
+        }
     }
 }
 
