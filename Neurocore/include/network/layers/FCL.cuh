@@ -7,7 +7,7 @@
 #include "network/LayerShape.cuh"
 #include "network/optimizers/Constant.h"
 
-template<typename activation,typename prevLayerShape,typename layershape,typename optimizer = Constant<0.001>, bool GPU = GPU_DEFAULT>
+template<typename activation,typename prevLayerShape,typename layershape,typename optimizer = Constant<0.001>, bool GPU = GPU_DEFAULT, bool test = false>
 class FCL final
 {
 public:
@@ -48,7 +48,7 @@ public:
     void UpdateWeights(double learningRate, int batchSize);
 
     //Add Delta from another identical layer
-    void AddDeltaFrom(Layer<FCL<activation,prevLayerShape,layershape,optimizer,GPU>>* otherLayer);
+    void AddDeltaFrom(Layer<FCL<activation,prevLayerShape,layershape,optimizer, GPU,test>>* otherLayer);
 
     //Initialize variable and check for network architecture
     void Compile();
@@ -60,21 +60,21 @@ public:
     Layer<FCL>* Clone();
 
 
-    void SetWeights(MAT<layershape::x, prevLayerShape::x>* weights)
+    void SetWeights(MAT<layershape::x, prevLayerShape::x>* weights) requires(test)
     {
         if (Weights != nullptr)
             delete Weights;
         Weights = weights;
     }
 
-    void SetBiases(MAT<layershape::x>* biases)
+    void SetBiases(MAT<layershape::x>* biases) requires(test)
     {
         if (Biases != nullptr)
             delete Biases;
         Biases = biases;
     }
 
-    Matrix<layershape::x, prevLayerShape::x, 1, false>* GetWeightsCPUCopy()
+    Matrix<layershape::x, prevLayerShape::x, 1, false>* GetWeightsCPUCopy() requires(test)
     {
         if constexpr (GPU)
             {return Weights->CPU_copy();}
@@ -82,7 +82,7 @@ public:
         {return Weights->Copy();}
     }
 
-    Matrix<layershape::x, 1,1, false>* GetBiasesCPUCopy()
+    Matrix<layershape::x, 1,1, false>* GetBiasesCPUCopy() requires(test)
     {
         if constexpr (GPU)
             {return Biases->CPU_copy();}
@@ -95,7 +95,7 @@ public:
         return Weights->CPU_copy();
     }
 
-    Matrix<layershape::x, 1, 1, false>* GetBiases_CPU() requires(GPU)
+    Matrix<layershape::x, 1, 1, false>* GetBiases_CPU() requires(GPU && test)
     {
         return Biases->CPU_copy();
     }
@@ -159,14 +159,14 @@ private:
 #include "matrix/Matrix.cuh"
 #include "network/LayerShape.cuh"
 
-template<typename activation,typename prevLayerShape,typename layershape,typename optimizer,bool GPU>
-FCL<activation,prevLayerShape,layershape,optimizer,GPU>::FCL()
+template<typename activation,typename prevLayerShape,typename layershape,typename optimizer,bool GPU, bool test>
+FCL<activation,prevLayerShape,layershape,optimizer,GPU, test>::FCL()
 {
 
 }
 
-template<typename activation,typename prevLayerShape,typename layershape,typename optimizer,bool GPU>
-void FCL<activation,prevLayerShape,layershape,optimizer,GPU>::Compile()
+template<typename activation,typename prevLayerShape,typename layershape,typename optimizer,bool GPU, bool test>
+void FCL<activation,prevLayerShape,layershape,optimizer,GPU, test>::Compile()
 {
     buffer = new float[8];
 
@@ -213,8 +213,8 @@ FCL<activation,prevLayerShape,layershape,optimizer,GPU>::FCL(MAT* weights, MAT* 
 }
 */
 
-template<typename activation,typename prevLayerShape,typename layershape,typename optimizer,bool GPU>
-MAT<layershape::x>* FCL<activation,prevLayerShape,layershape,optimizer,GPU>::FeedForward(const MAT<prevLayerShape::x>* input)
+template<typename activation,typename prevLayerShape,typename layershape,typename optimizer,bool GPU, bool test>
+MAT<layershape::x>* FCL<activation,prevLayerShape,layershape,optimizer,GPU, test>::FeedForward(const MAT<prevLayerShape::x>* input)
 {
 
         //TODO: Check a solution to flatten without copying
@@ -227,8 +227,8 @@ MAT<layershape::x>* FCL<activation,prevLayerShape,layershape,optimizer,GPU>::Fee
 
 }
 
-template<typename activation,typename prevLayerShape,typename layershape,typename optimizer,bool GPU>
-const MAT<prevLayerShape::x>* FCL<activation,prevLayerShape,layershape,optimizer,GPU>::BackPropagate(const MAT<layershape::x>* lastDelta, const MAT<prevLayerShape::x>* PastActivation)
+template<typename activation,typename prevLayerShape,typename layershape,typename optimizer,bool GPU, bool test>
+const MAT<prevLayerShape::x>* FCL<activation,prevLayerShape,layershape,optimizer,GPU, test>::BackPropagate(const MAT<layershape::x>* lastDelta, const MAT<prevLayerShape::x>* PastActivation)
 {
     if constexpr (GPU)
     {
@@ -264,8 +264,8 @@ const MAT<prevLayerShape::x>* FCL<activation,prevLayerShape,layershape,optimizer
     }
 }
 
-template<typename activation,typename prevLayerShape,typename layershape,typename optimizer,bool GPU>
-const MAT<layershape::x, prevLayerShape::x>* FCL<activation, prevLayerShape, layershape, optimizer,GPU>::BackPropagateSSE2(
+template<typename activation,typename prevLayerShape,typename layershape,typename optimizer,bool GPU, bool test>
+const MAT<layershape::x, prevLayerShape::x>* FCL<activation, prevLayerShape, layershape, optimizer,GPU, test>::BackPropagateSSE2(
     const MAT<layershape::x>* lastDelta, const MAT<layershape::x>* PastActivation) requires(!GPU)
 {
     /*newDelta->Flatten();
@@ -328,8 +328,8 @@ const MAT<layershape::x, prevLayerShape::x>* FCL<activation, prevLayerShape, lay
     return nullptr;
 }
 
-template<typename activation,typename prevLayerShape,typename layershape,typename optimizer,bool GPU>
-const MAT<layershape::x, prevLayerShape::x>* FCL<activation, prevLayerShape, layershape, optimizer,GPU>::BackPropagateAX2(
+template<typename activation,typename prevLayerShape,typename layershape,typename optimizer,bool GPU, bool test>
+const MAT<layershape::x, prevLayerShape::x>* FCL<activation, prevLayerShape, layershape, optimizer,GPU, test>::BackPropagateAX2(
     const MAT<layershape::x>* lastDelta, const MAT<layershape::x>* PastActivation) requires (!GPU)
 {
 
@@ -385,18 +385,18 @@ const MAT<layershape::x, prevLayerShape::x>* FCL<activation, prevLayerShape, lay
 
     return newDelta;
 }
-template<typename activation,typename prevLayerShape,typename layershape,typename optimizer,bool GPU>
-const MAT<layershape::x>* FCL<activation,prevLayerShape,layershape,optimizer,GPU>::getResult() const
+template<typename activation,typename prevLayerShape,typename layershape,typename optimizer,bool GPU, bool test>
+const MAT<layershape::x>* FCL<activation,prevLayerShape,layershape,optimizer,GPU, test>::getResult() const
 {
     return Result;
 }
-template<typename activation,typename prevLayerShape,typename layershape,typename optimizer,bool GPU>
-const MAT<layershape::x, prevLayerShape::x>* FCL<activation,prevLayerShape,layershape,optimizer,GPU>::getDelta()
+template<typename activation,typename prevLayerShape,typename layershape,typename optimizer,bool GPU, bool test>
+const MAT<layershape::x, prevLayerShape::x>* FCL<activation,prevLayerShape,layershape,optimizer,GPU, test>::getDelta()
 {
     return Delta;
 }
-template<typename activation,typename prevLayerShape,typename layershape,typename optimizer,bool GPU>
-const MAT<layershape::x>* FCL<activation,prevLayerShape,layershape,optimizer,GPU>::getDeltaBiases()
+template<typename activation,typename prevLayerShape,typename layershape,typename optimizer,bool GPU, bool test>
+const MAT<layershape::x>* FCL<activation,prevLayerShape,layershape,optimizer,GPU, test>::getDeltaBiases()
 {
     return DeltaBiases;
 }
@@ -414,24 +414,25 @@ FCL* FCL<activation,prevLayerShape,layershape,optimizer,GPU>::Load(std::ifstream
 }
 */
 
-template<typename activation,typename prevLayerShape,typename layershape,typename optimizer,bool GPU>
-void FCL<activation,prevLayerShape,layershape,optimizer,GPU>::ClearDelta()
+template<typename activation,typename prevLayerShape,typename layershape,typename optimizer,bool GPU, bool test>
+void FCL<activation,prevLayerShape,layershape,optimizer,GPU, test>::ClearDelta()
 {
     Delta->Zero();
     DeltaBiases->Zero();
 }
 
-template<typename activation,typename prevLayerShape,typename layershape,typename optimizer,bool GPU>
-void FCL<activation,prevLayerShape,layershape,optimizer,GPU>::UpdateWeights(const double learningRate, const int batchSize)
+template<typename activation,typename prevLayerShape,typename layershape,typename optimizer,bool GPU, bool test>
+void FCL<activation,prevLayerShape,layershape,optimizer,GPU,test>::UpdateWeights(const double learningRate, const int batchSize)
 {
     optimizer::Compute(Delta, Weights);
-    optimizer::Compute(DeltaBiases, Biases, 0/*Weights->GetSize()*/); // Todo: figure out what was the purpose of this offset
-
-    Delta->Zero();
-    DeltaBiases->Zero();
+    if constexpr (GPU)
+    {
+        printf("check if we have to remove offset");
+    }
+    optimizer::Compute(DeltaBiases, Biases, Weights->GetSize());
 }
-template<typename activation,typename prevLayerShape,typename layershape,typename optimizer,bool GPU>
-void FCL<activation,prevLayerShape,layershape,optimizer,GPU>::AddDeltaFrom(Layer<FCL<activation,prevLayerShape,layershape,optimizer,GPU>>* otherLayer)
+template<typename activation,typename prevLayerShape,typename layershape,typename optimizer,bool GPU, bool test>
+void FCL<activation,prevLayerShape,layershape,optimizer,GPU, test>::AddDeltaFrom(Layer<FCL<activation,prevLayerShape,layershape,optimizer,GPU, test>>* otherLayer)
 {
 #if USE_GPU
     throw std::runtime_error("FCL::AddDeltaFrom not implemented for GPU");
@@ -441,8 +442,8 @@ void FCL<activation,prevLayerShape,layershape,optimizer,GPU>::AddDeltaFrom(Layer
     DeltaBiases->AddAllDims(_FCLLayer->DeltaBiases, DeltaBiases);
 #endif
 }
-template<typename activation,typename prevLayerShape,typename layershape,typename optimizer,bool GPU>
-std::string FCL<activation,prevLayerShape,layershape,optimizer,GPU>::getLayerTitle()
+template<typename activation,typename prevLayerShape,typename layershape,typename optimizer,bool GPU, bool test>
+std::string FCL<activation,prevLayerShape,layershape,optimizer,GPU, test>::getLayerTitle()
 {
     std::string buf;
     buf += "Layer : Fully Connected\n";
@@ -450,8 +451,8 @@ std::string FCL<activation,prevLayerShape,layershape,optimizer,GPU>::getLayerTit
     buf += "Neurons Count : " + std::to_string(layershape::x) + "\n";
     return buf;
 }
-template<typename activation,typename prevLayerShape,typename layershape,typename optimizer,bool GPU>
-Layer<FCL<activation,prevLayerShape,layershape,optimizer,GPU>>* FCL<activation,prevLayerShape,layershape,optimizer,GPU>::Clone()
+template<typename activation,typename prevLayerShape,typename layershape,typename optimizer,bool GPU, bool test>
+Layer<FCL<activation,prevLayerShape,layershape,optimizer,GPU, test>>* FCL<activation,prevLayerShape,layershape,optimizer,GPU, test>::Clone()
 {
     return new FCL<activation,prevLayerShape,layershape,optimizer,GPU>();
 }
@@ -467,14 +468,14 @@ void FCL<activation,prevLayerShape,layershape,optimizer,GPU>::SpecificSave(std::
 }
 */
 
-template<typename activation,typename prevLayerShape,typename layershape,typename optimizer,bool GPU>
-void FCL<activation,prevLayerShape,layershape,optimizer,GPU>::AverageGradients(int batchSize)
+template<typename activation,typename prevLayerShape,typename layershape,typename optimizer,bool GPU, bool test>
+void FCL<activation,prevLayerShape,layershape,optimizer,GPU, test>::AverageGradients(int batchSize)
 {
     Delta->DivideAllDims(batchSize);
     DeltaBiases->DivideAllDims(batchSize);
 }
-template<typename activation,typename prevLayerShape,typename layershape,typename optimizer,bool GPU>
-FCL<activation,prevLayerShape,layershape,optimizer,GPU>::~FCL()
+template<typename activation,typename prevLayerShape,typename layershape,typename optimizer,bool GPU, bool test>
+FCL<activation,prevLayerShape,layershape,optimizer,GPU, test>::~FCL()
 {
     delete Weights;
     delete Biases;

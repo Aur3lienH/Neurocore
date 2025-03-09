@@ -11,7 +11,6 @@
 #include "cudnn.h"
 #include "gpuComputation/CUDA.cuh"
 
-#define SAFE 0
 #define AVX2 false
 #define SSE2 false
 
@@ -35,15 +34,33 @@ public:
         } else {
             int i = 0;
             for (const float &value: values) {
-                if (i < GetMatrixSize()) {
+                if (i < GetSize()) {
                     data[i++] = value;
                 }
+                else {
+                    throw std::runtime_error("Matrix::Matrix(std::initializer_list<float> values): Too much values in the initializer list !");
+                }
             }
+            if (i != GetSize())
+                throw std::runtime_error("Matrix::Matrix(std::initializer_list<float> values): Missing values in the initializer list !");
         }
     }
 
     Matrix(py::array_t<float> &input) {
         py::buffer_info buf = input.request();
+        size_t ndim = buf.ndim;
+        if (ndim == 1) {
+            if (cols != 1 || dims != 1 || rows != buf.shape[0])
+                throw std::runtime_error("Matrix::Matrix(py::array_t<float>& input): The given numpy array is (" + std::to_string(buf.shape[0]) + ") but the matrix shape is " + this->ToShape() + " !");
+        }
+        else if (ndim == 2) {
+            if (dims != 1 || rows != buf.shape[0] || cols != buf.shape[1])
+                throw std::runtime_error("Matrix::Matrix(py::array_t<float>& input): The given numpy array is (" + std::to_string(buf.shape[0]) + ", " + std::to_string(buf.shape[1]) + ") but the matrix shape is " + this->ToShape() + " !");
+        }
+        else if (ndim == 3 && (dims != buf.shape[2] || rows != buf.shape[0] || cols != buf.shape[1]))
+            throw std::runtime_error("Matrix::Matrix(py::array_t<float>& input): The given numpy array is (" + std::to_string(buf.shape[0]) + ", " + std::to_string(buf.shape[1]) + ", " + std::to_string(buf.shape[2]) + ") but the matrix shape is " + this->ToShape() + " !");
+        else
+            throw std::runtime_error("Matrix::Matrix(py::array_t<float>& input): Matrix cannot handle more than 3 dimensions but given " + std::to_string(ndim) + " !");
 
         float *ptr = static_cast<float *>(buf.ptr);
 
@@ -57,8 +74,10 @@ public:
 
     static py::object ConvertToArray(py::array_t<float> &input) {
         py::buffer_info buf = input.request();
+        if (buf.ndim > 4)
+            throw std::runtime_error("Matrix::ConvertToArray(py::array_t<float>& input): Matrix array cannot be more than 4 dims but given " + std::to_string(buf.ndim) + " !");
         auto shape = buf.shape;
-        float *ptr = static_cast<float *>(buf.ptr);
+        float* ptr = static_cast<float*>(buf.ptr);
         size_t n_matrices = 1;
         size_t matrix_elements;
 
@@ -133,29 +152,27 @@ public:
 public:
     static void Flip180(const Matrix *input, Matrix *output);
 
-    template<int filter_rows, int filter_cols>
-    static void FullConvolution(const Matrix<rows, cols> *m, const Matrix<filter_rows, filter_cols> *filter,
-                                Matrix<rows + filter_rows - 1, cols + filter_cols - 1, dims> *output);
+    template<int filter_rows, int filter_cols, int dim1, int dim2, int dim3>
+    static void FullConvolution(const Matrix<rows,cols,dim1>* m, const Matrix<filter_rows,filter_cols,dim2>* filter, Matrix<rows+filter_rows-1,cols+filter_cols-1,dim3>* output);
 
     //static void FullConvolutionAVX2(const Matrix* m, const Matrix* filter, Matrix* output);
 
     //FullConvolution FS4 = Filter Size 4
     //static void FullConvolutionFS4(const Matrix* m, const Matrix* filter, Matrix* output);
 
-    template<int filterSize, int stride>
-    static void Convolution(const Matrix<rows, cols, dims> *input, const Matrix<filterSize, filterSize, dims> *filter,
-                            Matrix<(rows - filterSize) / stride + 1, (cols - filterSize) / stride + 1, dims> *output);
+    template<int filterSize, int stride, int dim1, int dim2, int dim3>
+    static void Convolution(const Matrix<rows, cols, dim1>* input,const Matrix<filterSize, filterSize, dim2>* filter,Matrix<(rows - filterSize) / stride + 1, (cols - filterSize) / stride + 1, dim3>* output);
 
 
+
     template<int filterSize, int stride>
-    static void MaxPool(const Matrix<rows, cols, dims, GPU> *a,
-                        Matrix<(rows - filterSize) / stride + 1, (cols - filterSize) / stride + 1> *output);
+    static void MaxPool(const Matrix<rows,cols,dims>* a, Matrix<(rows - filterSize) / stride + 1,(cols - filterSize) / stride + 1, dims>* output);
 
     template<int filterSize, int stride>
     static void AveragePool(const Matrix<rows, cols, dims, GPU> *a,
                             Matrix<(rows - filterSize) / stride + 1, (cols - filterSize) / stride + 1> *output);
 
-    static Matrix Random();
+    static Matrix* Random();
 
     Matrix<cols, rows, dims, GPU> *Transpose() const;
 
@@ -175,9 +192,9 @@ public:
     //    void Flatten() const;
 
     //Cannot happen either !
-    //void Reshape(int rows_, int cols_, int dimss) const;
-
-    void Add(Matrix *other, Matrix *result);
+    //void Reshape(int rows_, int cols_, int dims) const;
+    template<int dim1, int dim2>
+    void Add(Matrix<rows,cols,dim1>* other, Matrix<rows,cols,dim2>* result);
 
     void AddAllDims(Matrix *other, Matrix *result);
 
@@ -245,6 +262,8 @@ public:
 
     //const float& operator()(int _rows, int _cols, int _dims) const requires(!GPU);;
 
+    std::string ToShape() const;
+
     template<int other_rows, int other_cols>
     void MatrixMultiplication(const Matrix<other_rows, other_cols> *other, Matrix<rows, other_cols> *output) const;
 
@@ -259,9 +278,13 @@ public:
 
     void PrintSize() const;
 
-    static float Distance(Matrix *a, Matrix *b);
+    void Print(size_t dimension) const;
 
-    Matrix *Copy();
+    void PrintAllDims() const;
+
+    static float Distance(Matrix* a, Matrix* b);
+
+    Matrix* Copy();
 
     Matrix *CopyWithSameData();
 
@@ -285,8 +308,10 @@ public:
     void MultiplyTransposeBy(const Matrix<rows, other_cols> &other, Matrix<cols, other_cols> &res) requires(GPU);
 
     //std::vector<Operation*> O_CrossProduct(Matrix* a, Matrix* b, Matrix* output);
+    void CheckValidOffset() const;
 
-    mutable float *data = nullptr;
+    mutable float* data = nullptr;
+
     cudnnTensorDescriptor_t desc;
     mutable cudnnTensorDescriptor_t desc_1D;
     float *data_d;
@@ -298,6 +323,7 @@ protected:
     // Descriptor for the matrix to perform operations on a single dimension
 
 private:
+
     void Init(float value = 0);
 };
 
@@ -319,6 +345,12 @@ Matrix<rows, columns, dims, GPU>::Matrix(float value) {
     Init(value);
 }
 
+template<int rows, int cols, int dims, bool GPU>
+void Matrix<rows, cols, dims, GPU>::CheckValidOffset() const {
+
+    if (offset < 0 || offset >= GetSize())
+        throw std::runtime_error("Matrix::CheckValidOffset(): Matrix offset is " + std::to_string(offset) + " and the size is " + std::to_string(GetSize()) + " !");
+}
 template<int rows, int cols, int dims, bool GPU>
 void Matrix<rows, cols, dims, GPU>::Init(float value) {
     if constexpr (GPU) {
@@ -396,29 +428,25 @@ bool Matrix<rows, cols, size, GPU>::IsColumnMajor() const {
 
 //Add two matrix using SSE2 SMID instructions
 template<int rows, int cols, int dims, bool GPU>
-void Matrix<rows, cols, dims, GPU>::Add(Matrix *other, Matrix *result) {
-#if SAFE
-    if (this->rows != other->rows || this->cols != other->cols)
+template<int dim1, int dim2>
+void Matrix<rows,cols,dims, GPU>::Add(Matrix<rows,cols,dim1>* other, Matrix<rows,cols,dim2>* result)
+{
+/*
+    for (int i = 0; i < this->rows * this->cols; i++)
     {
-        std::cout << "Error: Matrix dimensions must agree." << std::endl;
-        std::cout << "Matrix 1: " << this->rows << "x" << this->cols << std::endl;
-        std::cout << "Matrix 2: " << other->rows << "x" << other->cols << std::endl;
-        return;
+        result->data[i] = this->data[i] + other->data[i];
     }
-#endif
+*/
     if constexpr (GPU) {
         checkCUBLAS(
             cublasSgeam(cuda->cublasHandle, CUBLAS_OP_N, CUBLAS_OP_N, rows, cols,
                 &cuda->one, data_d, rows, &cuda->one, other->data_d, rows, result->data_d, rows));
-    } else {
-        /*
-            for (int i = 0; i < this->rows * this->cols; i++)
-            {
-                result->data[i] = this->data[i] + other->data[i];
-            }
-        */
-
-        float *temp = new float[4];
+    } else
+    {
+        float* temp = new float[4];
+        CheckValidOffset();
+        other->CheckValidOffset();
+        result->CheckValidOffset();
 
         int size = GetRows() * GetCols();
         int i;
@@ -442,12 +470,13 @@ void Matrix<rows, cols, dims, GPU>::Add(Matrix *other, Matrix *result) {
 
         delete[] temp;
     }
+
 }
 
 template<int rows, int cols, int dims, bool GPU>
 void Matrix<rows, cols, dims, GPU>::AddAllDims(Matrix *other, Matrix *result) {
 #if SAFE
-    if (this->rows != other->rows || this->cols != other->cols || this->dim != other->dim)
+    if (rows != other->GetRows() || cols != other->GetCols() || dims != other->GetDims())
     {
         std::cout << "Error: Matrix dimensions must agree." << std::endl;
         return;
@@ -461,15 +490,8 @@ void Matrix<rows, cols, dims, GPU>::AddAllDims(Matrix *other, Matrix *result) {
 }
 
 template<int rows, int cols, int dims, bool GPU>
-void Matrix<rows, cols, dims, GPU>::Substract(const Matrix *other, Matrix *result) const {
-#if SAFE
-    if (this->rows != other->rows || this->cols != other->cols)
-    {
-        std::cout << "Error: Matrix dimensions must agree." << std::endl;
-        return;
-    }
-#endif
-
+void Matrix<rows, cols, dims, GPU>::Substract(const Matrix *other, Matrix *result) const
+{
     if constexpr (GPU) {
         checkCUBLAS(
             cublasSgeam(cuda->cublasHandle, CUBLAS_OP_N, CUBLAS_OP_N, rows, cols,
@@ -507,13 +529,7 @@ Matrix<cols, rows, dims, GPU> *Matrix<rows, cols, dims, GPU>::Transpose() const 
 
 template<int rows, int cols, int dims, bool GPU>
 void Matrix<rows, cols, dims, GPU>::SubstractAllDims(const Matrix *other, Matrix *result) const {
-#if SAFE
-    if (this->rows != other->rows || this->cols != other->cols || this->dim != other->dim)
-    {
-        std::cout << "Error: Matrix dimensions must agree." << std::endl;
-        return;
-    }
-#endif
+
     if constexpr (GPU)
     {
         for (auto i =0; i < GetDims(); i++)
@@ -539,13 +555,7 @@ void Matrix<rows, cols, dims, GPU>::SubstractAllDims(const Matrix *other, Matrix
 
 template<int rows, int cols, int dims, bool GPU>
 void Matrix<rows, cols, dims, GPU>::MultiplyAllDims(const Matrix *other, Matrix *result) const {
-#if SAFE
-    if (this->rows != other->rows || this->cols != other->cols || this->dim != other->dim)
-    {
-        std::cout << "Error: Matrix dimensions must agree." << std::endl;
-        return;
-    }
-#endif
+
     int size = GetRows() * GetCols() * GetDims();
 
     for (int i = 0; i < size; i++) {
@@ -554,16 +564,21 @@ void Matrix<rows, cols, dims, GPU>::MultiplyAllDims(const Matrix *other, Matrix 
 }
 
 template<int rows, int cols, int dims, bool GPU>
-void Matrix<rows, cols, dims, GPU>::MultiplyAllDims(float value) {
-    if constexpr (GPU) {
-        checkKernel((scalarMult_kernel<<<CUDA_KERNEL_ARGS(cuda, GetSize())>>>(data_d, value, data_d, GetSize())));
-    } else {
-        int size = GetRows() * GetCols() * GetDims();
+void Matrix<rows,cols,dims, GPU>::MultiplyAllDims(float value)
+{
+    int size = GetSize();
 
-        for (int i = 0; i < size; i++) {
-            this->data[i] *= value;
-        }
+    if constexpr (GPU)
+    {
+            checkKernel(
+                (scalarMult_kernel<<<CUDA_KERNEL_ARGS(cuda, GetMatrixSize())>>>(data_d, value, data_d, GetSize())));
     }
+     else
+     {
+         for (int i = 0; i < size; i++) {
+             this->data[i] *= value;
+         }
+     }
 }
 
 template<int rows, int cols, int dims, bool GPU>
@@ -585,7 +600,7 @@ void Matrix<rows, cols, dims, GPU>::Zero() {
     if constexpr (GPU) {
         checkCUDA(cudaMemset(data_d, 0, dims * sizeof(float)));
     } else {
-        for (int i = 0; i < GetRows() * GetCols(); i++) {
+        for (int i = 0; i < GetSize(); i++) {
             this->data[i] = 0;
         }
     }
@@ -657,13 +672,45 @@ void Matrix<rows, cols, dims, GPU>::PrintSize() const {
     std::cout << "(" << GetRows() << "," << GetCols() << "," << GetDims() << ")" << std::endl;
 }
 
-/*template <int rows, int cols, int dims, bool GPU>
-float& Matrix<rows, cols, dims, GPU>::operator[](int index) requires(!GPU)
+template<int rows, int cols, int dims, bool GPU>
+void Matrix<rows, cols, dims, GPU>::Print(size_t dimension) const {
+    if (dimension >= dims)
+        throw std::runtime_error("Matrix::Print(size_t dimension): This dimensions does not exist in the current matrix !");
+    int store_offset = GetOffset();
+    ResetOffset();
+    for (size_t i = 0; i < dimension; i++)
+        GoToNextMatrix();
+    std::cout << offset << " is the offset " << GetSize() << " is the size !\n";
+    Print();
+    ResetOffset();
+    SetOffset(store_offset);
+}
+
+template<int rows, int cols, int dim, bool GPU>
+void Matrix<rows, cols, dim, GPU> ::PrintAllDims() const
+{
+    int store_offset = GetOffset();
+    std::cout << store_offset << " this is the offset which is stored ! \n";
+    ResetOffset();
+    std::cout << "[\n";
+    for (int i = 0; i < dim; i++) {
+        Print();
+        GoToNextMatrix();
+    }
+    std::cout << "]\n";
+    std::cout << "the stored offset is now " << store_offset << "\n";
+    ResetOffset();
+    SetOffset(store_offset);
+    std::cout << "finally the offset is " << GetOffset() << "\n";
+}
+/*
+template<int rows, int cols, int dim>
+float& Matrix<rows,cols,dim>::operator[](int index)
 {
 #if SAFE
-    if (index >= this->rows * this->cols * this->dim)
+    if (index >= GetSize())
     {
-        throw std::out_of_range("Matrix : Index out of bounds");
+        throw std::out_of_range("Matrix : Index out of bounds, index: " + std::to_string(index) + ", size: " + std::to_string(GetSize()));
     }
 #endif
 
@@ -675,10 +722,12 @@ template <int rows, int cols, int dims, bool GPU>
 const float& Matrix<rows, cols, dims, GPU>::operator[](int index) const requires(!GPU)
 {
 #if SAFE
-    if (index >= this->rows * this->cols * this->dim)
+    if (index >= GetSize())
     {
         throw std::out_of_range("Matrix : Index out of bounds");
     }
+    if (offset != 0)
+        throw std::runtime_error("Matrix::operator[](int index): The offset has not been reinitialized, offset : " + std::to_string(offset) + " \n");
 #endif
     if constexpr (GPU)
     {
@@ -716,16 +765,15 @@ const float& Matrix<rows, cols, dims, GPU>::operator()(int _rows, int _cols, int
 }*/
 
 template<int rows, int cols, int dims, bool GPU>
+std::string Matrix<rows,cols,dims, GPU>::ToShape() const
+{
+    std::string shape = "(" + std::to_string(this->GetRows()) + ", " + std::to_string(this->GetCols()) + ", " + std::to_string(this->GetDims()) + ")";
+    return shape;
+}
+
+template<int rows, int cols, int dims, bool GPU>
 Matrix<rows, cols, dims, GPU> *Matrix<rows, cols, dims, GPU>::operator*=(const Matrix<rows, cols, dims, GPU> *other)
     requires(!GPU) {
-#if SAFE
-    if (this->cols != other->cols && this->rows != other->rows)
-    {
-        throw std::runtime_error("Error: Matrix dimensions must agree.");
-    }
-#endif
-
-
     float *temp = new float[4];
 
     int size = this->GetRows() * this->GetCols();
@@ -775,14 +823,6 @@ Matrix<rows, cols, dims, GPU> *Matrix<rows, cols, dims, GPU>::operator*=(const f
 
 template<int rows, int cols, int dims, bool GPU>
 Matrix<rows, cols, dims, GPU> *Matrix<rows, cols, dims, GPU>::operator+(const Matrix &other) const {
-#if SAFE
-    if (this->rows != other.rows || this->cols != other.cols)
-    {
-        std::cout << "Matrices are not of the same size\n";
-        return nullptr;
-    }
-#endif
-
     auto *result = new Matrix();
     if constexpr (GPU) {
         checkCUBLAS(
@@ -798,14 +838,6 @@ Matrix<rows, cols, dims, GPU> *Matrix<rows, cols, dims, GPU>::operator+(const Ma
 
 template<int rows, int cols, int dims, bool GPU>
 Matrix<rows, cols, dims, GPU> *Matrix<rows, cols, dims, GPU>::operator-(const Matrix &other) const {
-#if SAFE
-    if (this->rows != other.rows || this->cols != other.cols)
-    {
-        std::cout << "Matrices are not of the same size\n";
-        return nullptr;
-    }
-#endif
-
     auto *result = new Matrix();
     if constexpr (GPU) {
         checkCUBLAS(
@@ -822,13 +854,6 @@ Matrix<rows, cols, dims, GPU> *Matrix<rows, cols, dims, GPU>::operator-(const Ma
 
 template<int rows, int cols, int dims, bool GPU>
 Matrix<rows, cols, dims, GPU> *Matrix<rows, cols, dims, GPU>::operator+=(const Matrix &other) {
-#if SAFE
-    if (this->rows != other.rows || this->cols != other.cols)
-    {
-        std::cout << "Matrices are not of the same size\n";
-        return nullptr;
-    }
-#endif
 
     for (int i = 0; i < this->GetCols() * this->GetRows(); i++) {
         this->data[i] += other.data[i];
@@ -856,14 +881,6 @@ Matrix<rows, cols, dims, GPU> *Matrix<rows, cols, dims, GPU>::operator*(const fl
 
 template<int rows, int cols, int dims, bool GPU>
 Matrix<rows, cols, dims, GPU> *Matrix<rows, cols, dims, GPU>::operator-=(const Matrix &other) {
-#if SAFE
-    if (this->rows != other.rows || this->cols != other.cols)
-    {
-        std::cout << "Matrices are not of the same size\n";
-        return nullptr;
-    }
-#endif
-
     for (int i = 0; i < this->GetRows() * this->GetCols(); i++) {
         this->data[i] -= other.data[i];
     }
@@ -874,7 +891,7 @@ Matrix<rows, cols, dims, GPU> *Matrix<rows, cols, dims, GPU>::operator-=(const M
 template<int rows, int cols, int dims, bool GPU>
 float Matrix<rows, cols, dims, GPU>::get(const int index) const {
 #if SAFE
-    if (index >= this->rows * this->cols * this->dim)
+    if (index >= GetSize())
     {
         throw std::out_of_range("Matrix : Index out of bounds");
     }
@@ -892,7 +909,7 @@ float Matrix<rows, cols, dims, GPU>::get(const int index) const {
 template<int rows, int cols, int dims, bool GPU>
 void Matrix<rows, cols, dims, GPU>::set(const int index, const float value) {
 #if SAFE
-    if (index >= this->rows * this->cols * this->dim)
+    if (index >= GetSize())
     {
         throw std::out_of_range("Matrix : Index out of bounds");
     }
@@ -905,13 +922,6 @@ void Matrix<rows, cols, dims, GPU>::set(const int index, const float value) {
 
 template<int rows, int cols, int dims, bool GPU>
 float Matrix<rows, cols, dims, GPU>::get(const int _rows, const int _cols) const {
-#if SAFE
-    if (rows_ >= this->rows || cols_ >= this->cols)
-    {
-        throw std::out_of_range("Matrix : Index out of bounds");
-    }
-#endif
-
     if constexpr (GPU) {
         float val;
         checkCUDA(cudaMemcpy(&val, data_d + _rows * this->GetCols() + _cols, sizeof(float), cudaMemcpyDeviceToHost));
@@ -923,13 +933,6 @@ float Matrix<rows, cols, dims, GPU>::get(const int _rows, const int _cols) const
 
 template<int rows, int cols, int dims, bool GPU>
 void Matrix<rows, cols, dims, GPU>::set(const int _rows, const int _cols, const float value) {
-#if SAFE
-    if (rows_ >= this->rows || cols_ >= this->cols)
-    {
-        throw std::out_of_range("Matrix : Index out of bounds");
-    }
-#endif
-
     if constexpr (GPU) {
         checkCUDA(cudaMemcpy(data_d + _rows * this->GetCols() + _cols, &value, sizeof(float), cudaMemcpyHostToDevice));
     } else { data[_rows * this->GetCols() + _cols] = value; }
@@ -939,18 +942,6 @@ template<int rows, int cols, int dims, bool GPU>
 template<int other_rows, int other_cols>
 void Matrix<rows, cols, dims, GPU>::MatrixMultiplication(const Matrix<other_rows, other_cols> *other,
                                                          Matrix<rows, other_cols> *output) const {
-#if SAFE
-
-    if (other->rows != this->cols)
-    {
-        throw std::runtime_error("Matrix have not the shape to be cross producted !");
-    }
-    if (output->rows != this->rows || output->cols != other->cols)
-    {
-        throw std::runtime_error("Output matrix has not the right shape !");
-    }
-
-#endif
 
     if constexpr (GPU) {
         checkCUBLAS(cublasSgemm_v2(cuda->cublasHandle, CUBLAS_OP_N, CUBLAS_OP_N, other->GetCols(), GetRows(), GetCols(),
@@ -997,21 +988,9 @@ void Matrix<rows, cols, dims, GPU>::MatrixMultiplication(const Matrix<other_rows
     }
 }
 
-
+//TODO: incorrect matrix dimensions for the output
 template<int rows, int cols, int dims, bool GPU>
 void Matrix<rows, cols, dims, GPU>::CrossProductWithSelfTranspose(const Matrix *other, Matrix *output) const {
-#if SAFE
-
-    if (other->rows != this->rows)
-    {
-        throw std::runtime_error("Matrix have not the shape to be cross producted !");
-    }
-    if (output->rows != this->cols || output->cols != other->cols)
-    {
-        throw std::runtime_error("Output matrix has not the right shape !");
-    }
-#endif
-
     /*for (int i = 0; i < this->cols; i++)
     {
         for (int j = 0; j < other->cols; j++)
@@ -1088,18 +1067,7 @@ void Matrix<rows, cols, dims, GPU>::CrossProductWithTranspose(const Matrix *othe
 
 template<int rows, int cols, int dims, bool GPU>
 void Matrix<rows, cols, dims, GPU>::OptimizedCrossProduct(const Matrix *a, const Matrix *other, Matrix *output) {
-#if SAFE
 
-    if (a->rows != a->cols)
-    {
-        throw std::runtime_error("Matrice have not the shape to be cross producted !");
-    }
-    if (a->rows != a->rows || output->cols != other->cols)
-    {
-        throw std::runtime_error("Output matrix has not the right shape !");
-    }
-
-#endif
 
 
     for (int i = 0; i < a->GetRows(); i++) {
@@ -1209,12 +1177,6 @@ void Matrix<rows,cols,dims, GPU>::Save(std::ofstream& writer)
 
 template<int rows, int cols, int dims, bool GPU>
 float Matrix<rows, cols, dims, GPU>::Distance(Matrix *a, Matrix *b) {
-#if SAFE
-    if (a->cols != b->cols || a->rows != b->rows)
-    {
-        throw std::invalid_argument("Matrices need to have same size to calculate distance !");
-    }
-#endif
     float res = 0;
     for (int i = 0; i < a->GetCols() * a->GetRows(); i++) {
         res += (a[0][i] - b[0][i]) * (a[0][i] - b[0][i]);
@@ -1245,8 +1207,8 @@ Matrix<rows, cols, dims, GPU> *Matrix<rows, cols, dims, GPU>::CopyWithSameData()
 
 template<int rows, int cols, int dims, bool GPU>
 void Matrix<rows, cols, dims, GPU>::Flip180(const Matrix *input, Matrix *output) {
-    for (int i = 0; i < input->GetCols() / 2; ++i) {
-        for (int j = 0; j < input->GetRows() / 2; ++j) {
+    for (int i = 0; i < input->GetCols(); ++i) {
+        for (int j = 0; j < input->GetRows(); ++j) {
             //UGLY
             output->set(i, j, input->get(input->GetRows() - 1 - j, input->GetCols() - 1 - i));
         }
@@ -1278,22 +1240,15 @@ int Matrix<rows, cols, dims, GPU>::GetOffset() const {
 }
 
 
-template<int rows, int cols, int dims, bool GPU>
-template<int filter_rows, int filter_cols>
-void Matrix<rows, cols, dims, GPU>::FullConvolution(const Matrix<rows, cols> *m,
-                                                    const Matrix<filter_rows, filter_cols> *filter,
-                                                    Matrix<rows + filter_rows - 1, cols + filter_cols - 1, dims> *
-                                                    output) {
+
+template<int rows, int cols, int dim, bool GPU>
+template<int filter_rows, int filter_cols, int dim1, int dim2, int dim3>
+void Matrix<rows,cols,dim, GPU>::FullConvolution(const Matrix<rows,cols,dim1>* m, const Matrix<filter_rows,filter_cols,dim2>* filter, Matrix<rows+filter_rows-1,cols+filter_cols-1,dim3>* output)
+{
     const int outputCols = m->GetCols() + filter->GetCols() - 1;
     const int outputRows = m->GetRows() + filter->GetRows() - 1;
 
-#if SAFE
-    if (output->cols != outputCols || outputRows != output->rows)
-    {
-        std::cout << "right shape is : " << "(" << outputRows << "," << outputCols << ")\n";
-        throw std::invalid_argument("FullConvolution : Output Matrix has not the right shape ! ");
-    }
-#endif
+
     const int filterCols = filter->GetCols();
     const int filterRows = filter->GetRows();
 
@@ -1435,23 +1390,11 @@ void Matrix<rows, cols, dims, GPU>::AveragePool(const Matrix<rows, cols, dims, G
 }
 
 template<int rows, int cols, int dims, bool GPU>
-template<int filterSize, int stride>
+template<int filterSize, int stride, int dim1, int dim2, int dim3>
 void Matrix<rows, cols, dims, GPU>::Convolution(
-    const Matrix<rows, cols, dims> *input,
-    const Matrix<filterSize, filterSize, dims> *filter,
-    Matrix<(rows - filterSize) / stride + 1, (cols - filterSize) / stride + 1, dims> *output) {
-#if SAFE
-    int filterSize = filter->GetRows();
-    int inputCols = input->GetCols();
-    int inputRows = input->GetRows();
-    int outputCols = (inputCols - filterSize) / stride + 1;
-    int outputRows = (inputRows - filterSize) / stride + 1;
-    if (outputCols != output->cols || output->rows != outputRows)
-    {
-        std::cout << outputRows << "\n";
-        throw std::invalid_argument("Convolution : output matrix has not the right shape !");
-    }
-#endif
+    const Matrix<rows, cols, dim1> *input,
+    const Matrix<filterSize, filterSize, dim2> *filter,
+    Matrix<(rows - filterSize) / stride + 1, (cols - filterSize) / stride + 1, dim3> *output) {
 
     for (int i = 0; i < output->GetRows(); i++) {
         for (int j = 0; j < output->GetCols(); j++) {
@@ -1544,11 +1487,10 @@ Matrix<rows, cols, dims, GPU> *Matrix<rows, cols, dims, GPU>::Copy(const Matrix 
     return res;
 }
 
-template<int rows, int cols, int dims, bool GPU>
+template<int rows, int cols, int dim, bool GPU>
 template<int filterSize, int stride>
-void Matrix<rows, cols, dims, GPU>::MaxPool(const Matrix<rows, cols, dims, GPU> *a,
-                                            Matrix<(rows - filterSize) / stride + 1, (cols - filterSize) / stride + 1> *
-                                            output) {
+void Matrix<rows,cols,dim, GPU>::MaxPool(const Matrix<rows,cols,dim>* a, Matrix<(rows - filterSize) / stride + 1,(cols - filterSize) / stride + 1, dim>* output)
+{
     const int inputCols = a->GetCols();
     const int inputRows = a->GetRows();
     const int outputCols = (inputCols - filterSize) / stride + 1;
@@ -1576,11 +1518,12 @@ void Matrix<rows, cols, dims, GPU>::MaxPool(const Matrix<rows, cols, dims, GPU> 
     output->ResetOffset();
 }
 
-template<int rows, int cols, int dims, bool GPU>
-Matrix<rows, cols, dims, GPU> Matrix<rows, cols, dims, GPU>::Random() {
-    Matrix res(rows, cols);
+template<int rows, int cols, int dim, bool GPU>
+Matrix<rows,cols,dim, GPU>* Matrix<rows,cols,dim, GPU>::Random()
+{
+    auto* res = new MAT<rows,cols,dim>();
     for (int i = 0; i < rows * cols; i++)
-        res[i] = (float) rand() / RAND_MAX * 2 - 1;
+        (*res).set(i, (float) rand() / RAND_MAX * 2 - 1);
 
     return res;
 }

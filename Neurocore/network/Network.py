@@ -1,9 +1,10 @@
+from email.errors import NonPrintableDefect
+
 from Neurocore.network.Activation import Activation
 from Neurocore.network.Loss import Loss
 from Neurocore.network.Layers import Layer
 from Neurocore.network.Matrix import Matrix
-from Neurocore.network.CompilationTools import RunCommand, ImportLib, GetBuildDir, GetTemplateDir, GetPybindDir, \
-    GetIncludeDir, GetCompilationCommand
+from Neurocore.network.CompilationTools import RunCommand, ImportLib, GetBuildDir, GetTemplateDir, GetPybindDir, GetIncludeDir
 import numpy as np
 import numpy.typing as npt
 from Neurocore.network.MatrixTypes import MatrixTypes
@@ -40,8 +41,13 @@ class Network:
             cmake_list_path = os.path.join(GetTemplateDir(),'CMakeLists.txt')
             source_path = os.path.join(build_dir,'network.cpp')
             out_path = os.path.join(build_dir,'neurocore.so')
-            cmd = GetCompilationCommand(source_path, out_path)
-
+            pybind_include = os.path.join(GetPybindDir(),'include')
+            cmd = f"g++ -O3 -shared -std=c++20 -fPIC -flto=auto "\
+          f" `python3 -m pybind11 --includes`" \
+          f" {'-static-libasan' if Config.DEBUG else '' }" \
+          f" -I{pybind_include} -I{GetIncludeDir()} "\
+          f"{source_path} "\
+          f"-o {out_path}"
             #RunCommand(f'cp {cmake_list_path} {build_dir}')
             #RunCommand(f'cmake -DPYBIND11_ROOT={GetPybindDir()} -DINCLUDE_DIR={GetIncludeDir()} -DNETWORK_FILE={source_path} -S {build_dir} -B {build_dir} -DPython3_FIND_STRATEGY=LOCATION')
             #RunCommand(f'cd {build_dir} && make')
@@ -60,7 +66,6 @@ class Network:
             os.chdir(original_dir)
     
     def Compile(self, loss: Loss):
-        print("started compiling !")
         build_dir = GetBuildDir()
 
         self.loss = loss
@@ -71,6 +76,11 @@ class Network:
         string += '#include "network/layers/FCL.cuh"\n'
         string += '#include "network/activation/ReLU.h"\n'
         string += '#include "network/layers/InputLayer.cuh"\n'
+        string += '#include "network/layers/Reshape.cuh"\n'
+        string += '#include "network/layers/ConvLayer.cuh"\n'
+        string += '#include "network/layers/MaxPooling.cuh"\n'
+        string += '#include "network/layers/AveragePooling.cuh"\n'
+        string += '#include "network/layers/DropoutFCL.cuh"\n'
         string += '#include "datasetsBehaviour/DataLoader.h"\n'
         string += '#include "network/loss/MSE.cuh"\n'
         string += '#include "network/loss/Loss.h"\n'
@@ -115,7 +125,6 @@ class Network:
         last_layer = self.layers[-1].get_layer_shape()
         PreCompileMatrix(first_layer.x,first_layer.y,first_layer.z)
         PreCompileMatrix(last_layer.x,last_layer.y,last_layer.z)
-        print("finshed compiling")
         self.cpp_network.Compile()
         
         

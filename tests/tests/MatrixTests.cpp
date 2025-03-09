@@ -50,7 +50,7 @@ bool MatrixTests::ExecuteTests()
             std::cout << std::get<1>(functions[i]) << "\n";
         }
     }
-    free(array);
+    delete[] array;
     return res;
 }
 
@@ -316,6 +316,8 @@ bool MatrixTests::TestOperators() {
         }
     }
 
+    delete subResult;
+    delete mulResult;
 
     return success;
 }
@@ -336,4 +338,6 @@ bool MatrixTests::BlockMatrixTest() {
 
     return success;
 }
+
+
 

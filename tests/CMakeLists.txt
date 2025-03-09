@@ -4,6 +4,7 @@ cmake_minimum_required(VERSION 3.13)
 #set(CMAKE_CXX_COMPILER "g++")
 #set(CMAKE_CUDA_HOST_COMPILER "/usr/bin/gcc-12" CACHE STRING "CUDA host compiler")
 project(deeplib_tests VERSION 1.0 LANGUAGES CUDA CXX)
+
 find_package(Python3 REQUIRED COMPONENTS Interpreter Development)
 
 # Language standards
@@ -12,6 +13,7 @@ set(CMAKE_C_STANDARD_REQUIRED True)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 set(CMAKE_CUDA_ARCHITECTURES "50;60;61;70;75;86;89;90")
+set(CMAKE_CUDA_COMPILER_LAUNCHER ccache)
 
 # Compiler flags
 set(CMAKE_C_FLAGS "-fPIC -O3 -ffast-math -Wno-deprecated-gpu-targets")
@@ -26,22 +28,14 @@ set(CMAKE_CXX_FLAGS "-fPIC -O3 -mavx -march=native")
 
 # Collect all source files for tests
 file(GLOB_RECURSE TEST_SOURCES
-        "${CMAKE_SOURCE_DIR}/src/tests/*.cpp"
-        "${CMAKE_SOURCE_DIR}/src/network/*.cpp"
-        "${CMAKE_SOURCE_DIR}/src/tests/*.cu"
-        "${CMAKE_SOURCE_DIR}/src/*.cu"
-        "${CMAKE_SOURCE_DIR}/src/main.cpp"
-        "${CMAKE_SOURCE_DIR}/include/*.h"
-        "${CMAKE_SOURCE_DIR}/include/*.hpp"
-        "${CMAKE_SOURCE_DIR}/include/*.cuh"
         "${CMAKE_SOURCE_DIR}/tests/*.cpp"
         "${CMAKE_SOURCE_DIR}/network/*.cpp"
+        #"${CMAKE_SOURCE_DIR}/*.cu"
         "${CMAKE_SOURCE_DIR}/main.cpp"
         "${CMAKE_SOURCE_DIR}/../Neurocore/include/*.h"
         "${CMAKE_SOURCE_DIR}/../Neurocore/include/*.hpp"
         "${CMAKE_SOURCE_DIR}/../Neurocore/include/*.cuh"
 )
-
 # Create the test executable
 add_executable(${PROJECT_NAME} ${TEST_SOURCES})
 
@@ -115,7 +109,7 @@ target_link_libraries(${PROJECT_NAME} PRIVATE
         SDL2
         cudnn
 )
-
+add_compile_definitions(SAFE=1)
 set_target_properties(${PROJECT_NAME} PROPERTIES LINKER_LANGUAGE CUDA)
 
 

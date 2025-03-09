@@ -42,7 +42,7 @@ bool LossTests::ExecuteTests()
             std::cout << std::get<1>(functions[i]) << "\n";
         }
     }
-    free(array);
+    delete[] array;
     return res;
 }
 

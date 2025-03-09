@@ -10,6 +10,10 @@
 #include <iostream>
 #include <ratio>
 
+#include "network/Network.h"
+#include "network/loss/Loss.h"
+#include "network/loss/MSE.cuh"
+
 
 bool LayerTests::ExecuteTests()
 {
@@ -27,6 +31,7 @@ bool LayerTests::ExecuteTests()
     functions.emplace_back((void*)TestAveragePoolLayer, std::string("Average Pooling Layer"));
     functions.emplace_back((void*)TestMaxPoolLayerBackprop, std::string("Max Pooling Layer Backprop"));
     functions.emplace_back((void*)TestAveragePoolLayerBackprop, std::string("Average Pooling Layer Backprop"));
+    functions.emplace_back((void*)TestCNNMultiple,std::string("CNN multiple layers, multiple filters dimensions"));
 
     bool* array = new bool[functions.size()];
 
@@ -59,7 +64,7 @@ bool LayerTests::ExecuteTests()
             std::cout << std::get<1>(functions[i]) << "\n";
         }
     }
-    free(array);
+    delete[] array;
     return res;
 }
 
@@ -90,17 +95,181 @@ bool LayerTests::TestInputLayer()
 
 bool LayerTests::TestCNNLayer()
 {
-    ConvLayer<Activation<ReLU<1,3>>, LayerShape<3,3>, LayerShape<1,1>, LayerShape<3,3>, Constant<1.0>> cnn;
+    ConvLayer<Activation<ReLU<1,3>>, LayerShape<3,3>, LayerShape<1,1>, LayerShape<3,3>, Constant<0.01>, GPU_DEFAULT ,true> cnn;
     cnn.Compile();
+
     Matrix<3,3> filters({0,0,0,0,1,0,0,0,0});
     cnn.SetWeights(&filters);
+
     Matrix<1,1> biases(0.);
     cnn.SetBiases(&biases);
+
     Matrix<3,3> input({1,1,1,1,2,1,1,1,1});
+
     Matrix<1,1>* out = cnn.FeedForward(&input);
-    Matrix<1,1> delta(1);
+
+    bool forwardPassCorrect = (std::abs((*out).get(0,0) - 2.0) < 1e-6);
+
+    if (!forwardPassCorrect)
+    {
+        std::cout << "we are here, over there" << std::endl;
+        out->Print();
+        return false;
+    }
+
+    Matrix<1,1> delta(1.0);
+
+
     Matrix<3,3>* bout = cnn.BackPropagate(&delta, &input);
-    
+
+
+
+
+    bool backwardPassCorrect = true;
+    for (int i = 0; i < 3; i++) {
+        for (int j = 0; j < 3; j++) {
+            float expected = (i == 1 && j == 1) ? 1.0 : 0.0;
+            if (std::abs((*bout).get(i,j) - expected) > 1e-6) {
+                backwardPassCorrect = false;
+                break;
+            }
+        }
+    }
+
+
+
+    return backwardPassCorrect;
+}
+
+bool LayerTests::TestCNNLayerWeightsInit()
+{
+    typedef ConvLayer<Activation<ReLU<3,3,3,3>>, LayerShape<3,3,2>, LayerShape<3,3,3>, LayerShape<1,1,3>, Constant<0.01>, true> cnn2;
+}
+
+bool LayerTests::TestCNNMultiple()
+{
+    typedef ConvLayer<Activation<ReLU<3,3,3,2>>, LayerShape<3,3>, LayerShape<3,3,2>, LayerShape<1,1,2>, Constant<0.01>, GPU_DEFAULT,true> cnn1;
+    typedef ConvLayer<Activation<ReLU<3,3,3,3>>, LayerShape<3,3,2>, LayerShape<3,3,3>, LayerShape<1,1,3>, Constant<0.01>, GPU_DEFAULT,true> cnn2;
+    Network<MSE<3,3,3>,InputLayer<LayerShape<3,3,1>>,cnn1,cnn2> net;
+    std::cout << "before compiling ! \n";
+    net.Compile();
+    std::cout << "after compiling \n";
+
+    cnn1* conv1 = net.GetLayer<1>();
+    cnn2* conv2 = net.GetLayer<2>();
+
+    // For first layer: 1 input channel * 2 output channels = 2 filters
+    // Each filter is 1x1
+    MAT<1,1,2>* filters1 = new MAT<1,1,2>({0.5f, 1.0f});
+    conv1->SetWeights(filters1);
+    conv1->SetBiases(new MAT<1,1,2>({0.5f, 1.0f}));
+
+    // For second layer: 2 input channels * 3 output channels = 6 filters
+    // Each filter is 1x1
+    MAT<1,1,6>* filters2 = new MAT<1,1,6>({
+        2.0f, 0.5f,  // First input channel to output channels 1,2,3
+        3.0f, 1.5f,  // Added values for the remaining connections
+        0.8f, 1.2f   // Second input channel to output channels 1,2,3
+    });
+    conv2->SetWeights(filters2);
+    conv2->SetBiases(new MAT<1,1,3>({1.0f, 2.0f, 3.0f}));
+
+    MAT<3,3,1>* mat = new MAT<3,3,1>({1,0,1,0,1,0,1,0,1});
+    std::cout << "after intializing the things ! \n";
+
+    //Input is
+    // 1 0 1
+    // 0 1 0
+    // 1 0 1
+
+    const MAT<3,3,3>* outi = net.FeedForward(mat);
+    auto* res = conv1->getResult();
+
+    //The first convLayer with two output channels:
+    // First channel (filter 0.5 + bias 0.5):
+    // 1.0 0.5 1.0
+    // 0.5 1.0 0.5
+    // 1.0 0.5 1.0
+
+    // Second channel (filter 1.0 + bias 1.0):
+    // 2.0 1.0 2.0
+    // 1.0 2.0 1.0
+    // 2.0 1.0 2.0
+
+    float correct_res_cnn1[] = {
+        1.0f,0.5f,1.0f,0.5f,1.0f,0.5f,1.0f,0.5f,1.0f,
+        2.0f,1.0f,2.0f,1.0f,2.0f,1.0f,2.0f,1.0f,2.0f
+    };
+
+    for (size_t i = 0; i < 18; i++) {
+        if (std::abs(res->get(i) - correct_res_cnn1[i]) > 1e-6) {
+            res->Print(0);
+            res->Print(1);
+            std::cout << "First layer output mismatch at index " << i
+                      << ": expected " << correct_res_cnn1[i]
+                      << ", got " << res->data[i] << std::endl;
+            return false;
+        }
+    }
+
+    //Same calculation here.
+
+    auto* res2 = conv2->getResult();
+
+    float correct_res_cnn2[] = {
+        4.0f, 2.5f, 4.0f, 2.5f, 4.0f, 2.5f, 4.0f, 2.5f, 4.0f,
+        8.0f, 5.0f, 8.0f, 5.0f, 8.0f, 5.0f, 8.0f, 5.0f, 8.0f,
+        6.2f, 4.6f, 6.2f, 4.6f, 6.2f, 4.6f, 6.2f, 4.6f, 6.2f
+    };
+
+
+    for (size_t i = 0; i < 27; i++) {
+        if (std::abs(res2->get(i) - correct_res_cnn2[i]) > 1e-6) {
+            res2->Print();
+            std::cout << "Second layer output mismatch at index " << i
+                      << ": expected " << correct_res_cnn2[i]
+                      << ", got " << res2->get(i) << std::endl;
+            return false;
+        }
+    }
+
+    Matrix<3,3,3>* expected = new Matrix<3,3,3>({
+        0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 2.5f, 4.0f, 2.5f, 4.0f,
+        8.0f, 5.0f, 8.0f, 5.0f, 8.0f, 0.0f, 0.0f, 5.0f, 8.0f,
+        6.2f, 4.6f, 6.2f, 4.6f, 6.2f, 4.6f, 6.2f, 0.0f, 0.0f
+    });
+
+    net.BackPropagate(mat,expected);
+
+    auto* delta = conv2->getDelta();
+    auto* delta_bias = conv2->getDeltaBias();
+
+    float* correct_delta_cnn2 = new float[]{14.5, 29.0, 10.5, 21.0, 8.5, 17.0};
+    float* correct_delta_bias_cnn2 = new float[]{17, 13, 10.8};
+
+    for (int i = 0; i < 6; i++) {
+        if (std::abs((*delta).get(i) - correct_delta_cnn2[i]) > 1e-6) {
+            std::cout << "the offset is : " << delta->GetOffset() << " \n";
+            delta->PrintAllDims();
+            std::cout << "the offset is : " << delta->GetOffset() << " \n";
+            std::cout << "Second layer delta output mismatch at index " << i
+                      << ": expected " << correct_delta_cnn2[i]
+                      << ", got " << (*delta).get(i) << std::endl;
+            return false;
+        }
+    }
+
+    for (int i = 0; i < 3; i++) {
+        if (std::abs((*delta_bias).get(i) - correct_delta_bias_cnn2[i]) > 1e-6) {
+            delta_bias->Print(i);
+            std::cout << "Second layer delta bias output mismatch at index " << i
+                      << ": expected " << correct_delta_bias_cnn2[i]
+                      << ", got " << delta_bias->data[i] << std::endl;
+            return false;
+        }
+    }
+
+
     return true;
 }
 

@@ -1,4 +1,4 @@
-from Neurocore.network.CompilationTools import RunCommand, ImportLib, GetBuildDir, GetIncludeDir, GetPybindDir, GetCompilationCommand
+from Neurocore.network.CompilationTools import RunCommand, ImportLib, GetBuildDir, GetIncludeDir, GetPybindDir
 import os
 from Neurocore.network.Config import Config
 
@@ -26,7 +26,13 @@ class MatrixTypes:
         file.write(f'BIND_MATRIX({rows},{cols},{dims})')
         file.close()
         out_file_path = os.path.join(build_dir,self.get_out_filename(rows,cols,dims))
-        cmd = GetCompilationCommand(filepath,out_file_path)
+        pybind_include = os.path.join(GetPybindDir(),'include')
+        cmd = f"g++ -O3 -shared -std=c++20 -fPIC -flto=auto "\
+          f" {'-static-libasan' if Config.DEBUG else '' }"\
+          f" `python3 -m pybind11 --includes`"\
+          f" -I{pybind_include} -I{GetIncludeDir()} "\
+          f" {filepath} "\
+          f"-o {out_file_path}"
 
         RunCommand(cmd)
         lib = ImportLib(out_file_path)

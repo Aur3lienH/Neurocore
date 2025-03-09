@@ -8,10 +8,18 @@ class AveragePoolLayer final
     cudnnPoolingDescriptor_t poolingDescriptor;
     cudnnTensorDescriptor_t forwardInputDesc, forwardOutputDesc;
 public:
+
+    using Shape = LayerShape;
+    
     AveragePoolLayer(): fs_2(filterSize * filterSize)
     {
         output = new LMAT<LayerShape>();
         newDelta = new LMAT<PrevLayerShape>();
+    }
+
+    ~AveragePoolLayer() {
+        delete output;
+        delete newDelta;
     }
 
     //static Layer* Load(std::ifstream& reader);

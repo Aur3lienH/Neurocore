@@ -148,8 +148,8 @@ template<int x=1, int y=1, int z=1, bool GPU=GPU_DEFAULT>
 void DefaultDerivative(const MAT<x,y,z>* x_, MAT<x,y,z>* dx_, void* derivative, const Matrix<x,y,z>* dy_, const Matrix<x,y,z>* y_)
 {
 #if SAFE
-    if (input->GetCols() != output->GetCols() || input->GetRows() != output->GetRows() ||
-        input->GetDims() != output->GetDims())
+    if (x_->GetCols() != dx_->GetCols() || x_->GetRows() != dx_->GetRows() ||
+        x_->GetDims() != dx_->GetDims())
     {
         throw std::invalid_argument("activation::Derivative() : Both matrix must have the same shape !");
     }

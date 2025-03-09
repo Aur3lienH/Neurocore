@@ -35,7 +35,7 @@ public:
         else
         {
             // Version CPU directe
-            const int totalSize = output->GetRows() * output->GetCols();
+            const int totalSize = output->GetSize();
 
 #pragma omp parallel for reduction(+:cost)
             for (int i = 0; i < totalSize; i++) {
@@ -58,7 +58,7 @@ public:
         else
         {
             // Version CPU avec potentielle vectorisation
-            const int totalSize = output->GetRows() * output->GetCols();
+            const int totalSize = output->GetSize();
 
 #pragma omp parallel for
             for (int i = 0; i < totalSize; i++)

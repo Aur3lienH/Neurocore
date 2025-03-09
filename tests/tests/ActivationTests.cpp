@@ -48,7 +48,7 @@ bool ActivationTests::ExecuteTests()
             std::cout << std::get<1>(functions[i]) << "\n";
         }
     }
-    free(array);
+    delete[] array;
     return res;
 }
 
@@ -91,7 +91,8 @@ bool ActivationTests::TestReLU()
         return false;
     }
 
-
+    delete biases;
+    delete weights;
     return true;
 }
 

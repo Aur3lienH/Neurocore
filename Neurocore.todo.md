@@ -1,11 +1,13 @@
 - [ ] Optimizations : 
   - [ ] Using FFT for Convolution
-  - [ ] Removing virtual function using CRTP
+  - [X] Removing virtual function using CRTP
     - [ ] Optimizing the code made with CRTP
       - [ ] In activation -> Check the best possible way to compute the function and the derivative
   - [ ] Implement Strassen algorithm for matrix
-- [ ] Python library : 
-  - [ ] Manage the ownership between python and C++
-  - [ ] Modify the README for python usage : Installation and usage
+- [X] Python library : 
+  - [X] Manage the ownership between python and C++
+  - [X] Modify the README for python usage : Installation and usage
+  - [ ] Add save to the library
 - [ ] Fix : 
   - [ ] Modify the Max pooling and Average pooling layer to be able to handle stride which is not a multiple of the input size
+  - [ ] Correct the initialization of the weights in the CNN, MaxPooling, Average Pooling
