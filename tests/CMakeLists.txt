@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.13)
 
 # Set the compilers BEFORE project()
 #set(CMAKE_CXX_COMPILER "g++")
-#set(CMAKE_CUDA_HOST_COMPILER "/usr/bin/gcc-12" CACHE STRING "CUDA host compiler")
+set(CMAKE_CUDA_HOST_COMPILER "/usr/bin/gcc-12" CACHE STRING "CUDA host compiler")
 project(deeplib_tests VERSION 1.0 LANGUAGES CUDA CXX)
 
 find_package(Python3 REQUIRED COMPONENTS Interpreter Development)
@@ -25,10 +25,11 @@ set(CMAKE_CXX_FLAGS "-fPIC -O3 -mavx -march=native")
 #pkg_check_modules(SDL2 REQUIRED sdl2)
 #pkg_check_modules(SDL2IMAGE REQUIRED SDL2_image)
 #pkg_check_modules(CAIRO REQUIRED cairo)
-
+message("${CMAKE_SOURCE_DIR}/tests/template_implementations/*.cpp")
 # Collect all source files for tests
 file(GLOB_RECURSE TEST_SOURCES
         "${CMAKE_SOURCE_DIR}/tests/*.cpp"
+        "${CMAKE_SOURCE_DIR}/template_implementations/*.cu"
         "${CMAKE_SOURCE_DIR}/network/*.cpp"
         #"${CMAKE_SOURCE_DIR}/*.cu"
         "${CMAKE_SOURCE_DIR}/main.cpp"

@@ -69,7 +69,7 @@ bool NetworkTests::BasicFFNFeedForward()
     neuralnet.Compile();
     MAT<1> input({1});
     auto* fcl = neuralnet.GetLayer<1>();
-    fcl->SetWeights(new MAT<5>({{1,2,3,4,5}}));
+    //fcl->SetWeights(new MAT<5>({{1,2,3,4,5}}));
     fcl->SetBiases(new MAT<5>({1,2,3,4,5}));
     const MAT<5>* output = neuralnet.FeedForward(&input);
     output->Print();
