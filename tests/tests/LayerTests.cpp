@@ -25,6 +25,7 @@ bool LayerTests::ExecuteTests()
     functions.emplace_back((void*)TestCNNLayer, std::string("CNN layer"));
 
 
+
     functions.emplace_back((void*)TestDropLayer, std::string("Dropout Layer"));
     functions.emplace_back((void*)TestDropLayerBackprop, std::string("Dropout Layer Backprop"));
     functions.emplace_back((void*)TestMaxPoolLayer, std::string("Max Pooling Layer"));
@@ -34,7 +35,6 @@ bool LayerTests::ExecuteTests()
     functions.emplace_back((void*)TestCNNMultiple,std::string("CNN multiple layers, multiple filters dimensions"));
 
     bool* array = new bool[functions.size()];
-
 
     for (int i = 0; i < functions.size(); i++)
     {
@@ -62,6 +62,7 @@ bool LayerTests::ExecuteTests()
         {
             std::cout << "  \033[1;31m[FAIL]\033[0m   ";
             std::cout << std::get<1>(functions[i]) << "\n";
+
         }
     }
     delete[] array;
@@ -144,6 +145,7 @@ bool LayerTests::TestCNNLayer()
 bool LayerTests::TestCNNLayerWeightsInit()
 {
     typedef ConvLayer<Activation<ReLU<3,3,3,3>>, LayerShape<3,3,2>, LayerShape<3,3,3>, LayerShape<1,1,3>, Constant<0.01>, true> cnn2;
+    return true;
 }
 
 bool LayerTests::TestCNNMultiple()

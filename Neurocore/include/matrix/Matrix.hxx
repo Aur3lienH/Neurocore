@@ -1,3 +1,4 @@
+#pragma once
 #include "Matrix.cuh"
 
 template<int rows, int cols, int dims, bool GPU>
@@ -121,12 +122,6 @@ Matrix<rows, cols, dims, GPU>::Matrix(std::initializer_list<float> values) {
 
         return py::array_t<float>(shape, data);
     }
-
-template<int x = 1, int y = 1, int z = 1, bool GPU = GPU_DEFAULT>
-using MAT = Matrix<x, y, z, GPU>;
-
-template<typename layershape>
-using LMAT = MAT<layershape::x, layershape::y, layershape::z>;
 
 
 //MATRIX
@@ -991,7 +986,7 @@ Matrix<rows, cols, dims, GPU> *Matrix<rows, cols, dims, GPU>::Copy() {
         for (int i = 0; i < cols * rows * dims; i++) {
             resArray[i] = data[i];
         }
-        return new Matrix<rows, cols, dims>(resArray);
+        return new Matrix<rows, cols, dims,GPU>(resArray);
     }
 }
 
@@ -1275,7 +1270,7 @@ constexpr int Matrix<rows, cols, dims, GPU>::GetSize() {
 
 template<int rows, int cols, int dims, bool GPU>
 Matrix<rows, cols, dims, GPU> *Matrix<rows, cols, dims, GPU>::Copy(const Matrix *a) {
-    auto *res = new Matrix<a->GetRows(), a->GetCols(), a->GetDims()>();
+    auto *res = new Matrix<a->GetRows(), a->GetCols(), a->GetDims(), GPU>();
     for (int i = 0; i < a->GetSize(); i++) {
         res->set(i,  a->get(i));
     }
@@ -1316,7 +1311,7 @@ void Matrix<rows,cols,dim, GPU>::MaxPool(const Matrix<rows,cols,dim>* a, Matrix<
 template<int rows, int cols, int dim, bool GPU>
 Matrix<rows,cols,dim, GPU>* Matrix<rows,cols,dim, GPU>::Random()
 {
-    auto* res = new MAT<rows,cols,dim>();
+    auto* res = new MAT<rows,cols,dim,GPU>();
     for (int i = 0; i < rows * cols; i++)
         (*res).set(i, (float) rand() / RAND_MAX * 2 - 1);
 

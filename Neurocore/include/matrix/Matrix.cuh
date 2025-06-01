@@ -216,6 +216,13 @@ private:
     void Init(float value = 0);
 };
 
+template<int x = 1, int y = 1, int z = 1, bool GPU = GPU_DEFAULT>
+using MAT = Matrix<x, y, z, GPU>;
+
+template<typename layershape>
+using LMAT = MAT<layershape::x, layershape::y, layershape::z>;
+
+
 #ifndef TEST
 #include "Matrix.hxx"
 #endif

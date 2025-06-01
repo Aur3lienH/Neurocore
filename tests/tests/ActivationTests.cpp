@@ -4,6 +4,7 @@
 #include "network/activation/Tanh.h"
 #include "network/activation/Softmax.h"
 #include "network/activation/Activation.cuh"
+#include "matrix/Matrix.cuh"
 
 
 bool ActivationTests::ExecuteTests()

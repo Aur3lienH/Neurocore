@@ -1,5 +1,7 @@
 #include "tests/MatrixTests.h"
 #include "matrix/Matrix.cuh"
+#include <iostream>
+#include <vector>
 #include <cmath>
 #include <tuple>
 
@@ -110,6 +112,8 @@ bool MatrixTests::TestBasicOperations() {
     Matrix<2,2> result;
     mat1.Add(&mat2, &result);
 
+    
+    
     for(int i = 0; i < 4; i++) {
         if (std::abs(result.get(i) - 3.0f) > 1e-6) {
             return false;

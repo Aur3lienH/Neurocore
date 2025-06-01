@@ -8,16 +8,21 @@ project(deeplib_tests VERSION 1.0 LANGUAGES CUDA CXX)
 find_package(Python3 REQUIRED COMPONENTS Interpreter Development)
 
 # Language standards
+
 set(CMAKE_C_STANDARD 11)
 set(CMAKE_C_STANDARD_REQUIRED True)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
-set(CMAKE_CUDA_ARCHITECTURES "50;60;61;70;75;86;89;90")
-set(CMAKE_CUDA_COMPILER_LAUNCHER ccache)
+set(CMAKE_BUILD_PARALLEL_LEVEL 0)
+set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} --threads 0")
+#set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} --compile-threads 0")
+set(CMAKE_CUDA_ARCHITECTURES "86")
+#set(CMAKE_CUDA_COMPILER_LAUNCHER ccache)
 
 # Compiler flags
 set(CMAKE_C_FLAGS "-fPIC -O3 -ffast-math -Wno-deprecated-gpu-targets")
 set(CMAKE_CXX_FLAGS "-fPIC -O3 -mavx -march=native")
+
 
 # Find packages
 #find_package(PkgConfig REQUIRED)
@@ -33,9 +38,6 @@ file(GLOB_RECURSE TEST_SOURCES
         "${CMAKE_SOURCE_DIR}/network/*.cpp"
         #"${CMAKE_SOURCE_DIR}/*.cu"
         "${CMAKE_SOURCE_DIR}/main.cpp"
-        "${CMAKE_SOURCE_DIR}/../Neurocore/include/*.h"
-        "${CMAKE_SOURCE_DIR}/../Neurocore/include/*.hpp"
-        "${CMAKE_SOURCE_DIR}/../Neurocore/include/*.cuh"
 )
 # Create the test executable
 add_executable(${PROJECT_NAME} ${TEST_SOURCES})
@@ -47,6 +49,7 @@ set (USE_GPU true)
 if (USE_GPU)
     target_compile_definitions(${PROJECT_NAME} PRIVATE USE_GPU)
 endif()
+target_compile_definitions(${PROJECT_NAME} PRIVATE TEST)
 set_target_properties(
         ${PROJECT_NAME}
         PROPERTIES

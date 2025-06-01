@@ -1,6 +1,6 @@
 #include "matrix/Matrix.cuh"
+#include "matrix/Matrix.hxx"
 
-template class Matrix<1>;
 template class Matrix<1, 2>;
 template class Matrix<1, 3>;
 template class Matrix<1, 4>;
@@ -14,6 +14,7 @@ template class Matrix<1, 11>;
 template class Matrix<1, 12>;
 template class Matrix<1, 13>;
 template class Matrix<1, 14>;
+template class Matrix<2, 1>;
 template class Matrix<2, 2>;
 template class Matrix<2, 3>;
 template class Matrix<2, 4>;
@@ -183,3 +184,24 @@ template class Matrix<14, 11>;
 template class Matrix<14, 12>;
 template class Matrix<14, 13>;
 template class Matrix<14, 14>;
+template class Matrix<3,3,3>;
+template class Matrix<1,1,6>;
+template class Matrix<3,3,2>;
+template class Matrix<1,1,3>;
+template class Matrix<2,2,2>;
+template class Matrix<3,3,1,false>;
+template class Matrix<1,1,2>;
+template class Matrix<3,3,3, false>;
+template class Matrix<5,2,1, false>;
+template class Matrix<1,1,2, false>;
+template class Matrix<1,1,6,false>;
+template class Matrix<5,1,1,false>;
+template class Matrix<5,1,1,true>;
+//template class Matrix<5,1,1,true>;
+//template class Matrix<2, 1, 1, true>;
+//template class Matrix<5, 1, 1, true>;
+template class Matrix<2, 1, 1, false>;
+//template class Matrix<2, 2, 1, true>;
+//template class Matrix<3, 3, 1, true>;
+//template class Matrix<4, 4, 1, true>;
+template class Matrix<1, 1, 1, true>;
