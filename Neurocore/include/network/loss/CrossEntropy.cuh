@@ -2,6 +2,7 @@
 #include "Loss.h"
 #include "matrix/Matrix.cuh"
 #include <cmath>
+#include "gpuComputation/CUDALink.cuh"
 
 template <int rows, int cols, int dims, bool GPU = GPU_DEFAULT>
 class CrossEntropy final
@@ -22,12 +23,12 @@ public:
             float* res_d;
             checkCUDA(cudaMalloc(&res_d, output->GetSize() * sizeof(float)));
 
-            checkKernel((CrossEntropyKernel<<<CUDA_KERNEL_ARGS(cuda, output->GetSize())>>>
-                (output->GetData(), target->GetData(), res_d, output->GetSize(), EPSILON)));
+            CrossEntropy_link(output->GetData(), target->GetData(), res_d, output->GetSize(), EPSILON);
 
             float* r;
             checkCUDA(cudaMalloc(&r, sizeof(float)));
-            checkKernel((SumKernel<<<1, 1>>>(res_d, output->GetSize(), r)));
+  
+            Sum_link(res_d, output->GetSize(), r);
 
             float* r_h = new float[1];
             checkCUDA(cudaMemcpy(r_h, r, sizeof(float), cudaMemcpyDeviceToHost));
@@ -57,10 +58,7 @@ public:
     {
         if constexpr (GPU)
         {
-            const int blocksPerGrid =
-                (output->GetSize() + cuda->threadsPerBlock - 1) / cuda->threadsPerBlock;
-            checkKernel((CostDerivativeKernel<<<blocksPerGrid, cuda->threadsPerBlock>>>
-                (output->GetData(), target->GetData(), result->GetData(), output->GetSize())));
+            CostDerivative_link(output->GetData(), target->GetData(), result->GetData(), output->GetSize());
         }
         else
         {

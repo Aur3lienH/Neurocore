@@ -2,6 +2,7 @@
 
 #include <matrix/Matrix.cuh>
 #include <network/InitFunc.cuh>
+#include "gpuComputation/CUDALink.cuh"
 template<int rows,int prev_rows, float def_val = 0.01f, int cols = 1, int dims = 1, bool GPU = GPU_DEFAULT>
 class LeakyReLU final
 {
@@ -25,17 +26,25 @@ public:
     static void FeedForward(const MAT<rows,cols,dims>* input, MAT<rows,cols,dims>* output)
     {
         if constexpr (GPU)
-            {checkKernel((leakyReluFeedForward<<<CUDA_KERNEL_ARGS(cuda, input->GetSize())>>>(input->data_d, output->data_d,input->GetSize(), def_val)));}
+        {
+            leakyReluFeedForward_link(input->data_d, output->data_d, input->GetSize(), def_val);
+        }
         else
-		    {DefaultFeedForward(input, output, (void*)Function);}
+		{
+            DefaultFeedForward(input, output, (void*)Function);
+        }
     }
 
     static void Derivative(const MAT<rows,cols,dims>* x, MAT<rows,cols,dims>* dx_, const Matrix<rows,cols,dims>* dy_, const Matrix<rows,cols,dims>* y_)
     {
         if constexpr (GPU)
-            {checkKernel((leakyReluDerivative<<<CUDA_KERNEL_ARGS(cuda, x->GetSize())>>>(x->data_d, dx_->data_d, x->GetSize(), def_val)));}
+        {
+            leakyReluDerivative_link(x->data_d, dx_->data_d, x->GetSize(), def_val);
+        }
         else
-            {DefaultDerivative<rows,cols,dims>(x, dx_, (void*)Derive, dy_, y_);}
+        {
+            DefaultDerivative<rows,cols,dims>(x, dx_, (void*)Derive, dy_, y_);
+        }
     }
 
     static std::string getName()

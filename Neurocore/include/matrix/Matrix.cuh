@@ -222,7 +222,4 @@ using MAT = Matrix<x, y, z, GPU>;
 template<typename layershape>
 using LMAT = MAT<layershape::x, layershape::y, layershape::z>;
 
-
-#ifndef TEST
-#include "Matrix.hxx"
-#endif
+#include "matrix/Matrix.hxx"

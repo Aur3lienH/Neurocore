@@ -1,5 +1,6 @@
 #pragma once
-#include "Matrix.cuh"
+#include "matrix/Matrix.cuh"
+#include "gpuComputation/CUDALink.cuh"
 
 template<int rows, int cols, int dims, bool GPU>
 Matrix<rows, cols, dims, GPU>::Matrix(std::initializer_list<float> values) {
@@ -150,7 +151,7 @@ void Matrix<rows, cols, dims, GPU>::Init(float value) {
         checkCUDNN(cudnnCreateTensorDescriptor(&desc_1D));
         checkCUDNN(cudnnSetTensor4dDescriptor(desc, CUDNN_TENSOR_NCHW, CUDNN_DATA_FLOAT, 1, dims, rows, cols));
         checkCUDNN(cudnnSetTensor4dDescriptor(desc_1D, CUDNN_TENSOR_NCHW, CUDNN_DATA_FLOAT, 1, 1, rows, cols));
-        checkKernel(initializeArray_kernel<<<CUDA_KERNEL_ARGS(cuda, GetSize())>>>(data_d, value, GetSize()));
+        initializeArray_kernel_link(data_d, value, GetSize());
     } else {
         //Create a simple array of size rows * cols * dim
         this->data = new float[rows * cols * dims];
@@ -299,9 +300,7 @@ Matrix<cols, rows, dims, GPU> *Matrix<rows, cols, dims, GPU>::Transpose() const 
 
     if constexpr (GPU) {
         for (int i = 0; i < dims; i++) {
-            dim3 threads(16, 16); // Each block has 16x16 threads
-            dim3 blocks((cols + threads.x - 1) / threads.x, (rows + threads.y - 1) / threads.y);
-            checkKernel((transpose_kernel<<<blocks, threads>>>(data_d, res->data_d, rows, cols)));
+            transpose_kernel_link(data_d, res->data_d, rows, cols);
             //GoToNextMatrix();
             //res->GoToNextMatrix();
         }
@@ -360,8 +359,7 @@ void Matrix<rows,cols,dims, GPU>::MultiplyAllDims(float value)
 
     if constexpr (GPU)
     {
-            checkKernel(
-                (scalarMult_kernel<<<CUDA_KERNEL_ARGS(cuda, GetMatrixSize())>>>(data_d, value, data_d, GetSize())));
+        scalarMult_kernel_link(data_d, value, data_d, GetSize());
     }
      else
      {
@@ -657,9 +655,7 @@ Matrix<rows, cols, dims, GPU> *Matrix<rows, cols, dims, GPU>::operator*(const fl
     auto *result = new Matrix<rows, cols, dims, GPU>();
 
     if constexpr (GPU) {
-        checkKernel(
-            (scalarMult_kernel<<<CUDA_KERNEL_ARGS(cuda, GetMatrixSize())>>>(data_d, other, result->data_d, result->
-                GetMatrixSize())));
+        scalarMult_kernel_link(data_d, other, result->data_d, result->GetMatrixSize());
     } else {
         for (int i = 0; i < this->GetCols() * this->GetRows(); i++) {
             result->data[i] = this->data[i] * other;

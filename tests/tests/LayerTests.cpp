@@ -148,6 +148,7 @@ bool LayerTests::TestCNNLayerWeightsInit()
     return true;
 }
 
+
 bool LayerTests::TestCNNMultiple()
 {
     typedef ConvLayer<Activation<ReLU<3,3,3,2>>, LayerShape<3,3>, LayerShape<3,3,2>, LayerShape<1,1,2>, Constant<0.01>, GPU_DEFAULT,true> cnn1;
