@@ -64,7 +64,7 @@ bool TestMatrixMultiplication() {
     // Compare results
     float max_diff = 0.0f;
     for (int i = 0; i < M * N; i++) {
-        float diff = abs((*C_optimized)[i] - (*C_naive)[i]);
+        float diff = std::fabs((*C_optimized)[i] - (*C_naive)[i]);
         if (diff > max_diff) {
             max_diff = diff;
         }
@@ -155,7 +155,7 @@ bool TestTransposeOperations() {
             for (int k = 0; k < cols; k++) {
                 sum += (*A)(i, k) * (*B)(j, k);
             }
-            float diff = abs((*C)(i, j) - sum);
+            float diff = std::fabs((*C)(i, j) - sum);
             if (diff > max_diff_1) max_diff_1 = diff;
         }
     }
@@ -172,7 +172,7 @@ bool TestTransposeOperations() {
             for (int k = 0; k < rows; k++) {
                 sum += (*A)(k, i) * (*B)(k, j);
             }
-            float diff = abs((*D)(i, j) - sum);
+            float diff = std::fabs((*D)(i, j) - sum);
             if (diff > max_diff_2) max_diff_2 = diff;
         }
     }

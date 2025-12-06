@@ -153,7 +153,7 @@ bool TestMatrixMultiplication() {
     
     float max_diff = 0.0f;
     for (int i = 0; i < M * N; i++) {
-        float diff = abs((*C_optimized)[i] - (*C_naive)[i]);
+        float diff = std::fabs((*C_optimized)[i] - (*C_naive)[i]);
         if (diff > max_diff) {
             max_diff = diff;
         }
