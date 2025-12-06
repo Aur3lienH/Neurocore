@@ -843,63 +843,40 @@ void Matrix<rows,cols,dim>::MatrixMultiplication(const Matrix<other_rows,other_c
 template<int rows, int cols, int dim>
 void Matrix<rows,cols,dim>::CrossProductWithSelfTranspose(const Matrix* other, Matrix* output) const
 {
-    // Optimized A^T * B with cache blocking
-    constexpr int BLOCK_SIZE = 64;
-    
-    const int M = this->GetCols();
-    const int N = other->GetCols();
-    const int K = this->GetRows();
-    
-    // Zero output
-    for (int i = 0; i < M * N; i++) {
-        output->data[i] = 0.0f;
-    }
-    
-    // Blocked computation
-    for (int ii = 0; ii < M; ii += BLOCK_SIZE) {
-        int iend = (ii + BLOCK_SIZE < M) ? ii + BLOCK_SIZE : M;
-        for (int jj = 0; jj < N; jj += BLOCK_SIZE) {
-            int jend = (jj + BLOCK_SIZE < N) ? jj + BLOCK_SIZE : N;
-            for (int kk = 0; kk < K; kk += BLOCK_SIZE) {
-                int kend = (kk + BLOCK_SIZE < K) ? kk + BLOCK_SIZE : K;
-                
-                for (int i = ii; i < iend; i++) {
-                    float* row_c = &output->data[i * N];
-                    
-                    for (int j = jj; j < jend; j++) {
-                        __m128 sum = _mm_setzero_ps();
-                        int k = kk;
-                        
-                        // Vectorized loop
-                        for (; k <= kend - 4; k += 4) {
-                            __m128 a = _mm_set_ps(
-                                this->data[(k+3) * this->GetCols() + i],
-                                this->data[(k+2) * this->GetCols() + i],
-                                this->data[(k+1) * this->GetCols() + i],
-                                this->data[k * this->GetCols() + i]
-                            );
-                            __m128 b = _mm_set_ps(
-                                other->data[(k+3) * other->GetCols() + j],
-                                other->data[(k+2) * other->GetCols() + j],
-                                other->data[(k+1) * other->GetCols() + j],
-                                other->data[k * other->GetCols() + j]
-                            );
-                            sum = _mm_add_ps(sum, _mm_mul_ps(a, b));
-                        }
-                        
-                        // Horizontal sum
-                        sum = _mm_hadd_ps(sum, sum);
-                        sum = _mm_hadd_ps(sum, sum);
-                        float vec_sum;
-                        _mm_store_ss(&vec_sum, sum);
-                        row_c[j] += vec_sum;
-                        
-                        // Remaining elements
-                        for (; k < kend; k++) {
-                            row_c[j] += this->data[k * this->GetCols() + i] * other->data[k * other->GetCols() + j];
-                        }
-                    }
-                }
+    // Optimized A^T * B - accessing columns which requires gathering
+    //sse2 version with horizontal add for better efficiency
+    for (int i = 0; i < this->GetCols(); i++)
+    {
+        for (int j = 0; j < other->GetCols(); j++)
+        {
+            __m128 sum = _mm_setzero_ps();
+            int k;
+            for (k = 0; k <= this->GetRows() - 4; k += 4)
+            {
+                __m128 a = _mm_set_ps(
+                    this->data[(k+3) * this->GetCols() + i],
+                    this->data[(k+2) * this->GetCols() + i],
+                    this->data[(k+1) * this->GetCols() + i],
+                    this->data[k * this->GetCols() + i]
+                );
+                __m128 b = _mm_set_ps(
+                    other->data[(k+3) * other->GetCols() + j],
+                    other->data[(k+2) * other->GetCols() + j],
+                    other->data[(k+1) * other->GetCols() + j],
+                    other->data[k * other->GetCols() + j]
+                );
+                sum = _mm_add_ps(sum, _mm_mul_ps(a, b));
+            }
+
+            // Horizontal sum
+            sum = _mm_hadd_ps(sum, sum);
+            sum = _mm_hadd_ps(sum, sum);
+            _mm_store_ss(&output->data[i * output->GetCols() + j], sum);
+
+            // Handle the remaining elements if rows is not a multiple of 4
+            for (; k < this->GetRows(); ++k)
+            {
+                output->data[i * output->GetCols() + j] += this->data[k * this->GetCols() + i] * other->data[k * other->GetCols() + j];
             }
         }
     }
@@ -908,51 +885,29 @@ void Matrix<rows,cols,dim>::CrossProductWithSelfTranspose(const Matrix* other, M
 template<int rows, int cols, int dim>
 void Matrix<rows,cols,dim>::CrossProductWithTranspose(const Matrix* other, Matrix* output) const
 {
-    // Optimized A * B^T with better cache locality
-    constexpr int BLOCK_SIZE = 64;
-    
-    const int M = this->GetRows();
-    const int N = other->GetRows();
-    const int K = this->GetCols();
-    
-    // Zero output
-    for (int i = 0; i < M * N; i++) {
-        output->data[i] = 0.0f;
-    }
-    
-    // Blocked computation
-    for (int ii = 0; ii < M; ii += BLOCK_SIZE) {
-        int iend = (ii + BLOCK_SIZE < M) ? ii + BLOCK_SIZE : M;
-        for (int jj = 0; jj < N; jj += BLOCK_SIZE) {
-            int jend = (jj + BLOCK_SIZE < N) ? jj + BLOCK_SIZE : N;
-            
-            for (int i = ii; i < iend; i++) {
-                const float* row_a = &this->data[i * K];
-                float* row_c = &output->data[i * N];
-                
-                for (int j = jj; j < jend; j++) {
-                    const float* row_b = &other->data[j * K];
-                    
-                    __m128 sum = _mm_setzero_ps();
-                    int k = 0;
-                    
-                    // Process 4 elements at a time - both rows are contiguous
-                    for (; k <= K - 4; k += 4) {
-                        __m128 a = _mm_loadu_ps(&row_a[k]);
-                        __m128 b = _mm_loadu_ps(&row_b[k]);
-                        sum = _mm_add_ps(sum, _mm_mul_ps(a, b));
-                    }
-                    
-                    // Horizontal sum
-                    sum = _mm_hadd_ps(sum, sum);
-                    sum = _mm_hadd_ps(sum, sum);
-                    _mm_store_ss(&row_c[j], sum);
-                    
-                    // Remaining elements
-                    for (; k < K; k++) {
-                        row_c[j] += row_a[k] * row_b[k];
-                    }
-                }
+    // Optimized A * B^T - both matrices accessed row-wise (excellent cache locality)
+    for (int i = 0; i < this->GetRows(); i++)
+    {
+        for (int j = 0; j < other->GetRows(); j++)
+        {
+            __m128 sum = _mm_setzero_ps();
+            int k;
+            for (k = 0; k <= this->GetCols() - 4; k += 4)
+            {
+                __m128 a = _mm_loadu_ps(&this->data[i * this->GetCols() + k]);
+                __m128 b = _mm_loadu_ps(&other->data[j * other->GetCols() + k]);
+                sum = _mm_add_ps(sum, _mm_mul_ps(a, b));
+            }
+
+            // Horizontal sum for better efficiency
+            sum = _mm_hadd_ps(sum, sum);
+            sum = _mm_hadd_ps(sum, sum);
+            _mm_store_ss(&output->data[i * output->GetCols() + j], sum);
+
+            // Handle the remaining elements if cols is not a multiple of 4
+            for (; k < this->GetCols(); ++k)
+            {
+                output->data[i * output->GetCols() + j] += this->data[i * this->GetCols() + k] * other->data[j * other->GetCols() + k];
             }
         }
     }
